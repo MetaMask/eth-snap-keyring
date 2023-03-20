@@ -63,7 +63,18 @@
   },
   "lavamoat": {
     "allowScripts": {
-      "@lavamoat/preinstall-always-fail": false
+      "@lavamoat/preinstall-always-fail": false,
+      "@metamask/snap-controllers>@metamask/controllers>babel-runtime>core-js": false,
+      "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>secp256k1": false,
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
+  },
+  "dependencies": {
+    "@metamask/snaps-utils": "^0.31.0",
+    "@metamask/utils": "^5.0.0",
+    "eth-rpc-errors": "^4.0.3",
+    "uuid": "^9.0.0"
   }
 }
