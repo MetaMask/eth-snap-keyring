@@ -9,7 +9,6 @@
  * @property {() => void} resolve - A function that resolves the Promise.
  * @property {() => void} reject - A function that rejects the Promise.
  */
-
 export interface DeferredPromise {
   promise: Promise<any>;
   resolve?: () => void;
