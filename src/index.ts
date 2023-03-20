@@ -352,7 +352,7 @@ class SnapKeyring {
 
   submitSignatureRequestResult(id: string, result: any): void {
     const signingPromise = this._pendingRequests.get(id);
-    if (signingPromise === undefined) {
+    if (signingPromise?.resolve === undefined) {
       console.warn(
         'submitSignatureRequestResult missing requested id',
         id,

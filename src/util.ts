@@ -11,7 +11,7 @@
  */
 export interface DeferredPromise {
   promise: Promise<any>;
-  resolve?: () => void;
+  resolve?: (value?: any) => void;
   reject?: () => void;
 }
 
