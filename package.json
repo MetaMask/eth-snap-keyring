@@ -1,10 +1,10 @@
 {
-  "name": "@metamask/module-template",
-  "version": "0.0.0",
-  "description": "The MetaMask Node module template.",
+  "name": "@metamask/eth-snap-keyring",
+  "version": "0.1.0",
+  "description": "Snaps keyring bridge.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MetaMask/metamask-module-template.git"
+    "url": "https://github.com/MetaMask/eth-snap-keyring.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
