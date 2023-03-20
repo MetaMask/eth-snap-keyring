@@ -74,6 +74,7 @@
   "dependencies": {
     "@metamask/snaps-utils": "^0.31.0",
     "@metamask/utils": "^5.0.0",
+    "@types/uuid": "^9.0.1",
     "eth-rpc-errors": "^4.0.3",
     "uuid": "^9.0.0"
   }
