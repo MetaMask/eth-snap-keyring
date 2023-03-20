@@ -36,8 +36,6 @@ class SnapKeyring {
     this.type = type;
     this._addressToOrigin = new Map();
     this._pendingRequests = new Map();
-
-    globalThis.__snapKeyring = this;
   }
 
   // keyrings cant take constructor arguments so we
