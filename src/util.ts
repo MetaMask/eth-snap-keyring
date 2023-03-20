@@ -17,7 +17,7 @@ export interface DeferredPromise {
 }
 
 /**
- * Create a defered Promise.
+ * Create a deferred Promise.
  *
  * @returns A deferred Promise.
  */
