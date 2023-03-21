@@ -1,6 +1,6 @@
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json } from '@metamask/utils';
-import { Buffer } from 'buffer';
+import { Buffer } from 'buffer'; // eslint-disable-line import/no-nodejs-modules
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
