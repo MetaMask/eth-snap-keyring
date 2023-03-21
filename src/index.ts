@@ -1,18 +1,24 @@
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json } from '@metamask/utils';
-import { Buffer } from 'buffer'; // eslint-disable-line import/no-nodejs-modules
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
 import { deferredPromise, DeferredPromise } from './util';
 
-export const type = 'Snap Keyring';
+export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export type Origin = string; // Origin of the snap
 export type Address = string; // String public address
-export type PublicKey = Buffer; // 33 or 64 byte public key
+export type PublicKey = Uint8Array; // 33 or 64 byte public key
 export type JsonWallet = [PublicKey, Json];
 export type SnapWallet = Map<Address, Origin>;
+
+type JsonRpcRequest = {
+  jsonrpc: '2.0';
+  method: string;
+  params?: any;
+  id?: string | number | null;
+};
 
 // Type for serialized format.
 export type SerializedWallets = {
@@ -20,56 +26,58 @@ export type SerializedWallets = {
 };
 
 class SnapKeyring {
-  static type: string;
+  static type: string = SNAP_KEYRING_TYPE;
 
   type: string;
 
-  _addressToOrigin: SnapWallet;
+  protected addressToSnapId: SnapWallet;
 
-  _provider: any;
+  protected provider: any;
 
-  _snapController: any;
+  protected snapController: any;
 
-  _pendingRequests: Map<string, DeferredPromise>;
+  protected pendingRequests: Map<string, DeferredPromise>;
 
   constructor() {
-    this.type = type;
-    this._addressToOrigin = new Map();
-    this._pendingRequests = new Map();
+    this.type = SnapKeyring.type;
+    this.addressToSnapId = new Map();
+    this.pendingRequests = new Map();
   }
 
   // keyrings cant take constructor arguments so we
   // late-set the provider
   setProvider(provider: any, snapController: any) {
-    console.log('setProvider', provider, snapController);
-    this._provider = provider;
-    this._snapController = snapController;
+    this.provider = provider;
+    this.snapController = snapController;
   }
 
-  async sendRequestToSnap(origin: Origin, request: any): Promise<any> {
-    console.log('setProvider', this._provider, this._snapController);
-    // return this._provider.request({
-    //   method: 'wallet_invokeSnap',
-    //   params: {
-    //     snapId: origin,
-    //     request,
-    //   },
-    // });
-    return this._snapController.handleRequest({
-      snapId: origin,
-      origin: 'metamask',
-      handler: HandlerType.OnRpcRequest,
+  protected async sendRequestToSnap(
+    snapId: Origin,
+    request: JsonRpcRequest,
+    origin = 'metamask',
+    handler = HandlerType.OnRpcRequest,
+  ): Promise<any> {
+    console.log('setProvider', this.provider, this.snapController);
+    return this.snapController.handleRequest({
+      snapId,
+      origin, // FIXME: handle the case when the request comes from another snap
+      handler,
       request,
     });
   }
 
-  async sendSignatureRequestToSnap(origin: Origin, request: any): Promise<any> {
-    console.log('sendSignatureRequest', origin, request);
-    const resP = this.sendRequestToSnap(origin, {
+  protected async sendSignatureRequestToSnap(
+    snapId: Origin,
+    request: any,
+  ): Promise<any> {
+    console.log('sendSignatureRequest', snapId, request);
+    const resP = this.sendRequestToSnap(snapId, {
+      jsonrpc: '2.0',
       method: 'snap_keyring_sign_request',
       params: request,
     });
     console.log('sendSignatureRequest returned');
+
     try {
       const result = await resP;
       console.log('sendSignatureRequest resolved', result);
@@ -139,7 +147,7 @@ class SnapKeyring {
    */
   async serialize(): Promise<SerializedWallets> {
     const output: SerializedWallets = {};
-    for (const [address, origin] of this._addressToOrigin.entries()) {
+    for (const [address, origin] of this.addressToSnapId.entries()) {
       output[address] = origin;
     }
     return output;
@@ -158,7 +166,7 @@ class SnapKeyring {
       return;
     }
     for (const [address, origin] of Object.entries(wallets)) {
-      this._addressToOrigin.set(address, origin);
+      this.addressToSnapId.set(address, origin);
     }
   }
 
@@ -166,7 +174,7 @@ class SnapKeyring {
    * Get an array of public addresses.
    */
   async getAccounts(): Promise<Address[]> {
-    return Array.from(this._addressToOrigin.keys());
+    return Array.from(this.addressToSnapId.keys());
   }
 
   /**
@@ -177,7 +185,7 @@ class SnapKeyring {
    * @param opts
    */
   async signTransaction(address: Address, tx: any, opts = {}) {
-    const origin = this._addressToOrigin.get(address);
+    const origin = this.addressToSnapId.get(address);
     if (origin === undefined) {
       throw new Error(`No origin found for address "${address}"`);
     }
@@ -191,7 +199,7 @@ class SnapKeyring {
     });
     const signingPromise = deferredPromise();
     console.log('new pending request', id);
-    this._pendingRequests.set(id, signingPromise);
+    this.pendingRequests.set(id, signingPromise);
     // wait for signing to complete
     const sigHexString = (await signingPromise.promise) as unknown as string;
     const { v, r, s } = signatureHexStringToRsv(sigHexString);
@@ -211,32 +219,38 @@ class SnapKeyring {
   }
 
   /**
-   * Sign a message.
+   * Sign a personal message.
    *
-   * @param address
-   * @param data
-   * @param opts
+   * Note: KeyringController says this should return a Buffer but it actually
+   * expects a string.
+   *
+   * @param address - Signer's address.
+   * @param data - Data to sign.
+   * @param _opts - Unused options.
+   * @returns Promise of the signature.
    */
-  // KeyringController says this should return a Buffer but it actually expects a string.
   async signPersonalMessage(
     address: Address,
     data: any,
-    opts = {},
+    _opts = {},
   ): Promise<string> {
-    const origin = this._addressToOrigin.get(address);
+    const origin = this.addressToSnapId.get(address);
     if (origin === undefined) {
       throw new Error(`No origin found for address "${address}"`);
     }
-    const id = uuidv4();
+
     // forward to snap
+    const id = uuidv4();
     await this.sendSignatureRequestToSnap(origin, {
       id,
       method: 'personal_sign',
       params: [data, address],
     });
+
     const signingPromise = deferredPromise();
     console.log('new pending request', id);
-    this._pendingRequests.set(id, signingPromise);
+    this.pendingRequests.set(id, signingPromise);
+
     // wait for signing to complete
     const sigHexString = (await signingPromise.promise) as unknown as string;
     console.log('signPersonalMessage', sigHexString);
@@ -272,14 +286,15 @@ class SnapKeyring {
   /**
    * List the accounts for a snap origin.
    *
-   * @param targetOrigin
+   * @param targetOrigin - Snap origin.
+   * @returns List of addresses for the given origin.
    */
   listAccounts(targetOrigin: Origin): Address[] {
-    return Array.from(this._addressToOrigin.entries())
-      .filter(([address, origin]) => {
+    return Array.from(this.addressToSnapId.entries())
+      .filter(([_, origin]) => {
         return origin === targetOrigin;
       })
-      .map(([address, origin]) => {
+      .map(([address, _]) => {
         return address;
       });
   }
@@ -287,20 +302,20 @@ class SnapKeyring {
   /**
    * Create an account for a snap origin.
    *
-   * The account is only created if the public address does not
-   * already exist.
+   * The account is only created if the public address does not already exist.
    *
-   * This checks for duplicates in the context of the snap origin but
-   * not across all snaps. The keyring controller is responsible for checking
-   * for duplicates across all addresses.
+   * This checks for duplicates in the context of the snap origin but not
+   * across all snaps. The keyring controller is responsible for checking for
+   * duplicates across all addresses.
    *
-   * @param origin
-   * @param address
+   * @param origin - Origin.
+   * @param address - Address.
+   * @returns True if the account was created, false if it already existed.
    */
   createAccount(origin: Origin, address: string): boolean {
-    const exists = this._addressToOrigin.has(address);
+    const exists = this.addressToSnapId.has(address);
     if (!exists) {
-      this._addressToOrigin.set(address, origin);
+      this.addressToSnapId.set(address, origin);
       return true;
     }
     return false;
@@ -338,20 +353,21 @@ class SnapKeyring {
   /**
    * Delete the private data for an account belonging to a snap origin.
    *
-   * @param address
+   * @param address - Address to remove.
+   * @returns True if the address existed before, false otherwise.
    */
   deleteAccount(address: string): boolean {
-    return this._addressToOrigin.delete(address);
+    return this.addressToSnapId.delete(address);
   }
 
   deleteAccountsByOrigin(origin: Origin): void {
     for (const address of this.listAccounts(origin)) {
-      this._addressToOrigin.delete(address);
+      this.addressToSnapId.delete(address);
     }
   }
 
   submitSignatureRequestResult(id: string, result: any): void {
-    const signingPromise = this._pendingRequests.get(id);
+    const signingPromise = this.pendingRequests.get(id);
     if (signingPromise?.resolve === undefined) {
       console.warn(
         'submitSignatureRequestResult missing requested id',
@@ -360,12 +376,12 @@ class SnapKeyring {
       );
       return;
     }
-    this._pendingRequests.delete(id);
+    this.pendingRequests.delete(id);
     signingPromise.resolve(result);
   }
 }
 
-SnapKeyring.type = type;
+SnapKeyring.type = SNAP_KEYRING_TYPE;
 
 export default SnapKeyring;
 
@@ -374,8 +390,11 @@ export default SnapKeyring;
  * @param signatureHexString
  */
 function signatureHexStringToRsv(signatureHexString: string) {
+  // eslint-disable-next-line id-length
   const r = signatureHexString.slice(0, 66);
+  // eslint-disable-next-line id-length
   const s = `0x${signatureHexString.slice(66, 130)}`;
+  // eslint-disable-next-line id-length
   const v = parseInt(signatureHexString.slice(130, 132), 16);
   return { r, s, v };
 }
