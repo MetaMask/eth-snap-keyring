@@ -1,34 +1,14 @@
-/**
- * A deferred Promise.
- *
- * A deferred Promise is one that can be resolved or rejected independently of
- * the Promise construction.
- *
- * @typedef {object} DeferredPromise
- * @property {Promise} promise - The Promise that has been deferred.
- * @property {() => void} resolve - A function that resolves the Promise.
- * @property {() => void} reject - A function that rejects the Promise.
- */
-export type DeferredPromise = {
-  promise: Promise<any>;
-  resolve?: (value?: any) => void;
-  reject?: () => void;
-};
+export class DeferredPromise<T> {
+  promise: Promise<T>;
 
-/**
- * Create a deferred Promise.
- *
- * @returns A deferred Promise.
- */
-export function deferredPromise(): DeferredPromise {
-  let resolve: DeferredPromise['resolve'];
-  let reject: DeferredPromise['reject'];
+  resolve?: (value: T | PromiseLike<T>) => void;
 
-  const promise = new Promise<void>(
-    (innerResolve: () => void, innerReject: () => void) => {
-      resolve = innerResolve;
-      reject = innerReject;
-    },
-  );
-  return { promise, resolve, reject };
+  reject?: (reason?: any) => void;
+
+  constructor() {
+    this.promise = new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
 }

@@ -1,17 +1,18 @@
+/* eslint-disable id-denylist */
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
-import { deferredPromise, DeferredPromise } from './util';
+import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-export type Origin = string; // Origin of the snap
+export type SnapId = string; // Origin of the snap
 export type Address = string; // String public address
 export type PublicKey = Uint8Array; // 33 or 64 byte public key
 export type JsonWallet = [PublicKey, Json];
-export type SnapWallet = Map<Address, Origin>;
+export type SnapWallet = Map<Address, SnapId>;
 
 type JsonRpcRequest = {
   jsonrpc: '2.0';
@@ -32,11 +33,9 @@ class SnapKeyring {
 
   protected addressToSnapId: SnapWallet;
 
-  protected provider: any;
-
   protected snapController: any;
 
-  protected pendingRequests: Map<string, DeferredPromise>;
+  protected pendingRequests: Map<string, DeferredPromise<any>>;
 
   constructor() {
     this.type = SnapKeyring.type;
@@ -46,32 +45,39 @@ class SnapKeyring {
 
   // keyrings cant take constructor arguments so we
   // late-set the provider
-  setProvider(provider: any, snapController: any) {
-    this.provider = provider;
+  setController(snapController: any) {
     this.snapController = snapController;
   }
 
+  /**
+   * Send a RPC request to a snap.
+   *
+   * @param snapId - Snap ID.
+   * @param request - JSON-RPC request.
+   * @param origin - Request's origin.
+   * @param handler - Request handler.
+   * @returns The RPC response.
+   */
   protected async sendRequestToSnap(
-    snapId: Origin,
+    snapId: SnapId,
     request: JsonRpcRequest,
     origin = 'metamask',
     handler = HandlerType.OnRpcRequest,
   ): Promise<any> {
-    console.log('setProvider', this.provider, this.snapController);
     return this.snapController.handleRequest({
       snapId,
-      origin, // FIXME: handle the case when the request comes from another snap
+      origin,
       handler,
       request,
     });
   }
 
   protected async sendSignatureRequestToSnap(
-    snapId: Origin,
+    snapId: SnapId,
     request: any,
   ): Promise<any> {
     console.log('sendSignatureRequest', snapId, request);
-    const resP = this.sendRequestToSnap(snapId, {
+    const resp = this.sendRequestToSnap(snapId, {
       jsonrpc: '2.0',
       method: 'snap_keyring_sign_request',
       params: request,
@@ -79,7 +85,7 @@ class SnapKeyring {
     console.log('sendSignatureRequest returned');
 
     try {
-      const result = await resP;
+      const result = await resp;
       console.log('sendSignatureRequest resolved', result);
       return result;
     } catch (err) {
@@ -89,8 +95,9 @@ class SnapKeyring {
   }
 
   async handleKeyringSnapMessage(
-    origin: Origin,
+    snapId: SnapId,
     message: any,
+    // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
   ): Promise<any> {
     const [methodName, params] = message;
@@ -98,14 +105,13 @@ class SnapKeyring {
     switch (methodName) {
       case 'create': {
         const address = params as Address;
-        const added = this.createAccount(origin, address);
-        if (added) {
-          await saveSnapKeyring();
-        }
-        return added;
+        this.createAccount(snapId, address);
+        await saveSnapKeyring();
+        return null;
       }
+
       case 'read': {
-        const accounts = this.listAccounts(origin);
+        const accounts = this.listAccounts(snapId);
         return accounts;
       }
       // case 'update': {
@@ -113,15 +119,15 @@ class SnapKeyring {
       // }
       case 'delete': {
         const address = params as Address;
-        if (address) {
-          const deleted = this.deleteAccount(address);
-          if (deleted) {
-            // include deleted address
-            await saveSnapKeyring(address);
-          }
-          return deleted;
+        if (!address) {
+          throw new Error('Missing account address');
         }
-        return;
+
+        const deleted = this.deleteAccount(address);
+        if (deleted) {
+          await saveSnapKeyring(address);
+        }
+        return deleted;
       }
 
       case 'submit': {
@@ -159,7 +165,7 @@ class SnapKeyring {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    *
-   * @param wallets
+   * @param wallets - Serialize wallets.
    */
   async deserialize(wallets: SerializedWallets | undefined): Promise<void> {
     if (!wallets) {
@@ -180,26 +186,28 @@ class SnapKeyring {
   /**
    * Sign a transaction.
    *
-   * @param address
-   * @param tx
-   * @param opts
+   * @param address - Sender's address.
+   * @param tx - Transaction.
+   * @param _opts - Transaction options (not used).
    */
-  async signTransaction(address: Address, tx: any, opts = {}) {
-    const origin = this.addressToSnapId.get(address);
-    if (origin === undefined) {
-      throw new Error(`No origin found for address "${address}"`);
+  async signTransaction(address: Address, tx: any, _opts = {}) {
+    const snapId = this.addressToSnapId.get(address);
+    if (snapId === undefined) {
+      throw new Error(`No snap found for address "${address}"`);
     }
+
+    // Forward request to snap
     const id = uuidv4();
     const txParams = tx.toJSON();
-    // forward to snap
-    await this.sendSignatureRequestToSnap(origin, {
+    await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
       params: [txParams],
     });
-    const signingPromise = deferredPromise();
-    console.log('new pending request', id);
+    const signingPromise = new DeferredPromise<any>();
     this.pendingRequests.set(id, signingPromise);
+    console.log('new pending request', id);
+
     // wait for signing to complete
     const sigHexString = (await signingPromise.promise) as unknown as string;
     const { v, r, s } = signatureHexStringToRsv(sigHexString);
@@ -210,11 +218,11 @@ class SnapKeyring {
   /**
    * Sign a message.
    *
-   * @param address
-   * @param data
-   * @param opts
+   * @param _address - Signer's address.
+   * @param _data - Data to sign.
+   * @param _opts - Signing options.
    */
-  async signMessage(address: Address, data: any, opts = {}) {
+  async signMessage(_address: Address, _data: any, _opts = {}) {
     throw new Error('death to eth_sign!');
   }
 
@@ -247,7 +255,7 @@ class SnapKeyring {
       params: [data, address],
     });
 
-    const signingPromise = deferredPromise();
+    const signingPromise = new DeferredPromise<any>();
     console.log('new pending request', id);
     this.pendingRequests.set(id, signingPromise);
 
@@ -266,18 +274,18 @@ class SnapKeyring {
    *
    * Used by the UI to export an account.
    *
-   * @param address
+   * @param _address - Address of the account to export.
    */
-  exportAccount(address: Address): [PublicKey, Json] | undefined {
+  exportAccount(_address: Address): [PublicKey, Json] | undefined {
     throw new Error('snap-keyring: "exportAccount" not supported');
   }
 
   /**
    * Removes the first account matching the given public address.
    *
-   * @param address
+   * @param _address - Address of the account to remove.
    */
-  removeAccount(address: Address): boolean {
+  removeAccount(_address: Address): boolean {
     throw new Error('snap-keyring: "removeAccount" not supported');
   }
 
@@ -289,7 +297,7 @@ class SnapKeyring {
    * @param targetOrigin - Snap origin.
    * @returns List of addresses for the given origin.
    */
-  listAccounts(targetOrigin: Origin): Address[] {
+  listAccounts(targetOrigin: SnapId): Address[] {
     return Array.from(this.addressToSnapId.entries())
       .filter(([_, origin]) => {
         return origin === targetOrigin;
@@ -310,15 +318,12 @@ class SnapKeyring {
    *
    * @param origin - Origin.
    * @param address - Address.
-   * @returns True if the account was created, false if it already existed.
    */
-  createAccount(origin: Origin, address: string): boolean {
-    const exists = this.addressToSnapId.has(address);
-    if (!exists) {
-      this.addressToSnapId.set(address, origin);
-      return true;
+  createAccount(origin: SnapId, address: string) {
+    if (this.addressToSnapId.has(address)) {
+      throw new Error('account already exists');
     }
-    return false;
+    this.addressToSnapId.set(address, origin);
   }
 
   // /**
@@ -360,7 +365,7 @@ class SnapKeyring {
     return this.addressToSnapId.delete(address);
   }
 
-  deleteAccountsByOrigin(origin: Origin): void {
+  deleteAccountsByOrigin(origin: SnapId): void {
     for (const address of this.listAccounts(origin)) {
       this.addressToSnapId.delete(address);
     }
@@ -381,15 +386,19 @@ class SnapKeyring {
   }
 }
 
-SnapKeyring.type = SNAP_KEYRING_TYPE;
-
 export default SnapKeyring;
 
 /**
+ * Parses a hex signature into RSV.
  *
- * @param signatureHexString
+ * @param signatureHexString - Signature in hex.
+ * @returns The signature as an {r,s,v} object.
  */
-function signatureHexStringToRsv(signatureHexString: string) {
+function signatureHexStringToRsv(signatureHexString: string): {
+  r: string;
+  s: string;
+  v: number;
+} {
   // eslint-disable-next-line id-length
   const r = signatureHexString.slice(0, 66);
   // eslint-disable-next-line id-length
