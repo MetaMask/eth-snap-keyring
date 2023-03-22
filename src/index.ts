@@ -37,7 +37,7 @@ export type SerializedWallets = {
   [key: string]: string;
 };
 
-class SnapKeyring {
+export class SnapKeyring {
   static type: string = SNAP_KEYRING_TYPE;
 
   type: string;
@@ -222,7 +222,7 @@ class SnapKeyring {
 
     // wait for signing to complete
     const sigHexString = (await signingPromise.promise) as unknown as string;
-    const { v, r, s } = signatureHexStringToRsv(sigHexString);
+    const { r, s, v } = decodeSignature(sigHexString);
     console.log('signTransaction', sigHexString);
     return tx._processSignature(v, r, s);
   }
@@ -385,24 +385,20 @@ class SnapKeyring {
   }
 }
 
-export default SnapKeyring;
-
 /**
- * Parses a hex signature into RSV.
+ * Decode a hex signature into a {r,s,v} object.
  *
- * @param signatureHexString - Signature in hex.
- * @returns The signature as an {r,s,v} object.
+ * @param signature - Signature in hexadecimal.
+ * @returns The signature in a {r,s,v} object.
  */
-function signatureHexStringToRsv(signatureHexString: string): {
+export function decodeSignature(signature: string): {
   r: string;
   s: string;
   v: number;
 } {
-  // eslint-disable-next-line id-length
-  const r = signatureHexString.slice(0, 66);
-  // eslint-disable-next-line id-length
-  const s = `0x${signatureHexString.slice(66, 130)}`;
-  // eslint-disable-next-line id-length
-  const v = parseInt(signatureHexString.slice(130, 132), 16);
-  return { r, s, v };
+  return {
+    r: signature.slice(0, 66),
+    s: `0x${signature.slice(66, 130)}`,
+    v: parseInt(signature.slice(130, 132), 16),
+  };
 }
