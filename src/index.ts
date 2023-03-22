@@ -80,6 +80,7 @@ export class SnapKeyring {
     request: any,
   ): Promise<any> {
     console.log('sendSignatureRequest', snapId, request);
+    console.log('snapController', this.snapController);
     const resp = this.sendRequestToSnap(snapId, {
       jsonrpc: '2.0',
       method: 'snap.keyring.submitRequest',
