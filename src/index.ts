@@ -9,7 +9,7 @@ import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-export type SnapId = string; // Origin of the snap
+export type SnapId = string; // Snap unique identifier
 export type Address = string; // String public address
 export type PublicKey = Uint8Array; // 33 or 64 byte public key
 export type JsonWallet = [PublicKey, Json];
@@ -157,8 +157,8 @@ export class SnapKeyring {
    */
   async serialize(): Promise<SerializedWallets> {
     const output: SerializedWallets = {};
-    for (const [address, origin] of this.addressToSnapId.entries()) {
-      output[address] = origin;
+    for (const [address, snapId] of this.addressToSnapId.entries()) {
+      output[address] = snapId;
     }
     return output;
   }
@@ -175,8 +175,8 @@ export class SnapKeyring {
     if (!wallets || Object.keys(wallets).length === 0) {
       throw new Error(SnapKeyringErrors.MissingWallet);
     }
-    for (const [address, origin] of Object.entries(wallets)) {
-      this.addressToSnapId.set(address, origin);
+    for (const [address, snapId] of Object.entries(wallets)) {
+      this.addressToSnapId.set(address, snapId);
     }
   }
 
@@ -246,14 +246,14 @@ export class SnapKeyring {
     data: any,
     _opts = {},
   ): Promise<string> {
-    const origin = this.addressToSnapId.get(address);
-    if (origin === undefined) {
-      throw new Error(`No origin found for address "${address}"`);
+    const snapId = this.addressToSnapId.get(address);
+    if (snapId === undefined) {
+      throw new Error(`No snap found for address "${address}"`);
     }
 
     // forward to snap
     const id = uuidv4();
-    await this.sendSignatureRequestToSnap(origin, {
+    await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'personal_sign',
       params: [data, address],
@@ -308,42 +308,38 @@ export class SnapKeyring {
   /* SNAP RPC METHODS */
 
   /**
-   * List the accounts for a snap origin.
+   * List the accounts for a snap.
    *
-   * @param targetOrigin - Snap origin.
-   * @returns List of addresses for the given origin.
+   * @param snapId - Snap identifier.
+   * @returns List of addresses for the given snap ID.
    */
-  listAccounts(targetOrigin: SnapId): Address[] {
+  listAccounts(snapId: SnapId): Address[] {
     return Array.from(this.addressToSnapId.entries())
-      .filter(([_, origin]) => {
-        return origin === targetOrigin;
-      })
-      .map(([address, _]) => {
-        return address;
-      });
+      .filter(([_, id]) => id === snapId)
+      .map(([address, _]) => address);
   }
 
   /**
-   * Create an account for a snap origin.
+   * Create an account for a snap.
    *
    * The account is only created if the public address does not already exist.
    *
-   * This checks for duplicates in the context of the snap origin but not
-   * across all snaps. The keyring controller is responsible for checking for
-   * duplicates across all addresses.
+   * This checks for duplicates in the context of one snap but not across all
+   * snaps. The keyring controller is responsible for checking for duplicates
+   * across all addresses.
    *
-   * @param origin - Origin.
+   * @param snapId - Snap identifier.
    * @param address - Address.
    */
-  createAccount(origin: SnapId, address: string): void {
+  createAccount(snapId: SnapId, address: string): void {
     if (this.addressToSnapId.has(address)) {
       throw new Error(SnapKeyringErrors.AccountAlreadyExists);
     }
-    this.addressToSnapId.set(address, origin);
+    this.addressToSnapId.set(address, snapId);
   }
 
   /**
-   * Delete the private data for an account belonging to a snap origin.
+   * Delete the private data for an account belonging to a snap.
    *
    * @param address - Address to remove.
    * @returns True if the address existed before, false otherwise.
@@ -352,13 +348,13 @@ export class SnapKeyring {
     return this.addressToSnapId.delete(address);
   }
 
-  deleteAccountsByOrigin(origin: SnapId): void {
-    const addressByOrigin = this.listAccounts(origin);
-    if (addressByOrigin.length === 0) {
+  deleteAccounts(snapId: SnapId): void {
+    const accounts = this.listAccounts(snapId);
+    if (accounts.length === 0) {
       throw new Error(SnapKeyringErrors.UnknownSnapId);
     }
 
-    for (const address of addressByOrigin) {
+    for (const address of accounts) {
       this.addressToSnapId.delete(address);
     }
   }
