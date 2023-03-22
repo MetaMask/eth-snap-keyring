@@ -1,4 +1,4 @@
-import SnapKeyring from '.';
+import { SnapKeyring } from '.';
 import { SnapKeyringErrors } from './errors';
 
 describe('SnapKeyring', () => {
@@ -72,7 +72,9 @@ describe('SnapKeyring', () => {
   //   expect(mockSnapController).toHaveBeenCalledWith({});
   // });
 
-  describe('handleKeyringSnapMessage', () => {});
+  describe('handleKeyringSnapMessage', () => {
+    // do nothing
+  });
 
   it('serializes SnapKeyring', async () => {
     snapKeyring.createAccount(mockSnapId, mockCAIP10Account);
