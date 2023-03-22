@@ -1,11 +1,10 @@
 /* eslint-disable id-denylist */
 import { HandlerType } from '@metamask/snaps-utils';
-import { Json } from '@metamask/utils';
+import { Json, JsonRpcNotification } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
-
 import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -24,13 +23,6 @@ enum ManageAccountsOperation {
   UpdateAccount = 'update',
   RemoveAccount = 'remove',
 }
-
-type JsonRpcRequest = {
-  jsonrpc: '2.0';
-  method: string;
-  params?: any;
-  id?: string | number | null;
-};
 
 // Type for serialized format.
 export type SerializedWallets = {
@@ -71,7 +63,7 @@ export class SnapKeyring {
    */
   protected async sendRequestToSnap(
     snapId: SnapId,
-    request: Json,
+    request: JsonRpcNotification,
     origin = 'metamask',
     handler = HandlerType.OnRpcRequest,
   ): Promise<any> {
@@ -295,19 +287,20 @@ export class SnapKeyring {
   /**
    * Removes the first account matching the given public address.
    *
-   * @param _address - Address of the account to remove.
+   * @param address - Address of the account to remove.
    */
-  async removeAccount(_address: Address): Promise<boolean> {
-    const snapId = this.addressToSnapId.get(_address);
+  async removeAccount(address: Address): Promise<boolean> {
+    const snapId = this.addressToSnapId.get(address);
     if (!snapId) {
       throw new Error(SnapKeyringErrors.UnknownAccount);
     }
 
     await this.sendRequestToSnap(snapId, {
-      request: ManageAccountsOperation.RemoveAccount,
+      jsonrpc: '2.0',
+      method: ManageAccountsOperation.RemoveAccount,
       params: {},
     });
-    this.addressToSnapId.delete(_address);
+    this.addressToSnapId.delete(address);
 
     return true;
   }
