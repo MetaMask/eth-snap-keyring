@@ -4,6 +4,8 @@ import { Json } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
+import { SnapKeyringErrors } from './errors';
+
 import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -13,6 +15,15 @@ export type Address = string; // String public address
 export type PublicKey = Uint8Array; // 33 or 64 byte public key
 export type JsonWallet = [PublicKey, Json];
 export type SnapWallet = Map<Address, SnapId>;
+
+// TODO: import from snap rpc
+enum ManageAccountsOperation {
+  ListAccounts = 'list',
+  CreateAccount = 'create',
+  ReadAccount = 'read',
+  UpdateAccount = 'update',
+  RemoveAccount = 'remove',
+}
 
 type JsonRpcRequest = {
   jsonrpc: '2.0';
@@ -45,7 +56,7 @@ class SnapKeyring {
 
   // keyrings cant take constructor arguments so we
   // late-set the provider
-  setController(snapController: any) {
+  setController(snapController: any): void {
     this.snapController = snapController;
   }
 
@@ -60,7 +71,7 @@ class SnapKeyring {
    */
   protected async sendRequestToSnap(
     snapId: SnapId,
-    request: JsonRpcRequest,
+    request: Json,
     origin = 'metamask',
     handler = HandlerType.OnRpcRequest,
   ): Promise<any> {
@@ -167,9 +178,9 @@ class SnapKeyring {
    *
    * @param wallets - Serialize wallets.
    */
-  async deserialize(wallets: SerializedWallets | undefined): Promise<void> {
-    if (!wallets) {
-      return;
+  async deserialize(wallets: SerializedWallets): Promise<void> {
+    if (!wallets || Object.keys(wallets).length === 0) {
+      throw new Error(SnapKeyringErrors.MissingWallet);
     }
     for (const [address, origin] of Object.entries(wallets)) {
       this.addressToSnapId.set(address, origin);
@@ -285,8 +296,19 @@ class SnapKeyring {
    *
    * @param _address - Address of the account to remove.
    */
-  removeAccount(_address: Address): boolean {
-    throw new Error('snap-keyring: "removeAccount" not supported');
+  async removeAccount(_address: Address): Promise<boolean> {
+    const snapId = this.addressToSnapId.get(_address);
+    if (!snapId) {
+      throw new Error(SnapKeyringErrors.UnknownAccount);
+    }
+
+    await this.sendRequestToSnap(snapId, {
+      request: ManageAccountsOperation.RemoveAccount,
+      params: {},
+    });
+    this.addressToSnapId.delete(_address);
+
+    return true;
   }
 
   /* SNAP RPC METHODS */
@@ -319,9 +341,9 @@ class SnapKeyring {
    * @param origin - Origin.
    * @param address - Address.
    */
-  createAccount(origin: SnapId, address: string) {
+  createAccount(origin: SnapId, address: string): void {
     if (this.addressToSnapId.has(address)) {
-      throw new Error('account already exists');
+      throw new Error(SnapKeyringErrors.AccountAlreadyExists);
     }
     this.addressToSnapId.set(address, origin);
   }
@@ -366,7 +388,12 @@ class SnapKeyring {
   }
 
   deleteAccountsByOrigin(origin: SnapId): void {
-    for (const address of this.listAccounts(origin)) {
+    const addressByOrigin = this.listAccounts(origin);
+    if (addressByOrigin.length === 0) {
+      throw new Error(SnapKeyringErrors.UnknownSnapId);
+    }
+
+    for (const address of addressByOrigin) {
       this.addressToSnapId.delete(address);
     }
   }
