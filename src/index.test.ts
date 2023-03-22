@@ -243,9 +243,7 @@ describe('SnapKeyring', () => {
     });
 
     it('deletes all the accounts by snapId', async () => {
-      expect(() =>
-        snapKeyring.deleteAccounts(mockSnapId),
-      ).not.toThrow();
+      expect(() => snapKeyring.deleteAccounts(mockSnapId)).not.toThrow();
 
       const accounts = snapKeyring.listAccounts(mockSnapId);
       expect(accounts).toStrictEqual([]);
@@ -259,9 +257,9 @@ describe('SnapKeyring', () => {
     });
 
     it('deletes an unknown account should throw and not delete any accounts', async () => {
-      expect(() =>
-        snapKeyring.deleteAccounts('unknown snap id'),
-      ).toThrow(SnapKeyringErrors.UnknownSnapId);
+      expect(() => snapKeyring.deleteAccounts('unknown snap id')).toThrow(
+        SnapKeyringErrors.UnknownSnapId,
+      );
 
       const accounts = await snapKeyring.getAccounts();
       expect(accounts).toStrictEqual([
