@@ -384,7 +384,7 @@ export class SnapKeyring {
  * @param signature - Signature in hexadecimal.
  * @returns The signature in a {r,s,v} object.
  */
-export function decodeSignature(signature: string): {
+function decodeSignature(signature: string): {
   r: string;
   s: string;
   v: number;
