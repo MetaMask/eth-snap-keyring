@@ -331,7 +331,7 @@ export class SnapKeyring {
    * @param snapId - Snap identifier.
    * @param address - Address.
    */
-  createAccount(snapId: SnapId, address: string): void {
+  createAccount(snapId: SnapId, address: Address): void {
     if (this.addressToSnapId.has(address)) {
       throw new Error(SnapKeyringErrors.AccountAlreadyExists);
     }
@@ -344,7 +344,7 @@ export class SnapKeyring {
    * @param address - Address to remove.
    * @returns True if the address existed before, false otherwise.
    */
-  deleteAccount(address: string): boolean {
+  deleteAccount(address: Address): boolean {
     return this.addressToSnapId.delete(address);
   }
 
