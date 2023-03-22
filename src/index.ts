@@ -125,9 +125,10 @@ class SnapKeyring {
         const accounts = this.listAccounts(snapId);
         return accounts;
       }
-      // case 'update': {
 
+      // case 'update': {
       // }
+
       case 'delete': {
         const address = params as Address;
         if (!address) {
@@ -347,35 +348,6 @@ class SnapKeyring {
     }
     this.addressToSnapId.set(address, origin);
   }
-
-  // /**
-  //  *  Read the private data for an account belonging to a snap origin.
-  //  */
-  // readAccount(origin: Origin, address: string): Json {
-  //   const accounts = this._addressToOrigin.get(address);
-  //   const value = accounts.find((v) => arrayEquals(v[0], address));
-  //   if (value) {
-  //     const [, privateData] = value;
-  //     return privateData;
-  //   }
-  //   return null;
-  // }
-
-  // /**
-  //  *  Update the private data for the account belonging to the snap origin.
-  //  *
-  //  *  The account must already exist.
-  //  */
-  // updateAccount(origin: Origin, _address: string, value: Json): boolean {
-  //   const address = Buffer.from(_address, "hex");
-  //   const accounts = this._addressToOrigin.get(origin) || [];
-  //   const exists = accounts.find((v) => arrayEquals(v[0], address));
-  //   if (exists) {
-  //     exists[1] = value;
-  //     return true;
-  //   }
-  //   return false;
-  // }
 
   /**
    * Delete the private data for an account belonging to a snap origin.
