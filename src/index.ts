@@ -79,8 +79,8 @@ export class SnapKeyring {
     snapId: SnapId,
     request: any,
   ): Promise<any> {
-    console.log('sendSignatureRequest', snapId, request);
-    console.log('snapController', this.snapController);
+    console.log('[BRIDGE] snapId:', snapId);
+    console.log('[BRIDGE] request:', JSON.stringify(request));
     const resp = this.sendRequestToSnap(snapId, {
       jsonrpc: '2.0',
       method: 'snap.keyring.submitRequest',
