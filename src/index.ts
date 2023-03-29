@@ -196,7 +196,7 @@ export class SnapKeyring {
    * @param _opts - Transaction options (not used).
    */
   async signTransaction(address: Address, tx: any, _opts = {}) {
-    const snapId = this.addressToSnapId.get(address);
+    const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
       throw new Error(`No snap found for address "${address}"`);
     }
@@ -247,7 +247,7 @@ export class SnapKeyring {
     data: any,
     _opts = {},
   ): Promise<string> {
-    const snapId = this.addressToSnapId.get(address);
+    const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
       throw new Error(`No snap found for address "${address}"`);
     }
@@ -291,7 +291,7 @@ export class SnapKeyring {
    * @param address - Address of the account to remove.
    */
   async removeAccount(address: Address): Promise<boolean> {
-    const snapId = this.addressToSnapId.get(address);
+    const snapId = this.getSnapIdFromAddress(address);
     if (!snapId) {
       throw new Error(SnapKeyringErrors.UnknownAccount);
     }
@@ -333,10 +333,11 @@ export class SnapKeyring {
    * @param address - Address.
    */
   createAccount(snapId: SnapId, address: Address): void {
-    if (this.addressToSnapId.has(address)) {
-      throw new Error(SnapKeyringErrors.AccountAlreadyExists);
+    // the map key is case sensitive
+    const lowerCasedAddress = address.toLowerCase();
+    if (this.addressToSnapId.has(lowerCasedAddress)) {
+      this.addressToSnapId.set(lowerCasedAddress, snapId);
     }
-    this.addressToSnapId.set(address, snapId);
   }
 
   /**
@@ -372,6 +373,14 @@ export class SnapKeyring {
     }
     this.pendingRequests.delete(id);
     signingPromise.resolve(result);
+  }
+
+  getSnapIdFromAddress(address: Address): SnapId {
+    const snapId = this.addressToSnapId.get(address.toLowerCase());
+    if (snapId === undefined) {
+      throw new Error(`No snap found for address "${address}"`);
+    }
+    return snapId;
   }
 }
 
