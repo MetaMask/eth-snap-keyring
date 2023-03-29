@@ -1860,6 +1860,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/eth-snap-keyring@workspace:."
   dependencies:
+    "@ethereumjs/tx": ^4.1.1
     "@lavamoat/allow-scripts": ^2.0.3
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/eslint-config": ^11.0.1

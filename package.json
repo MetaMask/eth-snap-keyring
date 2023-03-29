@@ -72,6 +72,7 @@
     }
   },
   "dependencies": {
+    "@ethereumjs/tx": "^4.1.1",
     "@metamask/snaps-utils": "^0.31.0",
     "@metamask/utils": "^5.0.0",
     "@types/uuid": "^9.0.1",

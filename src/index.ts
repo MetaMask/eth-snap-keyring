@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
 import { DeferredPromise } from './util';
+import { Transaction, TransactionFactory } from '@ethereumjs/tx';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -81,17 +82,12 @@ export class SnapKeyring {
   ): Promise<any> {
     console.log('[BRIDGE] snapId:', snapId);
     console.log('[BRIDGE] request:', JSON.stringify(request));
-    const resp = this.sendRequestToSnap(snapId, {
-      jsonrpc: '2.0',
-      method: 'snap.keyring.submitRequest',
-      params: request,
-    });
-    console.log('sendSignatureRequest returned');
-
     try {
-      const result = await resp;
-      console.log('sendSignatureRequest resolved', result);
-      return result;
+      return await this.sendRequestToSnap(snapId, {
+        jsonrpc: '2.0',
+        method: 'snap.keyring.approveRequest',
+        params: request,
+      });
     } catch (err) {
       console.log('sendSignatureRequest error', err);
       throw err;
@@ -173,7 +169,11 @@ export class SnapKeyring {
    * @param wallets - Serialize wallets.
    */
   async deserialize(wallets: SerializedWallets): Promise<void> {
-    if (!wallets || Object.keys(wallets).length === 0) {
+    if (
+      wallets &&
+      typeof wallets === 'object' &&
+      Object.keys(wallets).length > 0
+    ) {
       for (const [address, snapId] of Object.entries(wallets)) {
         this.addressToSnapId.set(address, snapId);
       }
@@ -194,7 +194,7 @@ export class SnapKeyring {
    * @param tx - Transaction.
    * @param _opts - Transaction options (not used).
    */
-  async signTransaction(address: Address, tx: any, _opts = {}) {
+  async signTransaction(address: Address, tx: Transaction, _opts = {}) {
     const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
       throw new Error(`No snap found for address "${address}"`);
@@ -202,21 +202,20 @@ export class SnapKeyring {
 
     // Forward request to snap
     const id = uuidv4();
+    // need to convert Transaction to serializable json to send to snap
     const txParams = tx.toJSON();
-    await this.sendSignatureRequestToSnap(snapId, {
+    delete txParams.r;
+    delete txParams.s;
+    delete txParams.v;
+    const rawSignedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
-      params: [txParams],
+      params: [txParams, address],
     });
-    const signingPromise = new DeferredPromise<any>();
-    this.pendingRequests.set(id, signingPromise);
-    console.log('new pending request', id);
 
-    // wait for signing to complete
-    const sigHexString = (await signingPromise.promise) as unknown as string;
-    const { r, s, v } = decodeSignature(sigHexString);
-    console.log('signTransaction', sigHexString);
-    return tx._processSignature(v, r, s);
+    const signedTx = TransactionFactory.fromTxData(rawSignedTx);
+
+    return signedTx;
   }
 
   /**
@@ -253,20 +252,11 @@ export class SnapKeyring {
 
     // forward to snap
     const id = uuidv4();
-    await this.sendSignatureRequestToSnap(snapId, {
+    return await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'personal_sign',
       params: [data, address],
     });
-
-    const signingPromise = new DeferredPromise<any>();
-    console.log('new pending request', id);
-    this.pendingRequests.set(id, signingPromise);
-
-    // wait for signing to complete
-    const sigHexString = (await signingPromise.promise) as unknown as string;
-    console.log('signPersonalMessage', sigHexString);
-    return sigHexString;
   }
 
   /**
