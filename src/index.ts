@@ -174,10 +174,9 @@ export class SnapKeyring {
    */
   async deserialize(wallets: SerializedWallets): Promise<void> {
     if (!wallets || Object.keys(wallets).length === 0) {
-      throw new Error(SnapKeyringErrors.MissingWallet);
-    }
-    for (const [address, snapId] of Object.entries(wallets)) {
-      this.addressToSnapId.set(address, snapId);
+      for (const [address, snapId] of Object.entries(wallets)) {
+        this.addressToSnapId.set(address, snapId);
+      }
     }
   }
 
