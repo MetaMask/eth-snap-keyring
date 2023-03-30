@@ -24,6 +24,14 @@
     "test": "jest && jest-it-up",
     "test:watch": "jest --watch"
   },
+  "dependencies": {
+    "@ethereumjs/tx": "^3.5.2",
+    "@metamask/snaps-utils": "^0.31.0",
+    "@metamask/utils": "^5.0.0",
+    "@types/uuid": "^9.0.1",
+    "eth-rpc-errors": "^4.0.3",
+    "uuid": "^9.0.0"
+  },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.0.3",
     "@metamask/auto-changelog": "^3.1.0",
@@ -70,13 +78,5 @@
       "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
-  },
-  "dependencies": {
-    "@ethereumjs/tx": "^4.1.1",
-    "@metamask/snaps-utils": "^0.31.0",
-    "@metamask/utils": "^5.0.0",
-    "@types/uuid": "^9.0.1",
-    "eth-rpc-errors": "^4.0.3",
-    "uuid": "^9.0.0"
   }
 }
