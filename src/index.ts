@@ -2,7 +2,6 @@
 import { Transaction, TransactionFactory } from '@ethereumjs/tx';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
-import { BN } from 'bn.js';
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -208,18 +207,13 @@ export class SnapKeyring {
     delete txParams.r;
     delete txParams.s;
     delete txParams.v;
-    const signature = await this.sendSignatureRequestToSnap(snapId, {
+    const serializedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
       params: [txParams, address],
     });
 
-    const signedTx = TransactionFactory.fromTxData({
-      ...txParams,
-      r: new BN(signature.r, 16),
-      s: new BN(signature.s, 16),
-      v: new BN(signature.v, 16),
-    });
+    const signedTx = TransactionFactory.fromTxData(serializedTx);
 
     return signedTx;
   }
@@ -330,7 +324,7 @@ export class SnapKeyring {
   createAccount(snapId: SnapId, address: Address): void {
     // the map key is case sensitive
     const lowerCasedAddress = address.toLowerCase();
-    if (this.addressToSnapId.has(lowerCasedAddress)) {
+    if (!this.addressToSnapId.has(lowerCasedAddress)) {
       this.addressToSnapId.set(lowerCasedAddress, snapId);
     }
   }

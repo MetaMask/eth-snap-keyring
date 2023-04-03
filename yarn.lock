@@ -1881,6 +1881,7 @@ __metadata:
   resolution: "@metamask/eth-snap-keyring@workspace:."
   dependencies:
     "@ethereumjs/tx": ^3.5.2
+    "@ethereumjs/util": ^8.0.5
     "@lavamoat/allow-scripts": ^2.0.3
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/eslint-config": ^11.0.1
