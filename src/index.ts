@@ -85,7 +85,7 @@ export class SnapKeyring {
     try {
       return await this.sendRequestToSnap(snapId, {
         jsonrpc: '2.0',
-        method: 'keyring_approveRequest',
+        method: 'snap.keyring.approveRequest',
         params: request,
       });
     } catch (err) {
