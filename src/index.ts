@@ -1,12 +1,13 @@
 /* eslint-disable id-denylist */
+import { Transaction, TransactionFactory } from '@ethereumjs/tx';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
+import { BN } from 'bn.js';
 import { ethErrors } from 'eth-rpc-errors';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
 import { DeferredPromise } from './util';
-import { Transaction, TransactionFactory } from '@ethereumjs/tx';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -207,13 +208,18 @@ export class SnapKeyring {
     delete txParams.r;
     delete txParams.s;
     delete txParams.v;
-    const rawSignedTx = await this.sendSignatureRequestToSnap(snapId, {
+    const signature = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
       params: [txParams, address],
     });
 
-    const signedTx = TransactionFactory.fromTxData(rawSignedTx);
+    const signedTx = TransactionFactory.fromTxData({
+      ...txParams,
+      r: new BN(signature.r, 16),
+      s: new BN(signature.s, 16),
+      v: new BN(signature.v, 16),
+    });
 
     return signedTx;
   }
