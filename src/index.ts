@@ -203,23 +203,30 @@ export class SnapKeyring {
     // Forward request to snap
     const id = uuidv4();
     // need to convert Transaction to serializable json to send to snap
-    const txParams = tx.toJSON();
-    delete txParams.r;
-    delete txParams.s;
-    delete txParams.v;
+    const serializedTx = tx.toJSON();
+
+    // toJSON does not convert undefined to null, or removes that entry
+    Object.entries(serializedTx).forEach(([key, _]) => {
+      if (serializedTx[key] === undefined) {
+        delete serializedTx[key];
+      }
+    });
 
     // this is to support EIP155 replay protection
     const chainOptions = {
       chainId: tx.common.chainIdBN().toNumber(),
       hardforks: [...tx.common.hardforks()],
+      hardfork: tx.common.DEFAULT_HARDFORK,
+      type: tx.type,
     };
-    const serializedTx = await this.sendSignatureRequestToSnap(snapId, {
+
+    const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
-      params: [txParams, address, chainOptions],
+      params: [serializedTx, address, chainOptions],
     });
 
-    const signedTx = TransactionFactory.fromTxData(serializedTx);
+    const signedTx = TransactionFactory.fromTxData(serializedSignedTx);
 
     return signedTx;
   }
