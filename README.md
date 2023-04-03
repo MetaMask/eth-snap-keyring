@@ -1,19 +1,14 @@
-# MetaMask Module Template
+# Snap Keyring
 
-This TypeScript module is maintained in the style of the MetaMask team.
+This keyring acts as a bridge between the `KeyringController` and a snap.
 
 ## Template Instructions
 
 Follow these instructions when using this template.
 
 - Update the package name, referenced in the following places:
-  - The `name` field of `package.json`
-  - The README title
   - The README "Usage" section
-- Update the package description
-  - The package description is referenced at the beginning of the README, and in the `description` field of `package.json`.
 - Update the repository URL, referenced in the following places:
-  - `repository` field of `package.json`
   - The links in the API section of the README
 - Update the pull request template (`.github/pull_request_template.md`) to remove the `Examples` section that is specific to this template.
 - Update the README "Usage" section, or remove it if it's not needed.
@@ -21,11 +16,11 @@ Follow these instructions when using this template.
 
 ## Installation
 
-`yarn add @metamask/this-module`
+`yarn add @metamask/eth-snap-keyring`
 
 or
 
-`npm install @metamask/this-module`
+`npm install @metamask/eth-snap-keyring`
 
 ## Usage
 

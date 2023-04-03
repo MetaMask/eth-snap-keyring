@@ -1,10 +1,10 @@
 {
-  "name": "@metamask/module-template",
-  "version": "0.0.0",
-  "description": "The MetaMask Node module template.",
+  "name": "@metamask/eth-snap-keyring",
+  "version": "0.1.0",
+  "description": "Snaps keyring bridge.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MetaMask/metamask-module-template.git"
+    "url": "https://github.com/MetaMask/eth-snap-keyring.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,6 +23,16 @@
     "prepack": "./scripts/prepack.sh",
     "test": "jest && jest-it-up",
     "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@ethereumjs/tx": "^3.5.2",
+    "@ethereumjs/util": "^8.0.5",
+    "@metamask/snaps-utils": "^0.31.0",
+    "@metamask/utils": "^5.0.0",
+    "@types/uuid": "^9.0.1",
+    "bn.js": "^5.2.1",
+    "eth-rpc-errors": "^4.0.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.0.3",
@@ -63,7 +73,12 @@
   },
   "lavamoat": {
     "allowScripts": {
-      "@lavamoat/preinstall-always-fail": false
+      "@lavamoat/preinstall-always-fail": false,
+      "@metamask/snap-controllers>@metamask/controllers>babel-runtime>core-js": false,
+      "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>secp256k1": false,
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   }
 }
