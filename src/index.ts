@@ -216,7 +216,8 @@ export class SnapKeyring {
     const chainOptions = {
       chainId: tx.common.chainIdBN().toNumber(),
       hardforks: [...tx.common.hardforks()],
-      hardfork: tx.common.DEFAULT_HARDFORK,
+      // @ts-ignore private
+      hardfork: tx.DEFAULT_HARDFORK,
       type: tx.type,
     };
 
