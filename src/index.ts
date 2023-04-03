@@ -207,10 +207,16 @@ export class SnapKeyring {
     delete txParams.r;
     delete txParams.s;
     delete txParams.v;
+
+    // this is to support EIP155 replay protection
+    const chainOptions = {
+      chainId: tx.common.chainIdBN().toNumber(),
+      hardforks: [...tx.common.hardforks()],
+    };
     const serializedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
-      params: [txParams, address],
+      params: [txParams, address, chainOptions],
     });
 
     const signedTx = TransactionFactory.fromTxData(serializedTx);
