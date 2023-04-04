@@ -1,8 +1,14 @@
 /* eslint-disable id-denylist */
-import { Transaction, TransactionFactory } from '@ethereumjs/tx';
+import {
+  FeeMarketEIP1559Transaction,
+  Transaction,
+  TransactionFactory,
+} from '@ethereumjs/tx';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
+// eslint-disable-next-line import/no-nodejs-modules
+// import EventEmitter from 'events';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
@@ -194,7 +200,11 @@ export class SnapKeyring {
    * @param tx - Transaction.
    * @param _opts - Transaction options (not used).
    */
-  async signTransaction(address: Address, tx: Transaction, _opts = {}) {
+  async signTransaction(
+    address: Address,
+    tx: Transaction | FeeMarketEIP1559Transaction,
+    _opts = {},
+  ) {
     const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
       throw new Error(`No snap found for address "${address}"`);
@@ -203,7 +213,7 @@ export class SnapKeyring {
     // Forward request to snap
     const id = uuidv4();
     // need to convert Transaction to serializable json to send to snap
-    const serializedTx = tx.toJSON();
+    const serializedTx: Record<string, any> = tx.toJSON();
 
     // toJSON does not convert undefined to null, or removes that entry
     Object.entries(serializedTx).forEach(([key, _]) => {
@@ -216,6 +226,7 @@ export class SnapKeyring {
     const chainOptions = {
       chainId: tx.common.chainIdBN().toNumber(),
       hardforks: [...tx.common.hardforks()],
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore private
       hardfork: tx.DEFAULT_HARDFORK,
       type: tx.type,
@@ -230,6 +241,28 @@ export class SnapKeyring {
     const signedTx = TransactionFactory.fromTxData(serializedSignedTx);
 
     return signedTx;
+  }
+
+  async signTypedData(
+    address: Address,
+    typedMessage: Record<string, unknown>[],
+    params: any,
+  ): Promise<string> {
+    const snapId = this.getSnapIdFromAddress(address);
+    if (snapId === undefined) {
+      throw new Error(`No snap found for address "${address}"`);
+    }
+
+    // Forward request to snap
+    const id = uuidv4();
+
+    const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
+      id,
+      method: 'eth_signTypedData',
+      params: [address, typedMessage, params],
+    });
+
+    return serializedSignedTx;
   }
 
   /**

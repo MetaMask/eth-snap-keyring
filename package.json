@@ -78,7 +78,9 @@
       "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@metamask/snap-controllers>@metamask/controllers>ethereumjs-util>ethereum-cryptography>secp256k1": false,
       "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false,
+      "@ethereumjs/tx>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@ethereumjs/tx>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   }
 }
