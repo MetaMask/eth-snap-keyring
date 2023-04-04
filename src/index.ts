@@ -91,7 +91,7 @@ export class SnapKeyring {
     try {
       return await this.sendRequestToSnap(snapId, {
         jsonrpc: '2.0',
-        method: 'snap.keyring.approveRequest',
+        method: 'keyring_approveRequest',
         params: request,
       });
     } catch (err) {
@@ -246,7 +246,7 @@ export class SnapKeyring {
   async signTypedData(
     address: Address,
     typedMessage: Record<string, unknown>[],
-    params: any,
+    params: any = {},
   ): Promise<string> {
     const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
