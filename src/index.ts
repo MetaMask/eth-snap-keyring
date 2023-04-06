@@ -235,7 +235,7 @@ export class SnapKeyring {
     const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
-      params: [serializedTx, address, chainOptions],
+      params: [address, serializedTx, chainOptions],
     });
 
     const signedTx = TransactionFactory.fromTxData(serializedSignedTx);
@@ -302,7 +302,7 @@ export class SnapKeyring {
     return await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'personal_sign',
-      params: [data, address],
+      params: [address, data],
     });
   }
 
