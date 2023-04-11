@@ -3,12 +3,15 @@ import {
   FeeMarketEIP1559Transaction,
   Transaction,
   TransactionFactory,
+  TypedTransaction,
 } from '@ethereumjs/tx';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
 // eslint-disable-next-line import/no-nodejs-modules
 // import EventEmitter from 'events';
+// eslint-disable-next-line import/no-nodejs-modules
+import EventEmitter from 'events';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
@@ -36,7 +39,7 @@ export type SerializedWallets = {
   [key: string]: string;
 };
 
-export class SnapKeyring {
+export class SnapKeyring extends EventEmitter {
   static type: string = SNAP_KEYRING_TYPE;
 
   type: string;
@@ -48,6 +51,7 @@ export class SnapKeyring {
   protected pendingRequests: Map<string, DeferredPromise<any>>;
 
   constructor() {
+    super();
     this.type = SnapKeyring.type;
     this.addressToSnapId = new Map();
     this.pendingRequests = new Map();
@@ -74,7 +78,7 @@ export class SnapKeyring {
     origin = 'metamask',
     handler = HandlerType.OnRpcRequest,
   ): Promise<any> {
-    return this.snapController.handleRequest({
+    return await this.snapController.handleRequest({
       snapId,
       origin,
       handler,
@@ -183,6 +187,8 @@ export class SnapKeyring {
       for (const [address, snapId] of Object.entries(wallets)) {
         this.addressToSnapId.set(address, snapId);
       }
+    } else {
+      throw new Error(SnapKeyringErrors.MissingWallet);
     }
   }
 
@@ -200,11 +206,7 @@ export class SnapKeyring {
    * @param tx - Transaction.
    * @param _opts - Transaction options (not used).
    */
-  async signTransaction(
-    address: Address,
-    tx: Transaction | FeeMarketEIP1559Transaction,
-    _opts = {},
-  ) {
+  async signTransaction(address: Address, tx: TypedTransaction, _opts = {}) {
     const snapId = this.getSnapIdFromAddress(address);
     if (snapId === undefined) {
       throw new Error(`No snap found for address "${address}"`);
@@ -222,20 +224,23 @@ export class SnapKeyring {
       }
     });
 
+    serializedTx.chainId = tx.common?.chainIdBN().toNumber() ?? '0x1';
+    serializedTx.type = tx.type ?? '';
+
     // this is to support EIP155 replay protection
-    const chainOptions = {
-      chainId: tx.common.chainIdBN().toNumber(),
-      hardforks: [...tx.common.hardforks()],
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore private
-      hardfork: tx.DEFAULT_HARDFORK,
-      type: tx.type,
-    };
+    // const chainOptions = {
+    //   chainId: tx.common.chainIdBN().toNumber(),
+    //   hardforks: [...tx.common.hardforks()],
+    //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //   // @ts-ignore private
+    //   hardfork: tx.DEFAULT_HARDFORK,
+    //   type: tx.type,
+    // };
 
     const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'eth_sendTransaction',
-      params: [address, serializedTx, chainOptions],
+      params: [address, serializedTx],
     });
 
     const signedTx = TransactionFactory.fromTxData(serializedSignedTx);
@@ -371,9 +376,10 @@ export class SnapKeyring {
   createAccount(snapId: SnapId, address: Address): void {
     // the map key is case sensitive
     const lowerCasedAddress = address.toLowerCase();
-    if (!this.addressToSnapId.has(lowerCasedAddress)) {
-      this.addressToSnapId.set(lowerCasedAddress, snapId);
+    if (this.addressToSnapId.has(lowerCasedAddress)) {
+      throw new Error(SnapKeyringErrors.AccountAlreadyExists);
     }
+    this.addressToSnapId.set(lowerCasedAddress, snapId);
   }
 
   /**

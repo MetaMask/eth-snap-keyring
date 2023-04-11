@@ -1,14 +1,22 @@
+import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
+import { HandlerType } from '@metamask/snaps-utils';
+
 import { SnapKeyring } from '.';
 import { SnapKeyringErrors } from './errors';
 
+jest.mock('uuid', () => ({ v4: () => 'testId' }));
+const mockHandleRequest = jest.fn().mockResolvedValue(1);
+const mockSnapController = {
+  handleRequest: mockHandleRequest,
+};
 describe('SnapKeyring', () => {
   let snapKeyring: SnapKeyring;
-  const mockSnapController = jest.fn();
 
-  const mockCAIP10Account =
-    'eip155:1:0xab16a96D359eC26a11e2C2b3d8f8B8942d5Bfcdb';
-  const mockCAIP10Account2 =
-    'eip155:2:0xfa814753a741d3a4998de68b693b61ffb65593486f50673b75ced1dc555eebeb';
+  const mockAddress = '0xab16a96D359eC26a11e2C2b3d8f8B8942d5Bfcdb';
+  const mockAddress2 =
+    '0xfa814753a741d3a4998de68b693b61ffb65593486f50673b75ced1dc555eebeb';
+  const mockCAIP10Account = `eip155:1:${mockAddress}`.toLowerCase();
+  const mockCAIP10Account2 = `eip155:2:${mockAddress2}`.toLowerCase();
   const mockSnapId = 'mockSnapId';
   const mockSnapId2 = 'mockSnapId2';
 
@@ -17,60 +25,12 @@ describe('SnapKeyring', () => {
     snapKeyring.setController(mockSnapController);
   });
 
-  // it('signs a transaction', async () => {
-  //   const mockSignature =
-  //     '0x01afb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f64';
-  //   mockSnapController.mockResolvedValue(mockSignature);
-  //   jest.mock('./util.ts', () => ({
-  //     deferredPromise: () =>
-  //       jest.fn().mockImplementation(() => {
-  //         return {
-  //           promise: jest.fn().mockResolvedValue(mockSignature),
-  //         };
-  //       }),
-  //   }));
-
-  //   snapKeyring.createAccount(mockSnapId, mockCAIP10Account);
-
-  //   const txData = {
-  //     data: '0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-  //     gasLimit: '0x02625a00',
-  //     maxPriorityFeePerGas: '0x01',
-  //     maxFeePerGas: '0xff',
-  //     nonce: '0x00',
-  //     to: '0xcccccccccccccccccccccccccccccccccccccccc',
-  //     value: '0x0186a0',
-  //     v: null,
-  //     r: null,
-  //     s: null,
-  //     chainId: '0x01',
-  //     accessList: [],
-  //     type: '0x02',
-  //   };
-
-  //   const signedTransaction = await snapKeyring.signTransaction(
-  //     mockCAIP10Account,
-  //     txData,
-  //   );
-
-  //   expect(signedTransaction).toBe('');
-  // });
-
   it('setController returns', () => {
     const localSnapKeyring = new SnapKeyring();
     expect(() =>
       localSnapKeyring.setController(mockSnapController),
     ).not.toThrow();
   });
-
-  // it.skip('sendsRequestToSnap', async () => {
-  //   const expectedResult = {};
-  //   await expect(
-  //     snapKeyring.sendRequestToSnap(mockSnapId, {}),
-  //   ).resolves.toStrictEqual({});
-  //   expect(mockSnapController).toHaveBeenCalledTimes(1);
-  //   expect(mockSnapController).toHaveBeenCalledWith({});
-  // });
 
   describe('handleKeyringSnapMessage', () => {
     // do nothing
@@ -153,11 +113,11 @@ describe('SnapKeyring', () => {
     });
 
     it('removes account', async () => {
-      mockSnapController.mockResolvedValue(true);
+      mockHandleRequest.mockResolvedValue(true);
       const removalResult = snapKeyring.removeAccount(mockCAIP10Account);
 
       expect(removalResult).toBe(true);
-      expect(mockSnapController).toBeCalledTimes(1);
+      expect(mockSnapController).toHaveBeenCalledTimes(1);
       expect(mockSnapController).toHaveBeenCalledWith({});
     });
 
@@ -165,11 +125,11 @@ describe('SnapKeyring', () => {
       await expect(
         snapKeyring.removeAccount(mockCAIP10Account),
       ).rejects.toThrow(SnapKeyringErrors.UnknownAccount);
-      expect(mockSnapController).toBeCalledTimes(0);
+      expect(mockSnapController).toHaveBeenCalledTimes(0);
     });
 
     it('throws error if snap rejected the call', async () => {
-      mockSnapController.mockRejectedValue('snapError');
+      mockHandleRequest.mockRejectedValue('snapError');
       const removalResult = snapKeyring.removeAccount(mockCAIP10Account);
 
       await expect(removalResult).rejects.toThrow('snapError');
@@ -228,11 +188,11 @@ describe('SnapKeyring', () => {
 
   describe('deleteAccountByOrigin', () => {
     const mockCAIP10Account3 =
-      'eip155:1:0x9862D074e33003726fA05c74F0142995f33A3250';
+      'eip155:1:0x9862D074e33003726fA05c74F0142995f33A3250'.toLowerCase();
     const mockCAIP10Account4 =
-      'eip155:1:0x650Ab9303424bb854Ff86B1325067e23167264Ac';
+      'eip155:1:0x650Ab9303424bb854Ff86B1325067e23167264Ac'.toLowerCase();
     const mockCAIP10Account5 =
-      'eip155:1:0xa76765C44767da8107f6A33e44A1D828F1438919';
+      'eip155:1:0xa76765C44767da8107f6A33e44A1D828F1438919'.toLowerCase();
     beforeEach(() => {
       snapKeyring.createAccount(mockSnapId, mockCAIP10Account);
       snapKeyring.createAccount(mockSnapId, mockCAIP10Account2);
@@ -271,4 +231,139 @@ describe('SnapKeyring', () => {
       ]);
     });
   });
+  describe('sign transaction', () => {
+    beforeEach(() => {
+      snapKeyring.createAccount(mockSnapId, mockAddress);
+    });
+    it('signs legacy transaction', async () => {
+      const mockSignedTx = {
+        data: '0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        gasLimit: '0x26259fe',
+        gasPrice: '0x1',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        r: '0x0',
+        s: '0x0',
+        v: '0x27',
+      };
+      const mockSignedEthereumJsTx =
+        TransactionFactory.fromTxData(mockSignedTx);
+      mockHandleRequest.mockResolvedValue(mockSignedEthereumJsTx);
+
+      const txData = {
+        data: '0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        gasLimit: '0x26259fe',
+        gasPrice: '0x1',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        chainId: '0x1',
+        type: '0x00',
+      };
+
+      const transaction = TransactionFactory.fromTxData(txData);
+      const serializedTransaction = serializeTx(transaction);
+
+      const signedTransaction = await snapKeyring.signTransaction(
+        mockAddress,
+        transaction,
+      );
+
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'eth_sendTransaction',
+            params: [mockAddress, serializedTransaction],
+          },
+        },
+      });
+      expect(signedTransaction).toStrictEqual(mockSignedEthereumJsTx);
+    });
+
+    it('signs eip1559 transaction', async () => {
+      const mockSignedTx = {
+        data: '0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        gasLimit: '0x26259fe',
+        maxPriorityFeePerGas: '0x11',
+        maxFeePerGas: '0x22',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        r: '0x0',
+        s: '0x0',
+        v: '0x1',
+        type: 2,
+      };
+      const mockSignedEthereumJsTx =
+        TransactionFactory.fromTxData(mockSignedTx);
+      mockHandleRequest.mockResolvedValue(mockSignedEthereumJsTx);
+
+      const txData = {
+        data: '0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        gasLimit: '0x26259fe',
+        maxPriorityFeePerGas: '0x11',
+        maxFeePerGas: '0x22',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        chainId: '0x1',
+        type: 2,
+      };
+
+      const transaction = TransactionFactory.fromTxData(txData);
+      const serializedTransaction = serializeTx(transaction);
+
+      const signedTransaction = await snapKeyring.signTransaction(
+        mockAddress,
+        transaction,
+      );
+
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'eth_sendTransaction',
+            params: [mockAddress, serializedTransaction],
+          },
+        },
+      });
+      expect(signedTransaction).toStrictEqual(mockSignedEthereumJsTx);
+      expect(signedTransaction.type).toBe(2);
+    });
+  });
+  describe('sign typed message', () => {
+    beforeEach(() => {
+      snapKeyring.createAccount(mockSnapId, mockAddress);
+    });
+
+    it("signs typed message with 'eth_signTypedData_v4'", async () => {});
+
+    it("signs typed message with 'eth_signTypedData_v3'", async () => {});
+
+    it("signs typed message with 'eth_signTypedData_v1'", async () => {});
+  });
 });
+
+function serializeTx(transaction: TypedTransaction): Record<string, any> {
+  const serializedTransaction = {
+    ...transaction.toJSON(),
+    chainId: transaction.common.chainIdBN().toNumber(),
+    type: transaction.type,
+  };
+  delete serializedTransaction.r;
+  delete serializedTransaction.s;
+  delete serializedTransaction.v;
+  return serializedTransaction;
+}
