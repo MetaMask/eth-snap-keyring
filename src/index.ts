@@ -5,6 +5,7 @@ import {
   TransactionFactory,
   TypedTransaction,
 } from '@ethereumjs/tx';
+import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
@@ -250,7 +251,7 @@ export class SnapKeyring extends EventEmitter {
 
   async signTypedData(
     address: Address,
-    typedMessage: Record<string, unknown>[],
+    typedMessage: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
     params: any = {},
   ): Promise<string> {
     const snapId = this.getSnapIdFromAddress(address);

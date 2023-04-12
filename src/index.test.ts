@@ -3,6 +3,16 @@ import { HandlerType } from '@metamask/snaps-utils';
 
 import { SnapKeyring } from '.';
 import { SnapKeyringErrors } from './errors';
+import {
+  normalize,
+  personalSign,
+  recoverPersonalSignature,
+  recoverTypedSignature,
+  signTypedData,
+  SignTypedDataVersion,
+  encrypt,
+  EthEncryptedData,
+} from '@metamask/eth-sig-util';
 
 jest.mock('uuid', () => ({ v4: () => 'testId' }));
 const mockHandleRequest = jest.fn().mockResolvedValue(1);
@@ -347,12 +357,215 @@ describe('SnapKeyring', () => {
     beforeEach(() => {
       snapKeyring.createAccount(mockSnapId, mockAddress);
     });
+    it("signs typed message with 'eth_signTypedData_v1'", async () => {
+      mockHandleRequest.mockResolvedValue(
+        '0xab69130a4ea1b290158a599502c3786501d296f531aacac63a79fba7c0a6e16610d2baa29eb426e1c8971bd550cb640f92dff9323ef5a2ffe8df203d820669961c',
+      );
+      const typedData = [
+        {
+          type: 'string',
+          name: 'message',
+          value: 'Hi, Alice!',
+        },
+      ];
 
-    it("signs typed message with 'eth_signTypedData_v4'", async () => {});
+      const signature = await snapKeyring.signTypedData(
+        mockAddress,
+        typedData,
+        {
+          version: SignTypedDataVersion.V1,
+        },
+      );
+      const restored = recoverTypedSignature({
+        data: typedData,
+        signature,
+        version: SignTypedDataVersion.V1,
+      });
 
-    it("signs typed message with 'eth_signTypedData_v3'", async () => {});
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'eth_signTypedData',
+            params: [
+              mockAddress,
+              typedData,
+              { version: SignTypedDataVersion.V1 },
+            ],
+          },
+        },
+      });
+      expect(restored).toStrictEqual(mockAddress);
+    });
+    it("signs typed message with 'eth_signTypedData_v3'", async () => {
+      mockHandleRequest.mockResolvedValue(
+        '0xf94f122435c5286256db99153ce6a3a0eb9c6796dc638f5764a2b433affeb9a67855fc984956f32a1700e483db6a09aad9fc572b56b769629827837ad5705fba1b',
+      );
+      const typedData = {
+        types: {
+          EIP712Domain: [
+            { name: 'name', type: 'string' },
+            { name: 'version', type: 'string' },
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
+          Person: [
+            { name: 'name', type: 'string' },
+            { name: 'wallet', type: 'address' },
+          ],
+          Mail: [
+            { name: 'from', type: 'Person' },
+            { name: 'to', type: 'Person' },
+            { name: 'contents', type: 'string' },
+          ],
+        },
+        primaryType: 'Mail' as const,
+        domain: {
+          name: 'Ether Mail',
+          version: '1',
+          chainId: 1,
+          verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+        },
+        message: {
+          from: {
+            name: 'Cow',
+            wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+          },
+          to: {
+            name: 'Bob',
+            wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+          },
+          contents: 'Hello, Bob!',
+        },
+      };
 
-    it("signs typed message with 'eth_signTypedData_v1'", async () => {});
+      const signature = await snapKeyring.signTypedData(
+        mockAddress,
+        typedData,
+        {
+          version: SignTypedDataVersion.V3,
+        },
+      );
+      const restored = recoverTypedSignature({
+        data: typedData,
+        signature,
+        version: SignTypedDataVersion.V3,
+      });
+
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'eth_signTypedData',
+            params: [
+              mockAddress,
+              typedData,
+              { version: SignTypedDataVersion.V3 },
+            ],
+          },
+        },
+      });
+      expect(restored).toStrictEqual(mockAddress);
+    });
+
+    it("signs typed message with 'eth_signTypedData_v4'", async () => {
+      mockHandleRequest.mockResolvedValue(
+        '0x220917664ef676d592bd709a5bffedaf69c5f6c72f13c6c4547a41d211f0923c3180893b1dec023433f11b664fabda22b74b57d21094f7798fc85b7650f8edbb1b',
+      );
+      const typedData = {
+        types: {
+          EIP712Domain: [
+            { name: 'name', type: 'string' },
+            { name: 'version', type: 'string' },
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
+          Person: [
+            { name: 'name', type: 'string' },
+            { name: 'wallets', type: 'address[]' },
+          ],
+          Mail: [
+            { name: 'from', type: 'Person' },
+            { name: 'to', type: 'Person[]' },
+            { name: 'contents', type: 'string' },
+          ],
+          Group: [
+            { name: 'name', type: 'string' },
+            { name: 'members', type: 'Person[]' },
+          ],
+        },
+        domain: {
+          name: 'Ether Mail',
+          version: '1',
+          chainId: 1,
+          verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+        },
+        primaryType: 'Mail' as const,
+        message: {
+          from: {
+            name: 'Cow',
+            wallets: [
+              '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+              '0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF',
+            ],
+          },
+          to: [
+            {
+              name: 'Bob',
+              wallets: [
+                '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+                '0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57',
+                '0xB0B0b0b0b0b0B000000000000000000000000000',
+              ],
+            },
+          ],
+          contents: 'Hello, Bob!',
+        },
+      };
+
+      const signature = await snapKeyring.signTypedData(
+        mockAddress,
+        typedData,
+        {
+          version: SignTypedDataVersion.V4,
+        },
+      );
+      const restored = recoverTypedSignature({
+        data: typedData,
+        signature,
+        version: SignTypedDataVersion.V4,
+      });
+
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'eth_signTypedData',
+            params: [
+              mockAddress,
+              typedData,
+              { version: SignTypedDataVersion.V4 },
+            ],
+          },
+        },
+      });
+      expect(restored).toStrictEqual(mockAddress);
+    });
   });
 });
 
