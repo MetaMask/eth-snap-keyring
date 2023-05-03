@@ -183,8 +183,6 @@ export class SnapKeyring extends EventEmitter {
       for (const [address, snapId] of Object.entries(wallets)) {
         this.addressToSnapId.set(address, snapId);
       }
-    } else {
-      throw new Error(SnapKeyringErrors.MissingWallet);
     }
   }
 
