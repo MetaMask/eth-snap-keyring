@@ -1,10 +1,5 @@
 /* eslint-disable id-denylist */
-import {
-  FeeMarketEIP1559Transaction,
-  Transaction,
-  TransactionFactory,
-  TypedTransaction,
-} from '@ethereumjs/tx';
+import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
