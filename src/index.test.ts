@@ -1,18 +1,13 @@
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
+import {
+  personalSign,
+  recoverTypedSignature,
+  SignTypedDataVersion,
+} from '@metamask/eth-sig-util';
 import { HandlerType } from '@metamask/snaps-utils';
 
 import { SnapKeyring } from '.';
 import { SnapKeyringErrors } from './errors';
-import {
-  normalize,
-  personalSign,
-  recoverPersonalSignature,
-  recoverTypedSignature,
-  signTypedData,
-  SignTypedDataVersion,
-  encrypt,
-  EthEncryptedData,
-} from '@metamask/eth-sig-util';
 
 jest.mock('uuid', () => ({ v4: () => 'testId' }));
 const mockHandleRequest = jest.fn().mockResolvedValue(1);
@@ -22,7 +17,7 @@ const mockSnapController = {
 describe('SnapKeyring', () => {
   let snapKeyring: SnapKeyring;
 
-  const mockAddress = '0xab16a96D359eC26a11e2C2b3d8f8B8942d5Bfcdb';
+  const mockAddress = '0x1c96099350f13d558464ec79b9be4445aa0ef579';
   const mockAddress2 =
     '0xfa814753a741d3a4998de68b693b61ffb65593486f50673b75ced1dc555eebeb';
   const mockCAIP10Account = `eip155:1:${mockAddress}`.toLowerCase();
@@ -567,8 +562,50 @@ describe('SnapKeyring', () => {
       expect(restored).toStrictEqual(mockAddress);
     });
   });
+
+  describe('sign personal message', () => {
+    beforeEach(() => {
+      snapKeyring.createAccount(mockSnapId, mockAddress);
+    });
+
+    it('signs personal message', async () => {
+      const message = '0x68656c6c6f20776f726c64';
+      // private key of account 1
+      const privateKey = Buffer.from(
+        '8e82d2d74c50e5c8460f771d38a560ebe1151a9134c65a7e92b28ad0cfae7151',
+        'hex',
+      );
+      const expectedSig = personalSign({ privateKey, data: message });
+
+      mockHandleRequest.mockResolvedValue(expectedSig);
+
+      const signature = await snapKeyring.signPersonalMessage(
+        mockAddress,
+        message,
+      );
+      expect(mockHandleRequest).toHaveBeenCalledWith({
+        snapId: mockSnapId,
+        origin: 'metamask',
+        handler: HandlerType.OnRpcRequest,
+        request: {
+          jsonrpc: '2.0',
+          method: 'keyring_approveRequest',
+          params: {
+            id: 'testId',
+            method: 'personal_sign',
+            params: [mockAddress, message],
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSig);
+    });
+  });
 });
 
+/**
+ *
+ * @param transaction
+ */
 function serializeTx(transaction: TypedTransaction): Record<string, any> {
   const serializedTransaction = {
     ...transaction.toJSON(),
