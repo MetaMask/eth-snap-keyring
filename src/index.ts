@@ -8,7 +8,8 @@ import { ethErrors } from 'eth-rpc-errors';
 // import EventEmitter from 'events';
 // eslint-disable-next-line import/no-nodejs-modules
 import EventEmitter from 'events';
-import { v4 as uuidv4 } from 'uuid';
+import { KeyringSnapClient } from 'keyring-api';
+import { v4 as uuid } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
 import { DeferredPromise } from './util';
@@ -17,9 +18,7 @@ export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export type SnapId = string; // Snap unique identifier
 export type Address = string; // String public address
-export type PublicKey = Uint8Array; // 33 or 64 byte public key
-export type JsonWallet = [PublicKey, Json];
-export type SnapWallet = Map<Address, SnapId>;
+type PublicKey = Uint8Array; // 33 or 64 byte public key
 
 // TODO: import from snap rpc
 enum ManageAccountsOperation {
@@ -40,7 +39,7 @@ export class SnapKeyring extends EventEmitter {
 
   type: string;
 
-  protected addressToSnapId: SnapWallet;
+  protected addressToSnapId: Map<Address, SnapId>;
 
   protected snapController: any;
 
@@ -207,7 +206,7 @@ export class SnapKeyring extends EventEmitter {
     }
 
     // Forward request to snap
-    const id = uuidv4();
+    const id = uuid();
     // need to convert Transaction to serializable json to send to snap
     const serializedTx: Record<string, any> = tx.toJSON();
 
@@ -253,7 +252,7 @@ export class SnapKeyring extends EventEmitter {
     }
 
     // Forward request to snap
-    const id = uuidv4();
+    const id = uuid();
 
     const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
       id,
@@ -297,7 +296,7 @@ export class SnapKeyring extends EventEmitter {
     }
 
     // forward to snap
-    const id = uuidv4();
+    const id = uuid();
     return await this.sendSignatureRequestToSnap(snapId, {
       id,
       method: 'personal_sign',

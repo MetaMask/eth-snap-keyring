@@ -33,6 +33,7 @@
     "@types/uuid": "^9.0.1",
     "bn.js": "^5.2.1",
     "eth-rpc-errors": "^4.0.3",
+    "keyring-api": "ssh://git@github.com/MetaMask/keyring-api#main",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
