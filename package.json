@@ -25,7 +25,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^3.5.2",
+    "@ethereumjs/tx": "^4.1.2",
     "@ethereumjs/util": "^8.0.5",
     "@metamask/eth-sig-util": "^5.1.0",
     "@metamask/snaps-utils": "^0.31.0",

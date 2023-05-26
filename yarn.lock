@@ -1049,16 +1049,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ethereumjs/common@npm:^2.6.4":
-  version: 2.6.5
-  resolution: "@ethereumjs/common@npm:2.6.5"
-  dependencies:
-    crc-32: ^1.2.0
-    ethereumjs-util: ^7.1.5
-  checksum: 0143386f267ef01b7a8bb1847596f964ad58643c084e5fd8e3a0271a7bf8428605dbf38cbb92c84f6622080ad095abeb765f178c02d86ec52abf9e8a4c0e4ecf
-  languageName: node
-  linkType: hard
-
 "@ethereumjs/common@npm:^3.1.1":
   version: 3.1.1
   resolution: "@ethereumjs/common@npm:3.1.1"
@@ -1069,22 +1059,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ethereumjs/common@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@ethereumjs/common@npm:3.1.2"
+  dependencies:
+    "@ethereumjs/util": ^8.0.6
+    crc-32: ^1.2.0
+  checksum: e80a8bc86476f1ce878bacb1915d91681671bb5303291cdcece26e456ac13a6158f0f59625cb02a1cfbdd7c9a7dc8b175f8d8f0fee596b3eb9dfb965465ad43d
+  languageName: node
+  linkType: hard
+
 "@ethereumjs/rlp@npm:^4.0.1":
   version: 4.0.1
   resolution: "@ethereumjs/rlp@npm:4.0.1"
   bin:
     rlp: bin/rlp
   checksum: 30db19c78faa2b6ff27275ab767646929207bb207f903f09eb3e4c273ce2738b45f3c82169ddacd67468b4f063d8d96035f2bf36f02b6b7e4d928eefe2e3ecbc
-  languageName: node
-  linkType: hard
-
-"@ethereumjs/tx@npm:^3.5.2":
-  version: 3.5.2
-  resolution: "@ethereumjs/tx@npm:3.5.2"
-  dependencies:
-    "@ethereumjs/common": ^2.6.4
-    ethereumjs-util: ^7.1.5
-  checksum: a34a7228a623b40300484d15875b9f31f0a612cfeab64a845f6866cf0bfe439519e9455ac6396149f29bc527cf0ee277ace082ae013a1075dcbf7193220a0146
   languageName: node
   linkType: hard
 
@@ -1104,6 +1094,24 @@ __metadata:
     c-kzg:
       optional: true
   checksum: 98897e79adf03ee90ed98c6a543e15e0b4e127bc5bc381d70cdcc76b111574205b94869c29d925ea9e30a98e5ef8b0f5597914359deb9db552017b2e78ef17a8
+  languageName: node
+  linkType: hard
+
+"@ethereumjs/tx@npm:^4.1.2":
+  version: 4.1.2
+  resolution: "@ethereumjs/tx@npm:4.1.2"
+  dependencies:
+    "@chainsafe/ssz": ^0.11.1
+    "@ethereumjs/common": ^3.1.2
+    "@ethereumjs/rlp": ^4.0.1
+    "@ethereumjs/util": ^8.0.6
+    ethereum-cryptography: ^2.0.0
+  peerDependencies:
+    c-kzg: ^1.0.8
+  peerDependenciesMeta:
+    c-kzg:
+      optional: true
+  checksum: ad2fb692c3746cd5935b01c98b6b54046ae2a1fccff57ad2209e10446f3b279a204d7477accf05b27078445b14379314077769662142ac07117c45a5a1ea427f
   languageName: node
   linkType: hard
 
@@ -1933,7 +1941,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/eth-snap-keyring@workspace:."
   dependencies:
-    "@ethereumjs/tx": ^3.5.2
+    "@ethereumjs/tx": ^4.1.2
     "@ethereumjs/util": ^8.0.5
     "@lavamoat/allow-scripts": ^2.0.3
     "@metamask/auto-changelog": ^3.1.0
@@ -4684,7 +4692,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethereumjs-util@npm:^7.0.10, ethereumjs-util@npm:^7.1.5":
+"ethereumjs-util@npm:^7.0.10":
   version: 7.1.5
   resolution: "ethereumjs-util@npm:7.1.5"
   dependencies:

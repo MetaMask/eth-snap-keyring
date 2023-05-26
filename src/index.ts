@@ -218,8 +218,8 @@ export class SnapKeyring extends EventEmitter {
       }
     });
 
-    serializedTx.chainId = tx.common?.chainIdBN().toNumber() ?? '0x1';
-    serializedTx.type = tx.type ?? '';
+    serializedTx.chainId = tx.common?.chainId() ?? '0x1';
+    serializedTx.type = tx.type ?? '0x0'; // default to legacy
 
     // this is to support EIP155 replay protection
     // const chainOptions = {
