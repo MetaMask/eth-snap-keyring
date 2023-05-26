@@ -1,6 +1,7 @@
 /* eslint-disable id-denylist */
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
+import { SnapController } from '@metamask/snap-controllers';
 import { HandlerType } from '@metamask/snaps-utils';
 import { Json, JsonRpcNotification } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
@@ -8,7 +9,6 @@ import { ethErrors } from 'eth-rpc-errors';
 // import EventEmitter from 'events';
 // eslint-disable-next-line import/no-nodejs-modules
 import EventEmitter from 'events';
-import { KeyringSnapClient } from 'keyring-api';
 import { v4 as uuid } from 'uuid';
 
 import { SnapKeyringErrors } from './errors';
@@ -41,21 +41,16 @@ export class SnapKeyring extends EventEmitter {
 
   protected addressToSnapId: Map<Address, SnapId>;
 
-  protected snapController: any;
+  protected snapController: SnapController;
 
   protected pendingRequests: Map<string, DeferredPromise<any>>;
 
-  constructor() {
+  constructor(controller: SnapController) {
     super();
     this.type = SnapKeyring.type;
     this.addressToSnapId = new Map();
     this.pendingRequests = new Map();
-  }
-
-  // keyrings cant take constructor arguments so we
-  // late-set the provider
-  setController(snapController: any): void {
-    this.snapController = snapController;
+    this.snapController = controller;
   }
 
   /**
@@ -417,22 +412,4 @@ export class SnapKeyring extends EventEmitter {
     }
     return snapId;
   }
-}
-
-/**
- * Decode a hex signature into a {r,s,v} object.
- *
- * @param signature - Signature in hexadecimal.
- * @returns The signature in a {r,s,v} object.
- */
-function decodeSignature(signature: string): {
-  r: string;
-  s: string;
-  v: number;
-} {
-  return {
-    r: signature.slice(0, 66),
-    s: `0x${signature.slice(66, 130)}`,
-    v: parseInt(signature.slice(130, 132), 16),
-  };
 }
