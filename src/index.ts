@@ -45,9 +45,13 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToAccount.clear();
     this.#addressToSnapId.clear();
 
+    console.log('[bridge] 1');
     for (const snapId of this.#snapIds) {
+      console.log('[bridge] 2');
       const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
+      console.log('[bridge] 3');
       for (const account of accounts) {
+        console.log('[bridge] 4');
         this.#addressToAccount.set(account.address, account);
         this.#addressToSnapId.set(account.address, snapId);
       }
@@ -135,6 +139,7 @@ export class SnapKeyring extends EventEmitter {
    * @param snapIds - List of account snaps.
    */
   async deserialize(snapIds: string[] = []): Promise<void> {
+    console.log('[bridge] deserialize:', snapIds);
     this.#snapIds = new Set(snapIds);
     await this.#syncAccounts();
   }
