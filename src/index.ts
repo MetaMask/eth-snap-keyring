@@ -16,11 +16,6 @@ import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-// Type for serialized format.
-export type SnapKeyringState = {
-  snapIds: string[];
-};
-
 export class SnapKeyring extends EventEmitter {
   static type: string = SNAP_KEYRING_TYPE;
 
@@ -127,10 +122,8 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    */
-  async serialize(): Promise<SnapKeyringState> {
-    return {
-      snapIds: Array.from(this.#snapIds.values()),
-    };
+  async serialize(): Promise<string[]> {
+    return Array.from(this.#snapIds.values());
   }
 
   /**
@@ -139,10 +132,10 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    *
-   * @param _snaps - List of account snaps.
+   * @param snapIds - List of account snaps.
    */
-  async deserialize(_snaps: SnapKeyringState): Promise<void> {
-    this.#snapIds = new Set();
+  async deserialize(snapIds: string[] = []): Promise<void> {
+    this.#snapIds = new Set(snapIds);
     await this.#syncAccounts();
   }
 
