@@ -17,8 +17,8 @@ import { DeferredPromise } from './util';
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 // Type for serialized format.
-export type SerializedWallets = {
-  snaps: string[];
+export type SnapKeyringState = {
+  snapIds: string[];
 };
 
 export class SnapKeyring extends EventEmitter {
@@ -75,15 +75,9 @@ export class SnapKeyring extends EventEmitter {
     switch (methodName) {
       case 'create': {
         const address = params as string;
-
-        console.log('[BRIDGE] Before listAccounts');
-
-        const client = this.#snapClient.withSnapId(snapId);
-        console.log('[bridge] client', client);
-        const accounts = await client.listAccounts();
-        console.log('[bridge] accounts', accounts);
-
-        console.log('[BRIDGE] After listAccounts');
+        const accounts = await this.#snapClient
+          .withSnapId(snapId)
+          .listAccounts();
 
         const account = accounts.find((a) => a.address === address);
         if (account === undefined) {
@@ -93,9 +87,7 @@ export class SnapKeyring extends EventEmitter {
         this.#addressToAccount.set(address, account);
         this.#addressToSnapId.set(address, snapId);
         this.#snapIds.add(snapId);
-        console.log('[BRIDGE] Before saveSnapKeyring');
         await saveSnapKeyring();
-        console.log('[BRIDGE] After saveSnapKeyring');
         return null;
       }
 
@@ -135,9 +127,9 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    */
-  async serialize(): Promise<SerializedWallets> {
+  async serialize(): Promise<SnapKeyringState> {
     return {
-      snaps: Array.from(this.#snapIds.values()),
+      snapIds: Array.from(this.#snapIds.values()),
     };
   }
 
@@ -147,10 +139,10 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    *
-   * @param wallets - Serialize wallets.
+   * @param _snaps - List of account snaps.
    */
-  async deserialize(wallets: SerializedWallets): Promise<void> {
-    this.#snapIds = new Set(wallets.snaps ?? []);
+  async deserialize(_snaps: SnapKeyringState): Promise<void> {
+    this.#snapIds = new Set();
     await this.#syncAccounts();
   }
 
