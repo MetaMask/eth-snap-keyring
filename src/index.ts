@@ -150,7 +150,7 @@ export class SnapKeyring extends EventEmitter {
    * @param wallets - Serialize wallets.
    */
   async deserialize(wallets: SerializedWallets): Promise<void> {
-    this.#snapIds = new Set(wallets.snaps);
+    this.#snapIds = new Set(wallets.snaps ?? []);
     await this.#syncAccounts();
   }
 
