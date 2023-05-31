@@ -137,11 +137,11 @@ export class SnapKeyring extends EventEmitter {
   async deserialize(snapIds: string[] = []): Promise<void> {
     try {
       this.#snapIds = new Set(snapIds);
+      await this.#syncAccounts();
     } catch (error) {
-      console.warn('Cannot restore snap keyring', error);
+      console.warn('Cannot restore snap keyring:', error);
       this.#snapIds = new Set();
     }
-    await this.#syncAccounts();
   }
 
   /**
