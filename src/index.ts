@@ -66,6 +66,11 @@ export class SnapKeyring extends EventEmitter {
     // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
   ): Promise<any> {
+    console.log(
+      `[BRIDGE] Received account management request: ${JSON.stringify(
+        message,
+      )}`,
+    );
     const [methodName, params] = message;
 
     switch (methodName) {
