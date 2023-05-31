@@ -12,7 +12,6 @@ import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
-import { SnapKeyringErrors } from './errors';
 import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -29,34 +28,34 @@ export class SnapKeyring extends EventEmitter {
 
   #snapClient: KeyringSnapControllerClient;
 
-  #snapIds: string[];
+  #snapIds: Set<string>;
 
-  protected addressToAccount: Map<string, KeyringAccount>;
+  #addressToAccount: Map<string, KeyringAccount>;
 
-  protected addressToSnapId: Map<string, string>;
+  #addressToSnapId: Map<string, string>;
 
-  protected pendingRequests: Map<string, DeferredPromise<any>>;
+  #pendingRequests: Map<string, DeferredPromise<any>>;
 
   constructor(controller: SnapController) {
     super();
     this.type = SnapKeyring.type;
-    this.addressToAccount = new Map();
-    this.addressToSnapId = new Map();
-    this.pendingRequests = new Map();
     this.#snapClient = new KeyringSnapControllerClient(controller);
-    this.#snapIds = [];
+    this.#snapIds = new Set();
+    this.#addressToAccount = new Map();
+    this.#addressToSnapId = new Map();
+    this.#pendingRequests = new Map();
   }
 
   async #syncAccounts(): Promise<void> {
-    this.addressToAccount.clear();
-    this.addressToSnapId.clear();
+    this.#addressToAccount.clear();
+    this.#addressToSnapId.clear();
 
     for (const snapId of this.#snapIds) {
       const client = this.#snapClient.withSnapId(snapId);
       const accounts = await client.listAccounts();
       for (const account of accounts) {
-        this.addressToAccount.set(account.address, account);
-        this.addressToSnapId.set(account.address, snapId);
+        this.#addressToAccount.set(account.address, account);
+        this.#addressToSnapId.set(account.address, snapId);
       }
     }
   }
@@ -72,14 +71,25 @@ export class SnapKeyring extends EventEmitter {
     switch (methodName) {
       case 'create': {
         const address = params as string;
-        this.createAccount(snapId, address);
+        const accounts = await this.#snapClient
+          .withSnapId(snapId)
+          .listAccounts();
+
+        const account = accounts.find((a) => a.address === address);
+        if (account === undefined) {
+          throw new Error(`Address not found: ${address}`);
+        }
+
+        this.#addressToAccount.set(address, account);
+        this.#addressToSnapId.set(address, snapId);
+        this.#snapIds.add(snapId);
         await saveSnapKeyring();
+
         return null;
       }
 
       case 'read': {
-        const accounts = this.listAccounts(snapId);
-        return accounts;
+        return this.listAccounts(snapId);
       }
 
       // case 'update': {
@@ -90,18 +100,13 @@ export class SnapKeyring extends EventEmitter {
         if (!address) {
           throw new Error('Missing account address');
         }
-
-        const deleted = this.deleteAccount(address);
-        if (deleted) {
-          await saveSnapKeyring(address);
-        }
-        return deleted;
+        return true;
       }
 
       case 'submit': {
         const { id, result } = params;
         console.log('submit', id, result);
-        this.submitSignatureRequestResult(id, result);
+        this.#submitSignatureRequestResult(id, result);
         return true;
       }
 
@@ -121,7 +126,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async serialize(): Promise<SerializedWallets> {
     return {
-      snaps: this.#snapIds,
+      snaps: Array.from(this.#snapIds.values()),
     };
   }
 
@@ -134,7 +139,7 @@ export class SnapKeyring extends EventEmitter {
    * @param wallets - Serialize wallets.
    */
   async deserialize(wallets: SerializedWallets): Promise<void> {
-    this.#snapIds = wallets.snaps;
+    this.#snapIds = new Set(wallets.snaps);
     await this.#syncAccounts();
   }
 
@@ -142,7 +147,7 @@ export class SnapKeyring extends EventEmitter {
    * Get an array of public addresses.
    */
   async getAccounts(): Promise<string[]> {
-    return Array.from(this.addressToSnapId.keys());
+    return Array.from(this.#addressToSnapId.keys());
   }
 
   async #submitRequest<Response extends Json>(
@@ -150,8 +155,8 @@ export class SnapKeyring extends EventEmitter {
     method: string,
     params?: Json | Json[],
   ): Promise<Response> {
-    const snapId = this.addressToSnapId.get(address);
-    const account = this.addressToAccount.get(address);
+    const snapId = this.#addressToSnapId.get(address);
+    const account = this.#addressToAccount.get(address);
 
     if (snapId === undefined || account === undefined) {
       throw new Error(`Address not found: ${address}`);
@@ -176,7 +181,7 @@ export class SnapKeyring extends EventEmitter {
     }
 
     const promise = new DeferredPromise<Response>();
-    this.pendingRequests.set(id, promise);
+    this.#pendingRequests.set(id, promise);
     return promise.promise;
   }
 
@@ -276,15 +281,15 @@ export class SnapKeyring extends EventEmitter {
    * @param address - Address of the account to remove.
    */
   async removeAccount(address: string): Promise<boolean> {
-    const account = this.addressToAccount.get(address);
-    const snapId = this.addressToSnapId.get(address);
+    const account = this.#addressToAccount.get(address);
+    const snapId = this.#addressToSnapId.get(address);
     if (snapId === undefined || account === undefined) {
       throw new Error(`Account not found: ${address}`);
     }
 
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
-    this.addressToSnapId.delete(address);
-    this.addressToSnapId.delete(address);
+    this.#addressToSnapId.delete(address);
+    this.#addressToSnapId.delete(address);
 
     return true;
   }
@@ -297,10 +302,10 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - Snap identifier.
    * @returns List of addresses for the given snap ID.
    */
-  listAccounts(snapId: string): string[] {
-    return Array.from(this.addressToSnapId.entries())
-      .filter(([_, id]) => id === snapId)
-      .map(([address, _]) => address);
+  async listAccounts(snapId: string): Promise<string[]> {
+    return (await this.#snapClient.withSnapId(snapId).listAccounts()).map(
+      (a) => a.address,
+    );
   }
 
   /**
@@ -312,41 +317,29 @@ export class SnapKeyring extends EventEmitter {
    * snaps. The keyring controller is responsible for checking for duplicates
    * across all addresses.
    *
-   * @param snapId - Snap identifier.
-   * @param address - Address.
+   * @param _snapId - Snap identifier.
+   * @param _address - Address.
    */
-  createAccount(snapId: string, address: string): void {
-    // the map key is case sensitive
-    const lowerCasedAddress = address.toLowerCase();
-    if (this.addressToSnapId.has(lowerCasedAddress)) {
-      throw new Error(SnapKeyringErrors.AccountAlreadyExists);
-    }
-    this.addressToSnapId.set(lowerCasedAddress, snapId);
+  async createAccount(_snapId: string, _address: string): Promise<void> {
+    await this.#syncAccounts();
   }
 
   /**
    * Delete the private data for an account belonging to a snap.
    *
-   * @param address - Address to remove.
+   * @param _address - Address to remove.
    * @returns True if the address existed before, false otherwise.
    */
-  deleteAccount(address: string): boolean {
-    return this.addressToSnapId.delete(address);
+  async deleteAccount(_address: string): Promise<void> {
+    await this.#syncAccounts();
   }
 
-  deleteAccounts(snapId: string): void {
-    const accounts = this.listAccounts(snapId);
-    if (accounts.length === 0) {
-      throw new Error(SnapKeyringErrors.UnknownSnapId);
-    }
-
-    for (const address of accounts) {
-      this.addressToSnapId.delete(address);
-    }
+  async deleteAccounts(_snapId: string): Promise<void> {
+    await this.#syncAccounts();
   }
 
-  submitSignatureRequestResult(id: string, result: any): void {
-    const signingPromise = this.pendingRequests.get(id);
+  #submitSignatureRequestResult(id: string, result: any): void {
+    const signingPromise = this.#pendingRequests.get(id);
     if (signingPromise?.resolve === undefined) {
       console.warn(
         'submitSignatureRequestResult missing requested id',
@@ -355,15 +348,7 @@ export class SnapKeyring extends EventEmitter {
       );
       return;
     }
-    this.pendingRequests.delete(id);
+    this.#pendingRequests.delete(id);
     signingPromise.resolve(result);
-  }
-
-  getSnapIdFromAddress(address: string): string {
-    const snapId = this.addressToSnapId.get(address.toLowerCase());
-    if (snapId === undefined) {
-      throw new Error(`No snap found for address "${address}"`);
-    }
-    return snapId;
   }
 }
