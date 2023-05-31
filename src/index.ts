@@ -51,8 +51,7 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToSnapId.clear();
 
     for (const snapId of this.#snapIds) {
-      const client = this.#snapClient.withSnapId(snapId);
-      const accounts = await client.listAccounts();
+      const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
       for (const account of accounts) {
         this.#addressToAccount.set(account.address, account);
         this.#addressToSnapId.set(account.address, snapId);
@@ -94,7 +93,7 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case 'read': {
-        return this.listAccounts(snapId);
+        return await this.listAccounts(snapId);
       }
 
       // case 'update': {
