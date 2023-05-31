@@ -78,9 +78,12 @@ export class SnapKeyring extends EventEmitter {
 
         console.log('[BRIDGE] Before listAccounts');
 
-        const accounts = await this.#snapClient
-          .withSnapId(snapId)
-          .listAccounts();
+        const client = this.#snapClient.withSnapId(snapId);
+        console.log('[bridge] client', client);
+        const accounts = await client.listAccounts();
+        console.log('[bridge] accounts', accounts);
+
+        console.log('[BRIDGE] After listAccounts');
 
         const account = accounts.find((a) => a.address === address);
         if (account === undefined) {
@@ -97,7 +100,7 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case 'read': {
-        return await this.listAccounts(snapId);
+        return await this.#listAccounts(snapId);
       }
 
       // case 'update': {
@@ -312,7 +315,7 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - Snap identifier.
    * @returns List of addresses for the given snap ID.
    */
-  async listAccounts(snapId: string): Promise<string[]> {
+  async #listAccounts(snapId: string): Promise<string[]> {
     return (await this.#snapClient.withSnapId(snapId).listAccounts()).map(
       (a) => a.address,
     );

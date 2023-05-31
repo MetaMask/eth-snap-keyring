@@ -149,7 +149,7 @@ describe('SnapKeyring', () => {
     snapKeyring.createAccount(mockSnapId, mockCAIP10Account);
     snapKeyring.createAccount(mockSnapId2, mockCAIP10Account2);
 
-    const listAccounts = snapKeyring.listAccounts(mockSnapId);
+    const listAccounts = snapKeyring.#listAccounts(mockSnapId);
     expect(listAccounts).toStrictEqual([mockCAIP10Account]);
   });
 
@@ -210,10 +210,10 @@ describe('SnapKeyring', () => {
     it('deletes all the accounts by snapId', async () => {
       expect(() => snapKeyring.deleteAccounts(mockSnapId)).not.toThrow();
 
-      const accounts = snapKeyring.listAccounts(mockSnapId);
+      const accounts = snapKeyring.#listAccounts(mockSnapId);
       expect(accounts).toStrictEqual([]);
 
-      const accountsOfAnotherSnapId = snapKeyring.listAccounts(mockSnapId2);
+      const accountsOfAnotherSnapId = snapKeyring.#listAccounts(mockSnapId2);
       expect(accountsOfAnotherSnapId).toStrictEqual([
         mockCAIP10Account3,
         mockCAIP10Account4,
