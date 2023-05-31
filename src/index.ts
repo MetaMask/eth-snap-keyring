@@ -75,6 +75,9 @@ export class SnapKeyring extends EventEmitter {
     switch (methodName) {
       case 'create': {
         const address = params as string;
+
+        console.log('[BRIDGE] Before listAccounts');
+
         const accounts = await this.#snapClient
           .withSnapId(snapId)
           .listAccounts();
@@ -87,7 +90,9 @@ export class SnapKeyring extends EventEmitter {
         this.#addressToAccount.set(address, account);
         this.#addressToSnapId.set(address, snapId);
         this.#snapIds.add(snapId);
+        console.log('[BRIDGE] Before saveSnapKeyring');
         await saveSnapKeyring();
+        console.log('[BRIDGE] After saveSnapKeyring');
         return null;
       }
 
@@ -148,6 +153,8 @@ export class SnapKeyring extends EventEmitter {
 
   /**
    * Get an array of public addresses.
+   *
+   * @returns The list of account addresses.
    */
   getAccounts(): string[] {
     return Array.from(this.#addressToSnapId.keys());
