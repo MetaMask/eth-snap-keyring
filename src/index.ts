@@ -88,7 +88,6 @@ export class SnapKeyring extends EventEmitter {
         this.#addressToSnapId.set(address, snapId);
         this.#snapIds.add(snapId);
         await saveSnapKeyring();
-
         return null;
       }
 
@@ -150,7 +149,7 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Get an array of public addresses.
    */
-  async getAccounts(): Promise<string[]> {
+  getAccounts(): string[] {
     return Array.from(this.#addressToSnapId.keys());
   }
 
