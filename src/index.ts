@@ -138,7 +138,7 @@ export class SnapKeyring extends EventEmitter {
     try {
       this.#snapIds = new Set(snapIds);
       console.log('[bridge] deserialize snapIds:', snapIds);
-      await this.#syncAccounts();
+      // await this.#syncAccounts();
     } catch (error) {
       console.warn('Cannot restore keyring state:', error);
     }
