@@ -138,6 +138,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
+    console.log('[bridge] getAccounts:', this.#addressToSnapId.keys());
     return Array.from(this.#addressToSnapId.keys());
   }
 
@@ -294,11 +295,6 @@ export class SnapKeyring extends EventEmitter {
    * @returns List of addresses for the given snap ID.
    */
   async #listAccounts(snapId: string): Promise<string[]> {
-    const accounts = (
-      await this.#snapClient.withSnapId(snapId).listAccounts()
-    ).map((a) => a.address);
-    console.log('[bridge] accounts list:', accounts);
-
     return (await this.#snapClient.withSnapId(snapId).listAccounts()).map(
       (a) => a.address,
     );
