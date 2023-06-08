@@ -14,6 +14,11 @@ import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './util';
 
+type KeyringState = {
+  addressToAccount: Record<string, KeyringAccount>;
+  addressToSnapId: Record<string, string>;
+};
+
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export class SnapKeyring extends EventEmitter {
@@ -22,8 +27,6 @@ export class SnapKeyring extends EventEmitter {
   type: string;
 
   #snapClient: KeyringSnapControllerClient;
-
-  #snapIds: Set<string>;
 
   #addressToAccount: Map<string, KeyringAccount>;
 
@@ -35,23 +38,27 @@ export class SnapKeyring extends EventEmitter {
     super();
     this.type = SnapKeyring.type;
     this.#snapClient = new KeyringSnapControllerClient(controller);
-    this.#snapIds = new Set();
     this.#addressToAccount = new Map();
     this.#addressToSnapId = new Map();
     this.#pendingRequests = new Map();
   }
 
   async #syncAccounts(): Promise<void> {
-    this.#addressToAccount.clear();
-    this.#addressToSnapId.clear();
+    // Create new maps instead of reusing the existing ones to prevent them
+    // from being overwritten in case an exception is thrown during the sync.
+    const addressToAccount = new Map<string, KeyringAccount>();
+    const addressToSnapId = new Map<string, string>();
 
-    for (const snapId of this.#snapIds) {
+    for (const snapId of this.#addressToSnapId.values()) {
       const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
       for (const account of accounts) {
-        this.#addressToAccount.set(account.address, account);
-        this.#addressToSnapId.set(account.address, snapId);
+        addressToAccount.set(account.address, account);
+        addressToSnapId.set(account.address, snapId);
       }
     }
+
+    this.#addressToAccount = addressToAccount;
+    this.#addressToSnapId = addressToSnapId;
   }
 
   async handleKeyringSnapMessage(
@@ -68,37 +75,16 @@ export class SnapKeyring extends EventEmitter {
     const [methodName, params] = message;
 
     switch (methodName) {
-      case 'create': {
-        const address = params as string;
-        const accounts = await this.#snapClient
-          .withSnapId(snapId)
-          .listAccounts();
-
-        const account = accounts.find((a) => a.address === address);
-        if (account === undefined) {
-          throw new Error(`Address not found: ${address}`);
-        }
-
-        this.#addressToAccount.set(address, account);
-        this.#addressToSnapId.set(address, snapId);
-        this.#snapIds.add(snapId);
+      case 'update':
+      case 'create':
+      case 'delete': {
+        await this.#syncAccounts();
         await saveSnapKeyring();
         return null;
       }
 
       case 'read': {
         return await this.#listAccounts(snapId);
-      }
-
-      // case 'update': {
-      // }
-
-      case 'delete': {
-        const address = params as string;
-        if (!address) {
-          throw new Error('Missing account address');
-        }
-        return true;
       }
 
       case 'submit': {
@@ -122,8 +108,11 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    */
-  async serialize(): Promise<string[]> {
-    return Array.from(this.#snapIds.values());
+  async serialize(): Promise<KeyringState> {
+    return {
+      addressToSnapId: Object.fromEntries(this.#addressToSnapId),
+      addressToAccount: Object.fromEntries(this.#addressToAccount),
+    };
   }
 
   /**
@@ -132,13 +121,12 @@ export class SnapKeyring extends EventEmitter {
    * This function is synchronous but uses an async signature
    * for consistency with other keyring implementations.
    *
-   * @param snapIds - List of account snaps.
+   * @param state - Keyring state object.
    */
-  async deserialize(snapIds: string[] = []): Promise<void> {
+  async deserialize(state: KeyringState): Promise<void> {
     try {
-      this.#snapIds = new Set(snapIds);
-      console.log('[bridge] deserialize snapIds:', snapIds);
-      // await this.#syncAccounts();
+      this.#addressToAccount = new Map(Object.entries(state.addressToAccount));
+      this.#addressToSnapId = new Map(Object.entries(state.addressToSnapId));
     } catch (error) {
       console.warn('Cannot restore keyring state:', error);
     }
@@ -292,7 +280,7 @@ export class SnapKeyring extends EventEmitter {
 
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
     this.#addressToSnapId.delete(address);
-    this.#addressToSnapId.delete(address);
+    this.#addressToAccount.delete(address);
 
     return true;
   }
@@ -311,35 +299,35 @@ export class SnapKeyring extends EventEmitter {
     );
   }
 
-  /**
-   * Create an account for a snap.
-   *
-   * The account is only created if the public address does not already exist.
-   *
-   * This checks for duplicates in the context of one snap but not across all
-   * snaps. The keyring controller is responsible for checking for duplicates
-   * across all addresses.
-   *
-   * @param _snapId - Snap identifier.
-   * @param _address - Address.
-   */
-  async createAccount(_snapId: string, _address: string): Promise<void> {
-    await this.#syncAccounts();
-  }
+  // /**
+  //  * Create an account for a snap.
+  //  *
+  //  * The account is only created if the public address does not already exist.
+  //  *
+  //  * This checks for duplicates in the context of one snap but not across all
+  //  * snaps. The keyring controller is responsible for checking for duplicates
+  //  * across all addresses.
+  //  *
+  //  * @param _snapId - Snap identifier.
+  //  * @param _address - Address.
+  //  */
+  // async createAccount(_snapId: string, _address: string): Promise<void> {
+  //   await this.#syncAccounts();
+  // }
 
-  /**
-   * Delete the private data for an account belonging to a snap.
-   *
-   * @param _address - Address to remove.
-   * @returns True if the address existed before, false otherwise.
-   */
-  async deleteAccount(_address: string): Promise<void> {
-    await this.#syncAccounts();
-  }
+  // /**
+  //  * Delete the private data for an account belonging to a snap.
+  //  *
+  //  * @param _address - Address to remove.
+  //  * @returns True if the address existed before, false otherwise.
+  //  */
+  // async deleteAccount(_address: string): Promise<void> {
+  //   await this.#syncAccounts();
+  // }
 
-  async deleteAccounts(_snapId: string): Promise<void> {
-    await this.#syncAccounts();
-  }
+  // async deleteAccounts(_snapId: string): Promise<void> {
+  //   await this.#syncAccounts();
+  // }
 
   #submitSignatureRequestResult(id: string, result: any): void {
     const signingPromise = this.#pendingRequests.get(id);
