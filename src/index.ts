@@ -84,9 +84,9 @@ export class SnapKeyring extends EventEmitter {
         message,
       )}`,
     );
-    const [methodName, params] = message;
+    const [method, params] = message;
 
-    switch (methodName) {
+    switch (method) {
       case 'update':
       case 'delete':
       case 'create': {
@@ -102,7 +102,7 @@ export class SnapKeyring extends EventEmitter {
       case 'submit': {
         const { id, result } = params;
         console.log('submit', id, result);
-        this.#submitSignatureRequestResult(id, result);
+        this.#resolveRequest(id, result);
         return true;
       }
 
@@ -285,7 +285,9 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Account not found: ${address}`);
     }
 
+    console.log(`[Bridge] Deleting account: ${JSON.stringify(account)}`);
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
+    console.log(`[Bridge] Deleted account: ${JSON.stringify(account)}`);
     await this.#syncAccounts();
 
     return true;
@@ -303,7 +305,7 @@ export class SnapKeyring extends EventEmitter {
     );
   }
 
-  #submitSignatureRequestResult(id: string, result: any): void {
+  #resolveRequest(id: string, result: any): void {
     const signingPromise = this.#pendingRequests[id];
     if (signingPromise?.resolve === undefined) {
       console.warn(`No pending request found for ID: ${id}`);
