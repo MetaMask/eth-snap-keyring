@@ -21,6 +21,16 @@ type KeyringState = {
 };
 
 /**
+ * Remove duplicate entries from an array.
+ *
+ * @param array - Array to remove duplicates from.
+ * @returns Array with duplicates removed.
+ */
+function unique<T>(array: T[]): T[] {
+  return [...new Set(array)];
+}
+
+/**
  * Keyring bridge implementation to support snaps.
  */
 export class SnapKeyring extends EventEmitter {
@@ -59,18 +69,15 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToSnapId = {};
 
     // ... And add them back.
-    for (const snapId of snapIds) {
+    for (const snapId of unique(snapIds)) {
       const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
       for (const account of accounts) {
-        console.log(
-          `[Bridge] Found account on snap '${snapId}': ${JSON.stringify(
-            account,
-          )}`,
-        );
         this.#addressToAccount[account.address] = account;
         this.#addressToSnapId[account.address] = snapId;
       }
     }
+
+    this.getAccounts();
   }
 
   async handleKeyringSnapMessage(
@@ -279,19 +286,15 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Address of the account to remove.
    */
-  async removeAccount(address: string): Promise<boolean> {
+  async removeAccount(address: string): Promise<void> {
     const account = this.#addressToAccount[address];
     const snapId = this.#addressToSnapId[address];
     if (snapId === undefined || account === undefined) {
       throw new Error(`Account not found: ${address}`);
     }
 
-    console.log(`[Bridge] Deleting account: ${JSON.stringify(account)}`);
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
-    console.log(`[Bridge] Deleted account: ${JSON.stringify(account)}`);
     await this.#syncAccounts();
-
-    return true;
   }
 
   /**
