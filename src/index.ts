@@ -145,6 +145,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
+    console.log('[Bridge] getAccounts:', Object.keys(this.#addressToSnapId));
     return Object.keys(this.#addressToSnapId);
   }
 
