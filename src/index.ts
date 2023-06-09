@@ -62,6 +62,11 @@ export class SnapKeyring extends EventEmitter {
     for (const snapId of snapIds) {
       const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
       for (const account of accounts) {
+        console.log(
+          `[Bridge] Found account on snap '${snapId}': ${JSON.stringify(
+            account,
+          )}`,
+        );
         this.#addressToAccount[account.address] = account;
         this.#addressToSnapId[account.address] = snapId;
       }
