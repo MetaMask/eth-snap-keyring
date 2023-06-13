@@ -153,7 +153,7 @@ export class SnapKeyring extends EventEmitter {
    */
   getAccounts(): string[] {
     console.log('[Bridge] getAccounts:', Object.keys(this.#addressToSnapId));
-    return Object.keys(this.#addressToSnapId);
+    return unique(Object.keys(this.#addressToSnapId));
   }
 
   async #submitRequest<Response extends Json>(
@@ -161,13 +161,7 @@ export class SnapKeyring extends EventEmitter {
     method: string,
     params?: Json | Json[],
   ): Promise<Response> {
-    const snapId = this.#addressToSnapId[address];
-    const account = this.#addressToAccount[address];
-
-    if (snapId === undefined || account === undefined) {
-      throw new Error(`Address not found: ${address}`);
-    }
-
+    const { account, snapId } = this.#resolveAddress(address);
     const id = uuid();
     const response = await this.#snapClient
       .withSnapId(snapId)
@@ -287,14 +281,27 @@ export class SnapKeyring extends EventEmitter {
    * @param address - Address of the account to remove.
    */
   async removeAccount(address: string): Promise<void> {
+    const { account, snapId } = this.#resolveAddress(address);
+
+    // FIXME: remove this hack and rely instead on the syncAccounts call below
+    // once the removeAccount method is made async in the KeyringController.
+    delete this.#addressToAccount[address];
+    delete this.#addressToSnapId[address];
+
+    await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
+    await this.#syncAccounts();
+  }
+
+  #resolveAddress(address: string): {
+    account: KeyringAccount;
+    snapId: string;
+  } {
     const account = this.#addressToAccount[address];
     const snapId = this.#addressToSnapId[address];
     if (snapId === undefined || account === undefined) {
       throw new Error(`Account not found: ${address}`);
     }
-
-    await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
-    await this.#syncAccounts();
+    return { account, snapId };
   }
 
   /**
