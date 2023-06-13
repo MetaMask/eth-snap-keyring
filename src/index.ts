@@ -80,12 +80,20 @@ export class SnapKeyring extends EventEmitter {
     this.getAccounts();
   }
 
+  /**
+   * Handle a message from a snap.
+   *
+   * @param snapId - ID of the snap.
+   * @param message - Message sent by the snap.
+   * @param saveSnapKeyring - Function to save the snap's state.
+   * @returns The execution result.
+   */
   async handleKeyringSnapMessage(
     snapId: string,
     message: any,
     // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
-  ): Promise<any> {
+  ): Promise<Json> {
     console.log(
       `[BRIDGE] Received account management request: ${JSON.stringify(
         message,
@@ -156,6 +164,14 @@ export class SnapKeyring extends EventEmitter {
     return unique(Object.keys(this.#addressToSnapId));
   }
 
+  /**
+   * Submit a request to a snap.
+   *
+   * @param address - Account address.
+   * @param method - Method to call.
+   * @param params - Method parameters.
+   * @returns Promise that resolves to the result of the method call.
+   */
   async #submitRequest<Response extends Json>(
     address: string,
     method: string,
@@ -172,7 +188,7 @@ export class SnapKeyring extends EventEmitter {
           jsonrpc: '2.0',
           id,
           method,
-          ...(params && { params }),
+          ...(params !== undefined && { params }),
         },
       });
 
@@ -292,6 +308,13 @@ export class SnapKeyring extends EventEmitter {
     await this.#syncAccounts();
   }
 
+  /**
+   * Resolve an address to an account and snap ID.
+   *
+   * @param address - Address of the account to resolve.
+   * @returns Account and snap ID. Throws if the account or snap ID is not
+   * found.
+   */
   #resolveAddress(address: string): {
     account: KeyringAccount;
     snapId: string;
@@ -316,6 +339,12 @@ export class SnapKeyring extends EventEmitter {
     );
   }
 
+  /**
+   * Resolve a pending request.
+   *
+   * @param id - ID of the request to resolve.
+   * @param result - Result of the request.
+   */
   #resolveRequest(id: string, result: any): void {
     const signingPromise = this.#pendingRequests[id];
     if (signingPromise?.resolve === undefined) {
