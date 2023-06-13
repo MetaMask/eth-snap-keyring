@@ -31,6 +31,20 @@ function unique<T>(array: T[]): T[] {
 }
 
 /**
+ * Convert a value to a valid JSON object.
+ *
+ * The function chains JSON.stringify and JSON.parse to ensure that the result
+ * is a valid JSON object. In objects, undefined values are removed, and in
+ * arrays, they are replaced with null.
+ *
+ * @param value - Value to convert to JSON.
+ * @returns JSON representation of the value.
+ */
+function toJson<T extends Json = Json>(value: any): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/**
  * Keyring bridge implementation to support snaps.
  */
 export class SnapKeyring extends EventEmitter {
@@ -76,8 +90,6 @@ export class SnapKeyring extends EventEmitter {
         this.#addressToSnapId[account.address] = snapId;
       }
     }
-
-    this.getAccounts();
   }
 
   /**
@@ -155,12 +167,11 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Get an array of public addresses.
+   * Get the address of the accounts present in this keyring.
    *
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
-    console.log('[Bridge] getAccounts:', Object.keys(this.#addressToSnapId));
     return unique(Object.keys(this.#addressToSnapId));
   }
 
@@ -183,7 +194,7 @@ export class SnapKeyring extends EventEmitter {
       .withSnapId(snapId)
       .submitRequest<Response>({
         account: account.id,
-        scope: '',
+        scope: '', // Chain ID in CAIP-2 format.
         request: {
           jsonrpc: '2.0',
           id,
@@ -205,52 +216,62 @@ export class SnapKeyring extends EventEmitter {
    * Sign a transaction.
    *
    * @param address - Sender's address.
-   * @param tx - Transaction.
+   * @param transaction - Transaction.
    * @param _opts - Transaction options (not used).
    */
-  async signTransaction(address: string, tx: TypedTransaction, _opts = {}) {
-    // need to convert Transaction to serializable json to send to snap
-    const serializedTx: Record<string, any> = tx.toJSON();
-
-    // toJSON does not convert undefined to null, or removes that entry
-    Object.entries(serializedTx).forEach(([key, _]) => {
-      if (serializedTx[key] === undefined) {
-        delete serializedTx[key];
-      }
+  async signTransaction(
+    address: string,
+    transaction: TypedTransaction,
+    _opts = {},
+  ) {
+    const tx = toJson({
+      ...transaction.toJSON(),
+      type: transaction.type,
+      chainId: transaction.common.chainId().toString(),
     });
-
-    serializedTx.chainId = tx.common.chainId().toString() ?? '0x1';
-    serializedTx.type = tx.type ?? '0x0'; // default to legacy
 
     const signedTx = await this.#submitRequest(address, 'eth_sendTransaction', [
       address,
-      serializedTx,
+      tx,
     ]);
 
     return TransactionFactory.fromTxData(signedTx as any);
   }
 
+  /**
+   * Sign a typed data message.
+   *
+   * @param address - Signer's address.
+   * @param data - Data to sign.
+   * @param opts - Signing options.
+   * @returns The signature.
+   */
   async signTypedData(
     address: string,
-    typedMessage: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
-    params: any = {},
+    data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
+    opts: any = {},
   ): Promise<string> {
     return await this.#submitRequest(
       address,
       'eth_signTypedData',
-      JSON.parse(JSON.stringify([address, typedMessage, params])) as Json[],
+      toJson<Json[]>([address, data, opts]),
     );
   }
 
   /**
    * Sign a message.
    *
-   * @param _address - Signer's address.
-   * @param _data - Data to sign.
-   * @param _opts - Signing options.
+   * @param address - Signer's address.
+   * @param data - Data to sign.
+   * @param opts - Signing options.
+   * @returns The signature.
    */
-  async signMessage(_address: string, _data: any, _opts = {}) {
-    throw new Error('death to eth_sign!');
+  async signMessage(address: string, data: any, opts = {}): Promise<string> {
+    return await this.#submitRequest(
+      address,
+      'eth_sign',
+      toJson<Json[]>([address, data, opts]),
+    );
   }
 
   /**
@@ -272,7 +293,7 @@ export class SnapKeyring extends EventEmitter {
     return await this.#submitRequest(
       address,
       'personal_sign',
-      JSON.parse(JSON.stringify([address, data])) as Json[],
+      toJson<Json[]>([address, data]),
     );
   }
 
