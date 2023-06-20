@@ -1,140 +1,127 @@
-/* eslint-disable id-denylist */
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
-import { SnapController } from '@metamask/snap-controllers';
-import { HandlerType } from '@metamask/snaps-utils';
-import { Json, JsonRpcNotification } from '@metamask/utils';
+import {
+  KeyringSnapControllerClient,
+  KeyringAccount,
+} from '@metamask/keyring-api';
+import { SnapController } from '@metamask/snaps-controllers';
+import { Json } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
-// eslint-disable-next-line import/no-nodejs-modules
-// import EventEmitter from 'events';
-// eslint-disable-next-line import/no-nodejs-modules
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
-import { SnapKeyringErrors } from './errors';
 import { DeferredPromise } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-export type SnapId = string; // Snap unique identifier
-export type Address = string; // String public address
-type PublicKey = Uint8Array; // 33 or 64 byte public key
-
-// TODO: import from snap rpc
-enum ManageAccountsOperation {
-  ListAccounts = 'list',
-  CreateAccount = 'create',
-  ReadAccount = 'read',
-  UpdateAccount = 'update',
-  RemoveAccount = 'remove',
-}
-
-// Type for serialized format.
-export type SerializedWallets = {
-  [key: string]: string;
+type KeyringState = {
+  addressToAccount: Record<string, KeyringAccount>;
+  addressToSnapId: Record<string, string>;
 };
 
+/**
+ * Remove duplicate entries from an array.
+ *
+ * @param array - Array to remove duplicates from.
+ * @returns Array with duplicates removed.
+ */
+function unique<T>(array: T[]): T[] {
+  return [...new Set(array)];
+}
+
+/**
+ * Convert a value to a valid JSON object.
+ *
+ * The function chains JSON.stringify and JSON.parse to ensure that the result
+ * is a valid JSON object. In objects, undefined values are removed, and in
+ * arrays, they are replaced with null.
+ *
+ * @param value - Value to convert to JSON.
+ * @returns JSON representation of the value.
+ */
+function toJson<T extends Json = Json>(value: any): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/**
+ * Keyring bridge implementation to support snaps.
+ */
 export class SnapKeyring extends EventEmitter {
   static type: string = SNAP_KEYRING_TYPE;
 
   type: string;
 
-  protected addressToSnapId: Map<Address, SnapId>;
+  #snapClient: KeyringSnapControllerClient;
 
-  protected snapController: SnapController;
+  #addressToAccount: Record<string, KeyringAccount>;
 
-  protected pendingRequests: Map<string, DeferredPromise<any>>;
+  #addressToSnapId: Record<string, string>;
+
+  #pendingRequests: Record<string, DeferredPromise<any>>;
 
   constructor(controller: SnapController) {
     super();
     this.type = SnapKeyring.type;
-    this.addressToSnapId = new Map();
-    this.pendingRequests = new Map();
-    this.snapController = controller;
+    this.#snapClient = new KeyringSnapControllerClient(controller);
+    this.#addressToAccount = {};
+    this.#addressToSnapId = {};
+    this.#pendingRequests = {};
   }
 
   /**
-   * Send a RPC request to a snap.
+   * Sync accounts from all snaps.
    *
-   * @param snapId - Snap ID.
-   * @param request - JSON-RPC request.
-   * @param origin - Request's origin.
-   * @param handler - Request handler.
-   * @returns The RPC response.
+   * @param extraSnapIds - List of extra snap IDs to include in the sync.
    */
-  protected async sendRequestToSnap(
-    snapId: SnapId,
-    request: JsonRpcNotification,
-    origin = 'metamask',
-    handler = HandlerType.OnRpcRequest,
-  ): Promise<any> {
-    return await this.snapController.handleRequest({
-      snapId,
-      origin,
-      handler,
-      request,
-    });
-  }
+  async #syncAccounts(...extraSnapIds: string[]): Promise<void> {
+    // Add new snap IDs to the list.
+    const snapIds = Object.values(this.#addressToSnapId).concat(extraSnapIds);
 
-  protected async sendSignatureRequestToSnap(
-    snapId: SnapId,
-    request: any,
-  ): Promise<any> {
-    console.log('[BRIDGE] snapId:', snapId);
-    console.log('[BRIDGE] request:', JSON.stringify(request));
-    try {
-      return await this.sendRequestToSnap(snapId, {
-        jsonrpc: '2.0',
-        method: 'keyring_approveRequest',
-        params: request,
-      });
-    } catch (err) {
-      console.log('sendSignatureRequest error', err);
-      throw err;
+    // Remove all addresses from the maps.
+    this.#addressToAccount = {};
+    this.#addressToSnapId = {};
+
+    // ... And add them back.
+    for (const snapId of unique(snapIds)) {
+      const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
+      for (const account of accounts) {
+        this.#addressToAccount[account.address] = account;
+        this.#addressToSnapId[account.address] = snapId;
+      }
     }
   }
 
+  /**
+   * Handle a message from a snap.
+   *
+   * @param snapId - ID of the snap.
+   * @param message - Message sent by the snap.
+   * @param saveSnapKeyring - Function to save the snap's state.
+   * @returns The execution result.
+   */
   async handleKeyringSnapMessage(
-    snapId: SnapId,
+    snapId: string,
     message: any,
     // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
-  ): Promise<any> {
-    const [methodName, params] = message;
-
-    switch (methodName) {
+  ): Promise<Json> {
+    const [method, params] = message;
+    switch (method) {
+      case 'update':
+      case 'delete':
       case 'create': {
-        const address = params as Address;
-        this.createAccount(snapId, address);
+        await this.#syncAccounts(snapId);
         await saveSnapKeyring();
         return null;
       }
 
       case 'read': {
-        const accounts = this.listAccounts(snapId);
-        return accounts;
-      }
-
-      // case 'update': {
-      // }
-
-      case 'delete': {
-        const address = params as Address;
-        if (!address) {
-          throw new Error('Missing account address');
-        }
-
-        const deleted = this.deleteAccount(address);
-        if (deleted) {
-          await saveSnapKeyring(address);
-        }
-        return deleted;
+        return await this.#listAccounts(snapId);
       }
 
       case 'submit': {
         const { id, result } = params;
-        console.log('submit', id, result);
-        this.submitSignatureRequestResult(id, result);
+        this.#resolveRequest(id, result);
         return true;
       }
 
@@ -146,127 +133,137 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Convert the wallets in this keyring to a serialized form
-   * suitable for persistence.
+   * Serialize the keyring state.
    *
-   * This function is synchronous but uses an async signature
-   * for consistency with other keyring implementations.
+   * @returns Serialized keyring state.
    */
-  async serialize(): Promise<SerializedWallets> {
-    const output: SerializedWallets = {};
-    for (const [address, snapId] of this.addressToSnapId.entries()) {
-      output[address] = snapId;
-    }
-    return output;
+  async serialize(): Promise<KeyringState> {
+    return {
+      addressToAccount: this.#addressToAccount,
+      addressToSnapId: this.#addressToSnapId,
+    };
   }
 
   /**
-   * Deserialize the given wallets into this keyring.
+   * Deserialize the keyring state into this keyring.
    *
-   * This function is synchronous but uses an async signature
-   * for consistency with other keyring implementations.
-   *
-   * @param wallets - Serialize wallets.
+   * @param state - Serialized keyring state.
    */
-  async deserialize(wallets: SerializedWallets): Promise<void> {
-    if (
-      wallets &&
-      typeof wallets === 'object' &&
-      Object.keys(wallets).length > 0
-    ) {
-      for (const [address, snapId] of Object.entries(wallets)) {
-        this.addressToSnapId.set(address, snapId);
-      }
+  async deserialize(state: KeyringState): Promise<void> {
+    try {
+      this.#addressToAccount = state.addressToAccount;
+      this.#addressToSnapId = state.addressToSnapId;
+    } catch (error) {
+      console.warn('Cannot restore keyring state:', error);
     }
   }
 
   /**
-   * Get an array of public addresses.
+   * Get the address of the accounts present in this keyring.
+   *
+   * @returns The list of account addresses.
    */
-  async getAccounts(): Promise<Address[]> {
-    return Array.from(this.addressToSnapId.keys());
+  getAccounts(): string[] {
+    return unique(Object.keys(this.#addressToSnapId));
+  }
+
+  /**
+   * Submit a request to a snap.
+   *
+   * @param address - Account address.
+   * @param method - Method to call.
+   * @param params - Method parameters.
+   * @returns Promise that resolves to the result of the method call.
+   */
+  async #submitRequest<Response extends Json>(
+    address: string,
+    method: string,
+    params?: Json | Json[],
+  ): Promise<Response> {
+    const { account, snapId } = this.#resolveAddress(address);
+    const id = uuid();
+    const response = await this.#snapClient
+      .withSnapId(snapId)
+      .submitRequest<Response>({
+        account: account.id,
+        scope: '', // Chain ID in CAIP-2 format.
+        request: {
+          jsonrpc: '2.0',
+          id,
+          method,
+          ...(params !== undefined && { params }),
+        },
+      });
+
+    if (!response.pending) {
+      return response.result;
+    }
+
+    const promise = new DeferredPromise<Response>();
+    this.#pendingRequests[id] = promise;
+    return promise.promise;
   }
 
   /**
    * Sign a transaction.
    *
    * @param address - Sender's address.
-   * @param tx - Transaction.
+   * @param transaction - Transaction.
    * @param _opts - Transaction options (not used).
    */
-  async signTransaction(address: Address, tx: TypedTransaction, _opts = {}) {
-    const snapId = this.getSnapIdFromAddress(address);
-    if (snapId === undefined) {
-      throw new Error(`No snap found for address "${address}"`);
-    }
-
-    // Forward request to snap
-    const id = uuid();
-    // need to convert Transaction to serializable json to send to snap
-    const serializedTx: Record<string, any> = tx.toJSON();
-
-    // toJSON does not convert undefined to null, or removes that entry
-    Object.entries(serializedTx).forEach(([key, _]) => {
-      if (serializedTx[key] === undefined) {
-        delete serializedTx[key];
-      }
+  async signTransaction(
+    address: string,
+    transaction: TypedTransaction,
+    _opts = {},
+  ) {
+    const tx = toJson({
+      ...transaction.toJSON(),
+      type: transaction.type,
+      chainId: transaction.common.chainId().toString(),
     });
 
-    serializedTx.chainId = tx.common.chainId().toString() ?? '0x1';
-    serializedTx.type = tx.type ?? '0x0'; // default to legacy
+    const signedTx = await this.#submitRequest(address, 'eth_sendTransaction', [
+      address,
+      tx,
+    ]);
 
-    // this is to support EIP155 replay protection
-    // const chainOptions = {
-    //   chainId: tx.common.chainIdBN().toNumber(),
-    //   hardforks: [...tx.common.hardforks()],
-    //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //   // @ts-ignore private
-    //   hardfork: tx.DEFAULT_HARDFORK,
-    //   type: tx.type,
-    // };
-
-    const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
-      id,
-      method: 'eth_sendTransaction',
-      params: [address, serializedTx],
-    });
-
-    const signedTx = TransactionFactory.fromTxData(serializedSignedTx);
-
-    return signedTx;
+    return TransactionFactory.fromTxData(signedTx as any);
   }
 
+  /**
+   * Sign a typed data message.
+   *
+   * @param address - Signer's address.
+   * @param data - Data to sign.
+   * @param opts - Signing options.
+   * @returns The signature.
+   */
   async signTypedData(
-    address: Address,
-    typedMessage: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
-    params: any = {},
+    address: string,
+    data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
+    opts: any = {},
   ): Promise<string> {
-    const snapId = this.getSnapIdFromAddress(address);
-    if (snapId === undefined) {
-      throw new Error(`No snap found for address "${address}"`);
-    }
-
-    // Forward request to snap
-    const id = uuid();
-
-    const serializedSignedTx = await this.sendSignatureRequestToSnap(snapId, {
-      id,
-      method: 'eth_signTypedData',
-      params: [address, typedMessage, params],
-    });
-
-    return serializedSignedTx;
+    return await this.#submitRequest(
+      address,
+      'eth_signTypedData',
+      toJson<Json[]>([address, data, opts]),
+    );
   }
 
   /**
    * Sign a message.
    *
-   * @param _address - Signer's address.
-   * @param _data - Data to sign.
-   * @param _opts - Signing options.
+   * @param address - Signer's address.
+   * @param data - Data to sign.
+   * @param opts - Signing options.
+   * @returns The signature.
    */
-  async signMessage(_address: Address, _data: any, _opts = {}) {
-    throw new Error('death to eth_sign!');
+  async signMessage(address: string, data: any, opts = {}): Promise<string> {
+    return await this.#submitRequest(
+      address,
+      'eth_sign',
+      toJson<Json[]>([address, data, opts]),
+    );
   }
 
   /**
@@ -281,22 +278,15 @@ export class SnapKeyring extends EventEmitter {
    * @returns Promise of the signature.
    */
   async signPersonalMessage(
-    address: Address,
+    address: string,
     data: any,
     _opts = {},
   ): Promise<string> {
-    const snapId = this.getSnapIdFromAddress(address);
-    if (snapId === undefined) {
-      throw new Error(`No snap found for address "${address}"`);
-    }
-
-    // forward to snap
-    const id = uuid();
-    return await this.sendSignatureRequestToSnap(snapId, {
-      id,
-      method: 'personal_sign',
-      params: [address, data],
-    });
+    return await this.#submitRequest(
+      address,
+      'personal_sign',
+      toJson<Json[]>([address, data]),
+    );
   }
 
   /**
@@ -310,7 +300,7 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param _address - Address of the account to export.
    */
-  exportAccount(_address: Address): [PublicKey, Json] | undefined {
+  exportAccount(_address: string): [Uint8Array, Json] | undefined {
     throw new Error('snap-keyring: "exportAccount" not supported');
   }
 
@@ -319,97 +309,63 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Address of the account to remove.
    */
-  async removeAccount(address: Address): Promise<boolean> {
-    const snapId = this.getSnapIdFromAddress(address);
-    if (!snapId) {
-      throw new Error(SnapKeyringErrors.UnknownAccount);
-    }
+  async removeAccount(address: string): Promise<void> {
+    const { account, snapId } = this.#resolveAddress(address);
 
-    await this.sendRequestToSnap(snapId, {
-      jsonrpc: '2.0',
-      method: ManageAccountsOperation.RemoveAccount,
-      params: {},
-    });
-    this.addressToSnapId.delete(address);
+    // FIXME: remove this hack and rely instead on the syncAccounts call below
+    // once the removeAccount method is made async in the KeyringController.
+    delete this.#addressToAccount[address];
+    delete this.#addressToSnapId[address];
 
-    return true;
+    await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
+    await this.#syncAccounts();
   }
 
-  /* SNAP RPC METHODS */
+  /**
+   * Resolve an address to an account and snap ID.
+   *
+   * @param address - Address of the account to resolve.
+   * @returns Account and snap ID. Throws if the account or snap ID is not
+   * found.
+   */
+  #resolveAddress(address: string): {
+    account: KeyringAccount;
+    snapId: string;
+  } {
+    const account = this.#addressToAccount[address];
+    const snapId = this.#addressToSnapId[address];
+    if (snapId === undefined || account === undefined) {
+      throw new Error(`Account not found: ${address}`);
+    }
+    return { account, snapId };
+  }
 
   /**
    * List the accounts for a snap.
    *
-   * @param snapId - Snap identifier.
+   * @param snapId - ID of the snap.
    * @returns List of addresses for the given snap ID.
    */
-  listAccounts(snapId: SnapId): Address[] {
-    return Array.from(this.addressToSnapId.entries())
-      .filter(([_, id]) => id === snapId)
-      .map(([address, _]) => address);
+  async #listAccounts(snapId: string): Promise<string[]> {
+    return (await this.#snapClient.withSnapId(snapId).listAccounts()).map(
+      (a) => a.address,
+    );
   }
 
   /**
-   * Create an account for a snap.
+   * Resolve a pending request.
    *
-   * The account is only created if the public address does not already exist.
-   *
-   * This checks for duplicates in the context of one snap but not across all
-   * snaps. The keyring controller is responsible for checking for duplicates
-   * across all addresses.
-   *
-   * @param snapId - Snap identifier.
-   * @param address - Address.
+   * @param id - ID of the request to resolve.
+   * @param result - Result of the request.
    */
-  createAccount(snapId: SnapId, address: Address): void {
-    // the map key is case sensitive
-    const lowerCasedAddress = address.toLowerCase();
-    if (this.addressToSnapId.has(lowerCasedAddress)) {
-      throw new Error(SnapKeyringErrors.AccountAlreadyExists);
-    }
-    this.addressToSnapId.set(lowerCasedAddress, snapId);
-  }
-
-  /**
-   * Delete the private data for an account belonging to a snap.
-   *
-   * @param address - Address to remove.
-   * @returns True if the address existed before, false otherwise.
-   */
-  deleteAccount(address: Address): boolean {
-    return this.addressToSnapId.delete(address);
-  }
-
-  deleteAccounts(snapId: SnapId): void {
-    const accounts = this.listAccounts(snapId);
-    if (accounts.length === 0) {
-      throw new Error(SnapKeyringErrors.UnknownSnapId);
-    }
-
-    for (const address of accounts) {
-      this.addressToSnapId.delete(address);
-    }
-  }
-
-  submitSignatureRequestResult(id: string, result: any): void {
-    const signingPromise = this.pendingRequests.get(id);
+  #resolveRequest(id: string, result: any): void {
+    const signingPromise = this.#pendingRequests[id];
     if (signingPromise?.resolve === undefined) {
-      console.warn(
-        'submitSignatureRequestResult missing requested id',
-        id,
-        result,
-      );
+      console.warn(`No pending request found for ID: ${id}`);
       return;
     }
-    this.pendingRequests.delete(id);
-    signingPromise.resolve(result);
-  }
 
-  getSnapIdFromAddress(address: Address): SnapId {
-    const snapId = this.addressToSnapId.get(address.toLowerCase());
-    if (snapId === undefined) {
-      throw new Error(`No snap found for address "${address}"`);
-    }
-    return snapId;
+    delete this.#pendingRequests[id];
+    signingPromise.resolve(result);
   }
 }
