@@ -7,7 +7,6 @@ import {
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
-// eslint-disable-next-line import/no-nodejs-modules
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
@@ -74,9 +73,9 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param extraSnapIds - List of extra snap IDs to include in the sync.
    */
-  async #syncAccounts(extraSnapIds: string[] = []): Promise<void> {
+  async #syncAccounts(...extraSnapIds: string[]): Promise<void> {
     // Add new snap IDs to the list.
-    const snapIds = extraSnapIds.concat(Object.values(this.#addressToSnapId));
+    const snapIds = Object.values(this.#addressToSnapId).concat(extraSnapIds);
 
     // Remove all addresses from the maps.
     this.#addressToAccount = {};
@@ -106,18 +105,12 @@ export class SnapKeyring extends EventEmitter {
     // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
   ): Promise<Json> {
-    console.log(
-      `[BRIDGE] Received account management request: ${JSON.stringify(
-        message,
-      )}`,
-    );
     const [method, params] = message;
-
     switch (method) {
       case 'update':
       case 'delete':
       case 'create': {
-        await this.#syncAccounts([snapId]);
+        await this.#syncAccounts(snapId);
         await saveSnapKeyring();
         return null;
       }
@@ -128,7 +121,6 @@ export class SnapKeyring extends EventEmitter {
 
       case 'submit': {
         const { id, result } = params;
-        console.log('submit', id, result);
         this.#resolveRequest(id, result);
         return true;
       }
