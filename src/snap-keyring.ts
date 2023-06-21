@@ -10,8 +10,10 @@ import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
-import { DeferredPromise, strictMask } from './util';
-import { string } from 'superstruct';
+import { DeferredPromise, strictMask, toJson } from './util';
+import { assert, string } from 'superstruct';
+import { SnapMessageStruct } from './types';
+import { unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -19,30 +21,6 @@ type KeyringState = {
   addressToAccount: Record<string, KeyringAccount>;
   addressToSnapId: Record<string, string>;
 };
-
-/**
- * Remove duplicate entries from an array.
- *
- * @param array - Array to remove duplicates from.
- * @returns Array with duplicates removed.
- */
-function unique<T>(array: T[]): T[] {
-  return [...new Set(array)];
-}
-
-/**
- * Convert a value to a valid JSON object.
- *
- * The function chains JSON.stringify and JSON.parse to ensure that the result
- * is a valid JSON object. In objects, undefined values are removed, and in
- * arrays, they are replaced with null.
- *
- * @param value - Value to convert to JSON.
- * @returns JSON representation of the value.
- */
-function toJson<T extends Json = Json>(value: any): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 /**
  * Keyring bridge implementation to support snaps.
@@ -102,10 +80,11 @@ export class SnapKeyring extends EventEmitter {
    */
   async handleKeyringSnapMessage(
     snapId: string,
-    message: any,
+    message: unknown,
     // eslint-disable-next-line @typescript-eslint/ban-types
     saveSnapKeyring: Function,
   ): Promise<Json> {
+    assert(message, SnapMessageStruct);
     const [method, params] = message;
     switch (method) {
       case 'update':
@@ -121,7 +100,7 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case 'submit': {
-        const { id, result } = params;
+        const { id, result } = params as any; // FIXME: add a struct for this
         this.#resolveRequest(id, result);
         return true;
       }
