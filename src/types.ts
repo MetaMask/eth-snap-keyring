@@ -1,5 +1,5 @@
 import { JsonStruct } from '@metamask/utils';
-import { Infer, array, record, string, tuple, union } from 'superstruct';
+import { Infer, string, tuple } from 'superstruct';
 
 export const SnapMessageStruct = tuple([string(), JsonStruct]);
 

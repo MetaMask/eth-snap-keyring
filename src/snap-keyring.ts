@@ -9,11 +9,11 @@ import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
 import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
+import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
-import { DeferredPromise, strictMask, toJson, unique } from './util';
-import { assert, object, string, record, Infer } from 'superstruct';
 import { SnapMessageStruct } from './types';
+import { DeferredPromise, strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 

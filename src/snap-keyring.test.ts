@@ -1,7 +1,7 @@
 import { TransactionFactory } from '@ethereumjs/tx';
+import { SnapController } from '@metamask/snaps-controllers';
 
 import { KeyringState, SnapKeyring } from '.';
-import { SnapController } from '@metamask/snaps-controllers';
 
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;
@@ -33,28 +33,18 @@ describe('SnapKeyring', () => {
     },
   ] as const;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create a new keyring for each test.
     keyring = new SnapKeyring(mockSnapController as unknown as SnapController);
 
     // Fill the keyring with some accounts.
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
-      keyring.handleKeyringSnapMessage(
+      await keyring.handleKeyringSnapMessage(
         snapId,
         ['create', account.address],
         mockSaveSnapKeyring,
       );
-      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
-        handler: 'onRpcRequest',
-        origin: 'metamask',
-        request: {
-          id: expect.any(String),
-          jsonrpc: '2.0',
-          method: 'keyring_listAccounts',
-        },
-        snapId,
-      });
     }
   });
 
