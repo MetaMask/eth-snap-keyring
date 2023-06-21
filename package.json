@@ -1,6 +1,6 @@
 {
   "name": "@metamask/eth-snap-keyring",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Snaps keyring bridge.",
   "repository": {
     "type": "git",
@@ -26,14 +26,11 @@
   },
   "dependencies": {
     "@ethereumjs/tx": "^4.1.2",
-    "@ethereumjs/util": "^8.0.5",
     "@metamask/eth-sig-util": "^5.1.0",
     "@metamask/keyring-api": "^0.1.0",
     "@metamask/snaps-controllers": "^0.34.1-flask.1",
-    "@metamask/snaps-utils": "^0.34.1-flask.1",
     "@metamask/utils": "^6.1.0",
     "@types/uuid": "^9.0.1",
-    "bn.js": "^5.2.1",
     "eth-rpc-errors": "^4.0.3",
     "superstruct": "^1.0.3",
     "uuid": "^9.0.0"
@@ -86,7 +83,9 @@
       "@ethereumjs/tx>ethereumjs-util>ethereum-cryptography>keccak": false,
       "@ethereumjs/tx>ethereumjs-util>ethereum-cryptography>secp256k1": false,
       "@metamask/snaps-utils>@metamask/base-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/snaps-utils>@metamask/base-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
+      "@metamask/snaps-utils>@metamask/base-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false,
+      "@metamask/snaps-controllers>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snaps-controllers>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   }
 }
