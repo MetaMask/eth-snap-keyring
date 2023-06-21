@@ -28,13 +28,14 @@
     "@ethereumjs/tx": "^4.1.2",
     "@ethereumjs/util": "^8.0.5",
     "@metamask/eth-sig-util": "^5.1.0",
-    "@metamask/keyring-api": "ssh://git@github.com/MetaMask/keyring-api#main",
-    "@metamask/snaps-controllers": "^0.32.2",
-    "@metamask/snaps-utils": "^0.32.2",
+    "@metamask/keyring-api": "^0.1.0",
+    "@metamask/snaps-controllers": "^0.34.1-flask.1",
+    "@metamask/snaps-utils": "^0.34.1-flask.1",
     "@metamask/utils": "^5.0.0",
     "@types/uuid": "^9.0.1",
     "bn.js": "^5.2.1",
     "eth-rpc-errors": "^4.0.3",
+    "superstruct": "^1.0.3",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

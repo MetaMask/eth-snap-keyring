@@ -1,3 +1,5 @@
+import { Struct, assert } from 'superstruct';
+
 /**
  * A deferred promise can be resolved by a caller different from the one who
  * created it.
@@ -20,4 +22,13 @@ export class DeferredPromise<T> {
       this.reject = reject;
     });
   }
+}
+
+export function strictMask<T, S>(
+  value: unknown,
+  struct: Struct<T, S>,
+  message?: string,
+): T {
+  assert(value, struct, message);
+  return value;
 }
