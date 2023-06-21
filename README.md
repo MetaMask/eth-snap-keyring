@@ -2,18 +2,6 @@
 
 This keyring acts as a bridge between the `KeyringController` and a snap.
 
-## Template Instructions
-
-Follow these instructions when using this template.
-
-- Update the package name, referenced in the following places:
-  - The README "Usage" section
-- Update the repository URL, referenced in the following places:
-  - The links in the API section of the README
-- Update the pull request template (`.github/pull_request_template.md`) to remove the `Examples` section that is specific to this template.
-- Update the README "Usage" section, or remove it if it's not needed.
-- Delete these instructions.
-
 ## Installation
 
 `yarn add @metamask/eth-snap-keyring`
@@ -21,10 +9,6 @@ Follow these instructions when using this template.
 or
 
 `npm install @metamask/eth-snap-keyring`
-
-## Usage
-
-_Add examples here_
 
 ## API
 
