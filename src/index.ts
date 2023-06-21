@@ -10,7 +10,8 @@ import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
-import { DeferredPromise } from './util';
+import { DeferredPromise, strictMask } from './util';
+import { string } from 'superstruct';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -62,7 +63,7 @@ export class SnapKeyring extends EventEmitter {
   constructor(controller: SnapController) {
     super();
     this.type = SnapKeyring.type;
-    this.#snapClient = new KeyringSnapControllerClient(controller);
+    this.#snapClient = new KeyringSnapControllerClient({ controller });
     this.#addressToAccount = {};
     this.#addressToSnapId = {};
     this.#pendingRequests = {};
@@ -179,21 +180,19 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     method: string,
     params?: Json | Json[],
-  ): Promise<Response> {
+  ): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
     const id = uuid();
-    const response = await this.#snapClient
-      .withSnapId(snapId)
-      .submitRequest<Response>({
-        account: account.id,
-        scope: '', // Chain ID in CAIP-2 format.
-        request: {
-          jsonrpc: '2.0',
-          id,
-          method,
-          ...(params !== undefined && { params }),
-        },
-      });
+    const response = await this.#snapClient.withSnapId(snapId).submitRequest({
+      account: account.id,
+      scope: '', // Chain ID in CAIP-2 format.
+      request: {
+        jsonrpc: '2.0',
+        id,
+        method,
+        ...(params !== undefined && { params }),
+      },
+    });
 
     if (!response.pending) {
       return response.result;
@@ -243,11 +242,12 @@ export class SnapKeyring extends EventEmitter {
     data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
     opts: any = {},
   ): Promise<string> {
-    return await this.#submitRequest(
+    const signature = await this.#submitRequest(
       address,
       'eth_signTypedData',
       toJson<Json[]>([address, data, opts]),
     );
+    return strictMask(signature, string());
   }
 
   /**
@@ -259,11 +259,12 @@ export class SnapKeyring extends EventEmitter {
    * @returns The signature.
    */
   async signMessage(address: string, data: any, opts = {}): Promise<string> {
-    return await this.#submitRequest(
+    const signature = await this.#submitRequest(
       address,
       'eth_sign',
       toJson<Json[]>([address, data, opts]),
     );
+    return strictMask(signature, string());
   }
 
   /**
@@ -282,11 +283,12 @@ export class SnapKeyring extends EventEmitter {
     data: any,
     _opts = {},
   ): Promise<string> {
-    return await this.#submitRequest(
+    const signature = await this.#submitRequest(
       address,
       'personal_sign',
       toJson<Json[]>([address, data]),
     );
+    return strictMask(signature, string());
   }
 
   /**
