@@ -2117,7 +2117,6 @@ __metadata:
   resolution: "@metamask/eth-snap-keyring@workspace:."
   dependencies:
     "@ethereumjs/tx": ^4.1.2
-    "@ethereumjs/util": ^8.0.5
     "@lavamoat/allow-scripts": ^2.0.3
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/eslint-config": ^11.0.1
@@ -2127,14 +2126,12 @@ __metadata:
     "@metamask/eth-sig-util": ^5.1.0
     "@metamask/keyring-api": ^0.1.0
     "@metamask/snaps-controllers": ^0.34.1-flask.1
-    "@metamask/snaps-utils": ^0.34.1-flask.1
     "@metamask/utils": ^5.0.0
     "@types/jest": ^28.1.6
     "@types/node": ^17.0.23
     "@types/uuid": ^9.0.1
     "@typescript-eslint/eslint-plugin": ^5.43.0
     "@typescript-eslint/parser": ^5.43.0
-    bn.js: ^5.2.1
     depcheck: ^1.4.3
     eslint: ^8.27.0
     eslint-config-prettier: ^8.5.0
