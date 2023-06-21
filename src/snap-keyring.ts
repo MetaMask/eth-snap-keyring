@@ -3,6 +3,7 @@ import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import {
   KeyringSnapControllerClient,
   KeyringAccount,
+  KeyringAccountStruct,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
@@ -10,17 +11,18 @@ import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
 import { v4 as uuid } from 'uuid';
 
-import { DeferredPromise, strictMask, toJson } from './util';
-import { assert, string } from 'superstruct';
+import { DeferredPromise, strictMask, toJson, unique } from './util';
+import { assert, object, string, record, Infer } from 'superstruct';
 import { SnapMessageStruct } from './types';
-import { unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-type KeyringState = {
-  addressToAccount: Record<string, KeyringAccount>;
-  addressToSnapId: Record<string, string>;
-};
+export const KeyringStateStruct = object({
+  addressToAccount: record(string(), KeyringAccountStruct),
+  addressToSnapId: record(string(), string()),
+});
+
+export type KeyringState = Infer<typeof KeyringStateStruct>;
 
 /**
  * Keyring bridge implementation to support snaps.
@@ -129,13 +131,14 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param state - Serialized keyring state.
    */
-  async deserialize(state: KeyringState): Promise<void> {
-    try {
-      this.#addressToAccount = state.addressToAccount;
-      this.#addressToSnapId = state.addressToSnapId;
-    } catch (error) {
-      console.warn('Cannot restore keyring state:', error);
+  async deserialize(state: KeyringState | undefined): Promise<void> {
+    if (state === undefined) {
+      return;
     }
+
+    assert(state, KeyringStateStruct);
+    this.#addressToAccount = state.addressToAccount;
+    this.#addressToSnapId = state.addressToSnapId;
   }
 
   /**
