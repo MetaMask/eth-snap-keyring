@@ -35,22 +35,28 @@ describe('SnapKeyring', () => {
     keyring = new SnapKeyring(mockSnapController as unknown as SnapController);
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
-      await keyring.handleKeyringSnapMessage(snapId, [
-        'create',
-        account.address,
-      ]);
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: 'createAccount',
+        params: {
+          id: account.id,
+        },
+      });
     }
   });
 
   describe('handleKeyringSnapMessage', () => {
     it('should return the list of accounts', async () => {
-      const result = await keyring.handleKeyringSnapMessage(snapId, ['read']);
+      const result = await keyring.handleKeyringSnapMessage(snapId, {
+        method: 'listAccounts',
+      });
       expect(result).toStrictEqual(accounts);
     });
 
     it('should fail if the method is not supported', async () => {
       await expect(
-        keyring.handleKeyringSnapMessage(snapId, ['invalid']),
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: 'invalid',
+        }),
       ).rejects.toThrow('Method not supported: invalid');
     });
   });
