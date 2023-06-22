@@ -77,14 +77,11 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param snapId - ID of the snap.
    * @param message - Message sent by the snap.
-   * @param saveSnapKeyring - Function to save the snap's state.
    * @returns The execution result.
    */
   async handleKeyringSnapMessage(
     snapId: string,
     message: unknown,
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    saveSnapKeyring: Function,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const [method, params] = message;
@@ -93,7 +90,6 @@ export class SnapKeyring extends EventEmitter {
       case 'delete':
       case 'create': {
         await this.#syncAccounts(snapId);
-        await saveSnapKeyring();
         return null;
       }
 
