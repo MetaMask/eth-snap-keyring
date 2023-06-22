@@ -7,7 +7,6 @@ import {
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
-import { ethErrors } from 'eth-rpc-errors';
 import EventEmitter from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
@@ -94,7 +93,12 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case 'read': {
-        return await this.#listAccounts(snapId);
+        // Don't call the snap back to list the accounts. The main use case for
+        // this method is to allow the snap to verify if the keyring's state is
+        // in sync with the snap's state.
+        return Object.values(this.#addressToAccount).filter(
+          (account) => this.#addressToSnapId[account.address] === snapId,
+        );
       }
 
       case 'submit': {
@@ -104,9 +108,7 @@ export class SnapKeyring extends EventEmitter {
       }
 
       default:
-        throw ethErrors.rpc.invalidParams({
-          message: 'Must specify a valid snap_manageAccounts "methodName".',
-        });
+        throw new Error(`Method not supported: ${method}`);
     }
   }
 
@@ -143,6 +145,10 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
+    // *** DO NOT CALL THE SNAP HERE ***
+    //
+    // This method has to be synchronous because it is called by the UI, for
+    // other use cases, use the `#listAccounts()` method instead.
     return unique(Object.keys(this.#addressToSnapId));
   }
 
@@ -281,7 +287,7 @@ export class SnapKeyring extends EventEmitter {
    * @param _address - Address of the account to export.
    */
   exportAccount(_address: string): [Uint8Array, Json] | undefined {
-    throw new Error('snap-keyring: "exportAccount" not supported');
+    throw new Error('Exporting accounts from snaps is not supported');
   }
 
   /**
