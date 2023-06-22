@@ -94,7 +94,12 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case 'read': {
-        return await this.#listAccounts(snapId);
+        // Don't call the snap back to list the accounts. The main use case for
+        // this method is to allow the snap to verify if the keyring's state is
+        // in sync with the snap's state.
+        return Object.values(this.#addressToAccount).filter(
+          (account) => this.#addressToSnapId[account.address] === snapId,
+        );
       }
 
       case 'submit': {
