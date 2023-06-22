@@ -32,10 +32,7 @@ describe('SnapKeyring', () => {
   ] as const;
 
   beforeEach(async () => {
-    // Create a new keyring for each test.
     keyring = new SnapKeyring(mockSnapController as unknown as SnapController);
-
-    // Fill the keyring with some accounts.
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
       await keyring.handleKeyringSnapMessage(snapId, [
@@ -47,11 +44,14 @@ describe('SnapKeyring', () => {
 
   describe('handleKeyringSnapMessage', () => {
     it('should return the list of accounts', async () => {
-      const expectedAccounts = accounts.map((a) => a.address);
-
-      mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
       const result = await keyring.handleKeyringSnapMessage(snapId, ['read']);
-      expect(result).toStrictEqual(expectedAccounts);
+      expect(result).toStrictEqual(accounts);
+    });
+
+    it('should fail if the method is not supported', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, ['invalid']),
+      ).rejects.toThrow('Method not supported: invalid');
     });
   });
 
@@ -84,7 +84,6 @@ describe('SnapKeyring', () => {
           [accounts[1].address]: snapId,
         },
       };
-
       const state = await keyring.serialize();
       expect(state).toStrictEqual(expectedState);
     });
@@ -102,7 +101,6 @@ describe('SnapKeyring', () => {
         },
       };
       const expectedAddresses = [accounts[0].address];
-
       await keyring.deserialize(state as unknown as KeyringState);
       const addresses = keyring.getAccounts();
       expect(addresses).toStrictEqual(expectedAddresses);
@@ -113,7 +111,6 @@ describe('SnapKeyring', () => {
       keyring = new SnapKeyring(
         mockSnapController as unknown as SnapController,
       );
-
       await keyring.deserialize(undefined as unknown as KeyringState);
       expect(keyring.getAccounts()).toStrictEqual([]);
     });
@@ -123,7 +120,6 @@ describe('SnapKeyring', () => {
       keyring = new SnapKeyring(
         mockSnapController as unknown as SnapController,
       );
-
       await expect(
         keyring.deserialize({} as unknown as KeyringState),
       ).rejects.toThrow('Expected an object, but received: undefined');
@@ -151,7 +147,6 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       const expectedSignedTx = TransactionFactory.fromTxData(mockSignedTx);
-
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: mockSignedTx,
@@ -165,7 +160,6 @@ describe('SnapKeyring', () => {
     it('should sign a personal message', async () => {
       const mockMessage = 'Hello World!';
       const expectedSignature = '0x0';
-
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: expectedSignature,
@@ -176,7 +170,6 @@ describe('SnapKeyring', () => {
       );
       expect(signature).toStrictEqual(expectedSignature);
     });
-
     it('should fail if the address is not found', async () => {
       const mockMessage = 'Hello World!';
       await expect(
@@ -189,7 +182,6 @@ describe('SnapKeyring', () => {
     it('should sign a message', async () => {
       const mockMessage = 'Hello World!';
       const expectedSignature = '0x0';
-
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: expectedSignature,
@@ -219,6 +211,14 @@ describe('SnapKeyring', () => {
         },
         snapId: 'local:snap.mock',
       });
+    });
+  });
+
+  describe('exportAccount', () => {
+    it('should fail to export an account', async () => {
+      expect(() => keyring.exportAccount(accounts[0].address)).toThrow(
+        'Exporting accounts from snaps is not supported',
+      );
     });
   });
 });
