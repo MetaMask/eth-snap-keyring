@@ -143,6 +143,10 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
+    // *** DO NOT CALL THE SNAP HERE ***
+    //
+    // This method has to be synchronous because it is called by the UI, for
+    // other use cases, use the `#listAccounts()` method instead.
     return unique(Object.keys(this.#addressToSnapId));
   }
 
