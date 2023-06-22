@@ -83,16 +83,16 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
-    const [method, params] = message;
+    const { method, params } = message;
     switch (method) {
-      case 'update':
-      case 'delete':
-      case 'create': {
+      case 'updateAccount':
+      case 'deleteAccount':
+      case 'createAccount': {
         await this.#syncAccounts(snapId);
         return null;
       }
 
-      case 'read': {
+      case 'listAccounts': {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
@@ -101,7 +101,7 @@ export class SnapKeyring extends EventEmitter {
         );
       }
 
-      case 'submit': {
+      case 'submitResponse': {
         const { id, result } = params as any; // FIXME: add a struct for this
         this.#resolveRequest(id, result);
         return true;
