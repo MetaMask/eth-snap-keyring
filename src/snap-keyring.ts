@@ -12,7 +12,7 @@ import EventEmitter from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
-import { SnapMessageStruct } from './types';
+import { SnapMessage, SnapMessageStruct } from './types';
 import { DeferredPromise, strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -81,7 +81,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async handleKeyringSnapMessage(
     snapId: string,
-    message: unknown,
+    message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const [method, params] = message;
