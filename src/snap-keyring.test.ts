@@ -12,8 +12,6 @@ describe('SnapKeyring', () => {
 
   const snapId = 'local:snap.mock';
 
-  const mockSaveSnapKeyring = jest.fn();
-
   const accounts = [
     {
       id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
@@ -40,12 +38,21 @@ describe('SnapKeyring', () => {
     // Fill the keyring with some accounts.
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
-      await keyring.handleKeyringSnapMessage(
-        snapId,
-        ['create', account.address],
-        mockSaveSnapKeyring,
-      );
+      await keyring.handleKeyringSnapMessage(snapId, [
+        'create',
+        account.address,
+      ]);
     }
+  });
+
+  describe('handleKeyringSnapMessage', () => {
+    it('should return the list of accounts', async () => {
+      const expectedAccounts = accounts.map((a) => a.address);
+
+      mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
+      const result = await keyring.handleKeyringSnapMessage(snapId, ['read']);
+      expect(result).toStrictEqual(expectedAccounts);
+    });
   });
 
   describe('getAccounts', () => {

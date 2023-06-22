@@ -12,7 +12,7 @@ import EventEmitter from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
-import { SnapMessageStruct } from './types';
+import { SnapMessage, SnapMessageStruct } from './types';
 import { DeferredPromise, strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -77,14 +77,11 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param snapId - ID of the snap.
    * @param message - Message sent by the snap.
-   * @param saveSnapKeyring - Function to save the snap's state.
    * @returns The execution result.
    */
   async handleKeyringSnapMessage(
     snapId: string,
-    message: unknown,
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    saveSnapKeyring: Function,
+    message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const [method, params] = message;
@@ -93,7 +90,6 @@ export class SnapKeyring extends EventEmitter {
       case 'delete':
       case 'create': {
         await this.#syncAccounts(snapId);
-        await saveSnapKeyring();
         return null;
       }
 
