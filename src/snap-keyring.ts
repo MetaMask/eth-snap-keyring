@@ -63,10 +63,16 @@ export class SnapKeyring extends EventEmitter {
 
     // ... And add them back.
     for (const snapId of unique(snapIds)) {
-      const accounts = await this.#snapClient.withSnapId(snapId).listAccounts();
-      for (const account of accounts) {
-        this.#addressToAccount[account.address] = account;
-        this.#addressToSnapId[account.address] = snapId;
+      try {
+        const accounts = await this.#snapClient
+          .withSnapId(snapId)
+          .listAccounts();
+        for (const account of accounts) {
+          this.#addressToAccount[account.address] = account;
+          this.#addressToSnapId[account.address] = snapId;
+        }
+      } catch (error) {
+        console.error(`Failed to sync accounts from snap "${snapId}":`, error);
       }
     }
   }
