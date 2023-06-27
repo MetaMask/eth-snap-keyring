@@ -2082,8 +2082,8 @@ __metadata:
   linkType: hard
 
 "@metamask/keyring-api@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@metamask/keyring-api@npm:0.1.0"
+  version: 0.1.1
+  resolution: "@metamask/keyring-api@npm:0.1.1"
   dependencies:
     "@metamask/providers": ^11.0.0
     "@metamask/snaps-controllers": ^0.34.1-flask.1
@@ -2092,7 +2092,7 @@ __metadata:
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: dcb46f395095774c05647c573edbb4998dd15e1ad8106bb82fed240083a1466f8748cc0cf5d68b5c697bde0cec7c08860a1858dea17ddd3ba964fbcd00c46050
+  checksum: c65e10097eb74c7083c736e03da666dd27153148772830c481f3d2139099e0337631502b18d890103a9523a41a53fa190389943036fac771cec6464d24b0848f
   languageName: node
   linkType: hard
 
