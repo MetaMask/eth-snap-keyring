@@ -326,18 +326,6 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * List the accounts for a snap.
-   *
-   * @param snapId - ID of the snap.
-   * @returns List of addresses for the given snap ID.
-   */
-  async #listAccounts(snapId: string): Promise<string[]> {
-    return (await this.#snapClient.withSnapId(snapId).listAccounts()).map(
-      (a) => a.address,
-    );
-  }
-
-  /**
    * Resolve a pending request.
    *
    * @param id - ID of the request to resolve.
