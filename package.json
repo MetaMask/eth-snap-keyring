@@ -28,7 +28,7 @@
     "@ethereumjs/tx": "^4.1.2",
     "@metamask/eth-sig-util": "^5.1.0",
     "@metamask/keyring-api": "^0.1.0",
-    "@metamask/snaps-controllers": "^0.34.1-flask.1",
+    "@metamask/snaps-controllers": "^1.0.0-prerelease.1",
     "@metamask/utils": "^6.1.0",
     "@types/uuid": "^9.0.1",
     "superstruct": "^1.0.3",
