@@ -304,7 +304,6 @@ export class SnapKeyring extends EventEmitter {
     delete this.#addressToSnapId[address];
 
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
-    await this.#syncAccounts();
   }
 
   /**
