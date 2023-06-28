@@ -1,4 +1,5 @@
 import { TransactionFactory } from '@ethereumjs/tx';
+import { KeyringAccount } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 
 import { KeyringState, SnapKeyring } from '.';
@@ -15,7 +16,7 @@ describe('SnapKeyring', () => {
   const accounts = [
     {
       id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
-      address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3',
+      address: '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3',
       name: 'Account 1',
       options: null,
       supportedMethods: ['personal_sign', 'eth_sendTransaction'],
@@ -23,7 +24,7 @@ describe('SnapKeyring', () => {
     },
     {
       id: '33c96b60-2237-488e-a7bb-233576f3d22f',
-      address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63',
+      address: '0x34b13912eac00152be0cb409a301ab8e55739e63',
       name: 'Account 2',
       options: null,
       supportedMethods: ['eth_sendTransaction', 'eth_signTypedData'],
@@ -34,12 +35,10 @@ describe('SnapKeyring', () => {
   beforeEach(async () => {
     keyring = new SnapKeyring(mockSnapController as unknown as SnapController);
     for (const account of accounts) {
-      mockSnapController.handleRequest.mockResolvedValueOnce(accounts);
+      mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
         method: 'createAccount',
-        params: {
-          id: account.id,
-        },
+        params: { account: account as unknown as KeyringAccount },
       });
     }
   });
@@ -63,7 +62,7 @@ describe('SnapKeyring', () => {
 
   describe('getAccounts', () => {
     it('should return all account addresses', async () => {
-      const addresses = keyring.getAccounts();
+      const addresses = await keyring.getAccounts();
       expect(addresses).toStrictEqual(accounts.map((a) => a.address));
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onRpcRequest',
@@ -108,7 +107,7 @@ describe('SnapKeyring', () => {
       };
       const expectedAddresses = [accounts[0].address];
       await keyring.deserialize(state as unknown as KeyringState);
-      const addresses = keyring.getAccounts();
+      const addresses = await keyring.getAccounts();
       expect(addresses).toStrictEqual(expectedAddresses);
     });
 
@@ -118,7 +117,7 @@ describe('SnapKeyring', () => {
         mockSnapController as unknown as SnapController,
       );
       await keyring.deserialize(undefined as unknown as KeyringState);
-      expect(keyring.getAccounts()).toStrictEqual([]);
+      expect(await keyring.getAccounts()).toStrictEqual([]);
     });
 
     it('should fail to restore an empty state', async () => {
@@ -129,7 +128,7 @@ describe('SnapKeyring', () => {
       await expect(
         keyring.deserialize({} as unknown as KeyringState),
       ).rejects.toThrow('Expected an object, but received: undefined');
-      expect(keyring.getAccounts()).toStrictEqual([]);
+      expect(await keyring.getAccounts()).toStrictEqual([]);
     });
   });
 
@@ -180,7 +179,7 @@ describe('SnapKeyring', () => {
       const mockMessage = 'Hello World!';
       await expect(
         keyring.signPersonalMessage('0x0', mockMessage),
-      ).rejects.toThrow('Account not found: 0x0');
+      ).rejects.toThrow('Account address not found: 0x0');
     });
   });
 

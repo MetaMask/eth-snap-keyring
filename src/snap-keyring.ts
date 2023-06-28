@@ -120,7 +120,7 @@ export class SnapKeyring extends EventEmitter {
       const account = this.#addressToAccount[address];
       const snapId = this.#addressToSnapId[address];
       if (account !== undefined && snapId !== undefined) {
-        // Address
+        // Account object
         delete this.#addressToAccount[address];
         this.#addressToAccount[address.toLowerCase()] = account;
         // Snap ID
@@ -138,7 +138,7 @@ export class SnapKeyring extends EventEmitter {
   async getAccounts(): Promise<string[]> {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
-    return unique(Object.keys(this.#addressToSnapId));
+    return unique(Object.values(this.#addressToAccount).map((a) => a.address));
   }
 
   /**
