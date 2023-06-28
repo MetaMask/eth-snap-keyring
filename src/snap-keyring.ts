@@ -53,7 +53,7 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param extraSnapIds - List of extra snap IDs to include in the sync.
    */
-  async #syncAccounts(...extraSnapIds: string[]): Promise<void> {
+  async syncAccounts(...extraSnapIds: string[]): Promise<void> {
     // Add new snap IDs to the list.
     const snapIds = Object.values(this.#addressToSnapId).concat(extraSnapIds);
 
@@ -152,7 +152,6 @@ export class SnapKeyring extends EventEmitter {
     if (state === undefined) {
       return;
     }
-
     assert(state, KeyringStateStruct);
     this.#addressToAccount = state.addressToAccount;
     this.#addressToSnapId = state.addressToSnapId;
@@ -166,7 +165,6 @@ export class SnapKeyring extends EventEmitter {
   async getAccounts(): Promise<string[]> {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
-    await this.#syncAccounts();
     return unique(Object.keys(this.#addressToSnapId));
   }
 
