@@ -74,7 +74,8 @@ export class SnapKeyring extends EventEmitter {
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
         return Object.values(this.#addressToAccount).filter(
-          (account) => this.#addressToSnapId[account.address] === snapId,
+          (account) =>
+            this.#addressToSnapId[account.address.toLowerCase()] === snapId,
         );
       }
 
@@ -341,8 +342,8 @@ export class SnapKeyring extends EventEmitter {
     account: KeyringAccount;
     snapId: string;
   } {
-    const account = this.#addressToAccount[address];
-    const snapId = this.#addressToSnapId[address];
+    const account = this.#addressToAccount[address.toLowerCase()];
+    const snapId = this.#addressToSnapId[address.toLowerCase()];
     if (snapId === undefined || account === undefined) {
       throw new Error(`Account address not found: ${address}`);
     }
@@ -374,7 +375,8 @@ export class SnapKeyring extends EventEmitter {
    */
   #getAccountsBySnapId(snapId: string): KeyringAccount[] {
     return Object.values(this.#addressToAccount).filter(
-      (account) => this.#addressToSnapId[account.address] === snapId,
+      (account) =>
+        this.#addressToSnapId[account.address.toLowerCase()] === snapId,
     );
   }
 
@@ -385,8 +387,8 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - The snap ID of the account.
    */
   #addAccountToMaps(account: KeyringAccount, snapId: string): void {
-    this.#addressToAccount[account.address] = account;
-    this.#addressToSnapId[account.address] = snapId;
+    this.#addressToAccount[account.address.toLowerCase()] = account;
+    this.#addressToSnapId[account.address.toLowerCase()] = snapId;
   }
 
   /**
@@ -395,7 +397,7 @@ export class SnapKeyring extends EventEmitter {
    * @param account - The account to be removed.
    */
   #removeAccountFromMaps(account: KeyringAccount): void {
-    delete this.#addressToAccount[account.address];
-    delete this.#addressToSnapId[account.address];
+    delete this.#addressToAccount[account.address.toLowerCase()];
+    delete this.#addressToSnapId[account.address.toLowerCase()];
   }
 }
