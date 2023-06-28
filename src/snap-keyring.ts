@@ -91,10 +91,23 @@ export class SnapKeyring extends EventEmitter {
     assert(message, SnapMessageStruct);
     const { method, params } = message;
     switch (method) {
-      case 'updateAccount':
-      case 'deleteAccount':
+      case 'updateAccount': {
+        assert(params, object({ account: KeyringAccountStruct }));
+        this.#getAccountById(params.account.id); // Make sure the account exists.
+        this.#addAccountToMaps(params.account, snapId);
+        return null;
+      }
+
       case 'createAccount': {
-        await this.#syncAccounts(snapId);
+        assert(params, object({ account: KeyringAccountStruct }));
+        this.#addAccountToMaps(params.account, snapId);
+        return null;
+      }
+
+      case 'deleteAccount': {
+        assert(params, object({ id: string() }));
+        const account = this.#getAccountById(params.id);
+        this.#removeAccountFromMaps(account);
         return null;
       }
 
@@ -151,10 +164,8 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   getAccounts(): string[] {
-    // *** DO NOT CALL THE SNAP HERE ***
-    //
-    // This method has to be synchronous because it is called by the UI, for
-    // other use cases, use the `#listAccounts()` method instead.
+    // Do not call the snap here. This method is called by the UI, keep it
+    // _fast_.
     return unique(Object.keys(this.#addressToSnapId));
   }
 
@@ -293,7 +304,7 @@ export class SnapKeyring extends EventEmitter {
    * @param _address - Address of the account to export.
    */
   exportAccount(_address: string): [Uint8Array, Json] | undefined {
-    throw new Error('Exporting accounts from snaps is not supported');
+    throw new Error('Exporting accounts from snaps is not supported.');
   }
 
   /**
@@ -303,12 +314,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async removeAccount(address: string): Promise<void> {
     const { account, snapId } = this.#resolveAddress(address);
-
-    // FIXME: remove this hack and rely instead on the syncAccounts call below
-    // once the removeAccount method is made async in the KeyringController.
-    delete this.#addressToAccount[address];
-    delete this.#addressToSnapId[address];
-
+    this.#removeAccountFromMaps(account);
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
   }
 
@@ -326,7 +332,7 @@ export class SnapKeyring extends EventEmitter {
     const account = this.#addressToAccount[address];
     const snapId = this.#addressToSnapId[address];
     if (snapId === undefined || account === undefined) {
-      throw new Error(`Account not found: ${address}`);
+      throw new Error(`Account address not found: ${address}`);
     }
     return { account, snapId };
   }
@@ -346,5 +352,42 @@ export class SnapKeyring extends EventEmitter {
 
     delete this.#pendingRequests[id];
     signingPromise.resolve(result);
+  }
+
+  /**
+   * Get an account by ID.
+   *
+   * @param id - The ID of the account to get.
+   * @returns The account with the given ID.
+   */
+  #getAccountById(id: string): KeyringAccount {
+    const account = Object.values(this.#addressToAccount).find(
+      (acc) => acc.id === id,
+    );
+    if (account === undefined) {
+      throw new Error(`Account ID not found: ${id}`);
+    }
+    return account;
+  }
+
+  /**
+   * Add an account to the internal maps.
+   *
+   * @param account - The account to be added.
+   * @param snapId - The snap ID of the account.
+   */
+  #addAccountToMaps(account: KeyringAccount, snapId: string): void {
+    this.#addressToAccount[account.address] = account;
+    this.#addressToSnapId[account.address] = snapId;
+  }
+
+  /**
+   * Remove an account from the internal maps.
+   *
+   * @param account - The account to be removed.
+   */
+  #removeAccountFromMaps(account: KeyringAccount): void {
+    delete this.#addressToAccount[account.address];
+    delete this.#addressToSnapId[account.address];
   }
 }
