@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.1.3]
-### Uncategorized
-- fix: remove account from maps first ([#39](https://github.com/MetaMask/eth-snap-keyring/pull/39))
+### Fixed
+- Remove account from maps before calling the snap. ([#39](https://github.com/MetaMask/eth-snap-keyring/pull/39))
 
 ## [0.1.2]
 ### Changed
