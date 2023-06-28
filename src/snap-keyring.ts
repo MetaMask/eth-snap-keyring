@@ -156,7 +156,6 @@ export class SnapKeyring extends EventEmitter {
     assert(state, KeyringStateStruct);
     this.#addressToAccount = state.addressToAccount;
     this.#addressToSnapId = state.addressToSnapId;
-    await this.#syncAccounts();
   }
 
   /**
