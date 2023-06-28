@@ -11,6 +11,7 @@ import EventEmitter from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
+import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { SnapMessage, SnapMessageStruct } from './types';
 import { DeferredPromise, strictMask, toJson, unique } from './util';
 
@@ -33,19 +34,19 @@ export class SnapKeyring extends EventEmitter {
 
   #snapClient: KeyringSnapControllerClient;
 
-  #addressToAccount: Record<string, KeyringAccount>;
+  #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
 
-  #addressToSnapId: Record<string, string>;
+  #addressToSnapId: CaseInsensitiveMap<string>;
 
-  #pendingRequests: Record<string, DeferredPromise<any>>;
+  #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
   constructor(controller: SnapController) {
     super();
     this.type = SnapKeyring.type;
     this.#snapClient = new KeyringSnapControllerClient({ controller });
-    this.#addressToAccount = {};
-    this.#addressToSnapId = {};
-    this.#pendingRequests = {};
+    this.#addressToAccount = new CaseInsensitiveMap();
+    this.#addressToSnapId = new CaseInsensitiveMap();
+    this.#pendingRequests = new CaseInsensitiveMap();
   }
 
   /**
@@ -73,9 +74,8 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
-        return Object.values(this.#addressToAccount).filter(
-          (account) =>
-            this.#addressToSnapId[account.address.toLowerCase()] === snapId,
+        return Array.from(this.#addressToAccount.values()).filter(
+          (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
       }
 
@@ -97,8 +97,8 @@ export class SnapKeyring extends EventEmitter {
    */
   async serialize(): Promise<KeyringState> {
     return {
-      addressToAccount: this.#addressToAccount,
-      addressToSnapId: this.#addressToSnapId,
+      addressToAccount: this.#addressToAccount.toObject(),
+      addressToSnapId: this.#addressToSnapId.toObject(),
     };
   }
 
@@ -108,26 +108,19 @@ export class SnapKeyring extends EventEmitter {
    * @param state - Serialized keyring state.
    */
   async deserialize(state: KeyringState | undefined): Promise<void> {
+    // If the state is undefined, it means that this is a new keyring, so we
+    // don't need to do anything.
     if (state === undefined) {
       return;
     }
-    assert(state, KeyringStateStruct);
-    this.#addressToAccount = state.addressToAccount;
-    this.#addressToSnapId = state.addressToSnapId;
 
-    // Normalize addresses to lower case.
-    for (const address of Object.keys(this.#addressToAccount)) {
-      const account = this.#addressToAccount[address];
-      const snapId = this.#addressToSnapId[address];
-      if (account !== undefined && snapId !== undefined) {
-        // Account object
-        delete this.#addressToAccount[address];
-        this.#addressToAccount[address.toLowerCase()] = account;
-        // Snap ID
-        delete this.#addressToSnapId[address];
-        this.#addressToSnapId[address.toLowerCase()] = snapId;
-      }
-    }
+    assert(state, KeyringStateStruct);
+    this.#addressToAccount = CaseInsensitiveMap.fromObject(
+      state.addressToAccount,
+    );
+    this.#addressToSnapId = CaseInsensitiveMap.fromObject(
+      state.addressToSnapId,
+    );
   }
 
   /**
@@ -138,7 +131,9 @@ export class SnapKeyring extends EventEmitter {
   async getAccounts(): Promise<string[]> {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
-    return unique(Object.values(this.#addressToAccount).map((a) => a.address));
+    return unique(
+      Array.from(this.#addressToAccount.values(), (account) => account.address),
+    );
   }
 
   /**
@@ -172,7 +167,7 @@ export class SnapKeyring extends EventEmitter {
     }
 
     const promise = new DeferredPromise<Response>();
-    this.#pendingRequests[id] = promise;
+    this.#pendingRequests.set(id, promise);
     return promise.promise;
   }
 
@@ -310,7 +305,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
     const snapIds = unique(
-      Object.values(this.#addressToSnapId).concat(extraSnapIds),
+      Array.from(this.#addressToSnapId.values()).concat(extraSnapIds),
     );
 
     for (const snapId of snapIds) {
@@ -357,8 +352,8 @@ export class SnapKeyring extends EventEmitter {
     account: KeyringAccount;
     snapId: string;
   } {
-    const account = this.#addressToAccount[address.toLowerCase()];
-    const snapId = this.#addressToSnapId[address.toLowerCase()];
+    const account = this.#addressToAccount.get(address);
+    const snapId = this.#addressToSnapId.get(address);
     if (snapId === undefined || account === undefined) {
       throw new Error(`Account address not found: ${address}`);
     }
@@ -372,13 +367,13 @@ export class SnapKeyring extends EventEmitter {
    * @param result - Result of the request.
    */
   #resolveRequest(id: string, result: any): void {
-    const signingPromise = this.#pendingRequests[id];
+    const signingPromise = this.#pendingRequests.get(id);
     if (signingPromise?.resolve === undefined) {
       console.warn(`No pending request found for ID: ${id}`);
       return;
     }
 
-    delete this.#pendingRequests[id];
+    this.#pendingRequests.delete(id);
     signingPromise.resolve(result);
   }
 
@@ -390,8 +385,7 @@ export class SnapKeyring extends EventEmitter {
    */
   #getAccountsBySnapId(snapId: string): KeyringAccount[] {
     return Object.values(this.#addressToAccount).filter(
-      (account) =>
-        this.#addressToSnapId[account.address.toLowerCase()] === snapId,
+      (account) => this.#addressToSnapId.get(account.address) === snapId,
     );
   }
 
@@ -402,8 +396,8 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - The snap ID of the account.
    */
   #addAccountToMaps(account: KeyringAccount, snapId: string): void {
-    this.#addressToAccount[account.address.toLowerCase()] = account;
-    this.#addressToSnapId[account.address.toLowerCase()] = snapId;
+    this.#addressToAccount.set(account.address, account);
+    this.#addressToSnapId.set(account.address, snapId);
   }
 
   /**
@@ -412,7 +406,7 @@ export class SnapKeyring extends EventEmitter {
    * @param account - The account to be removed.
    */
   #removeAccountFromMaps(account: KeyringAccount): void {
-    delete this.#addressToAccount[account.address.toLowerCase()];
-    delete this.#addressToSnapId[account.address.toLowerCase()];
+    this.#addressToAccount.delete(account.address);
+    this.#addressToSnapId.delete(account.address);
   }
 }
