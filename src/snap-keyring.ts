@@ -316,7 +316,6 @@ export class SnapKeyring extends EventEmitter {
    */
   async removeAccount(address: string): Promise<void> {
     const { account, snapId } = this.#resolveAddress(address);
-    this.#removeAccountFromMaps(account);
     await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
   }
 
@@ -398,8 +397,9 @@ export class SnapKeyring extends EventEmitter {
       Promise.resolve()
         .then(() => {
           console.log('Syncing accounts...');
-          this.#syncAccounts().catch(console.error);
-          console.log('Syncing accounts done.');
+          this.#syncAccounts()
+            .then(() => console.log('Syncing accounts done.'))
+            .catch(console.error);
         })
         .catch(console.error);
     }, 0);
