@@ -16,7 +16,7 @@ describe('SnapKeyring', () => {
   const accounts = [
     {
       id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
-      address: '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3',
+      address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3',
       name: 'Account 1',
       options: null,
       supportedMethods: ['personal_sign', 'eth_sendTransaction'],
@@ -24,7 +24,7 @@ describe('SnapKeyring', () => {
     },
     {
       id: '33c96b60-2237-488e-a7bb-233576f3d22f',
-      address: '0x34b13912eac00152be0cb409a301ab8e55739e63',
+      address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63',
       name: 'Account 2',
       options: null,
       supportedMethods: ['eth_sendTransaction', 'eth_signTypedData'],
@@ -81,12 +81,12 @@ describe('SnapKeyring', () => {
     it('should return the keyring state', async () => {
       const expectedState = {
         addressToAccount: {
-          [accounts[0].address]: accounts[0],
-          [accounts[1].address]: accounts[1],
+          [accounts[0].address.toLowerCase()]: accounts[0],
+          [accounts[1].address.toLowerCase()]: accounts[1],
         },
         addressToSnapId: {
-          [accounts[0].address]: snapId,
-          [accounts[1].address]: snapId,
+          [accounts[0].address.toLowerCase()]: snapId,
+          [accounts[1].address.toLowerCase()]: snapId,
         },
       };
       const state = await keyring.serialize();
