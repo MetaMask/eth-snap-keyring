@@ -285,7 +285,11 @@ export class SnapKeyring extends EventEmitter {
    * @param address - Address of the account to remove.
    */
   async removeAccount(address: string): Promise<void> {
+    // Always remove the account from the maps, even if the snap is going to
+    // fail to delete it.
     const { account, snapId } = this.#resolveAddress(address);
+    this.#removeAccountFromMaps(account);
+
     try {
       await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
     } catch (error) {
@@ -293,14 +297,10 @@ export class SnapKeyring extends EventEmitter {
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
       console.error(
-        `Cannot talk to snap "${snapId}", continuing with account deletion:`,
+        `Cannot talk to snap "${snapId}", continuing with the deletion of account ${address}.`,
         error,
       );
     }
-
-    // Always remove the account from the maps, even if the snap failed to
-    // delete it.
-    this.#removeAccountFromMaps(account);
   }
 
   /**
