@@ -46,6 +46,7 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToAccount = {};
     this.#addressToSnapId = {};
     this.#pendingRequests = {};
+    this.#scheduleUpdate();
   }
 
   /**
@@ -156,6 +157,7 @@ export class SnapKeyring extends EventEmitter {
     assert(state, KeyringStateStruct);
     this.#addressToAccount = state.addressToAccount;
     this.#addressToSnapId = state.addressToSnapId;
+    this.#scheduleUpdate();
   }
 
   /**
@@ -389,5 +391,17 @@ export class SnapKeyring extends EventEmitter {
   #removeAccountFromMaps(account: KeyringAccount): void {
     delete this.#addressToAccount[account.address];
     delete this.#addressToSnapId[account.address];
+  }
+
+  #scheduleUpdate(): void {
+    setTimeout(() => {
+      Promise.resolve()
+        .then(() => {
+          console.log('Syncing accounts...');
+          this.#syncAccounts().catch(console.error);
+          console.log('Syncing accounts done.');
+        })
+        .catch(console.error);
+    }, 0);
   }
 }
