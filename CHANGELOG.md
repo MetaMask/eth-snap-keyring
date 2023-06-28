@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.1.2]
-### Uncategorized
-- refactor: sync all accounts on snap notificaiton ([#36](https://github.com/MetaMask/eth-snap-keyring/pull/36))
-- chore: remove unused `#listAccounts()` method ([#35](https://github.com/MetaMask/eth-snap-keyring/pull/35))
-- docs: update API links on `README` ([#34](https://github.com/MetaMask/eth-snap-keyring/pull/34))
-- chore: don't sync accounts twice on deletion ([#32](https://github.com/MetaMask/eth-snap-keyring/pull/32))
-- chore(deps): bump snaps dependencies to `0.35.2-flask.1` ([#33](https://github.com/MetaMask/eth-snap-keyring/pull/33))
+### Changed
+- Remove unused `#listAccounts()` method. ([#35](https://github.com/MetaMask/eth-snap-keyring/pull/35))
+
+### Fixed
+- Sync all accounts on snap notificaiton. ([#36](https://github.com/MetaMask/eth-snap-keyring/pull/36))
+- Don't sync accounts twice on deletion. ([#32](https://github.com/MetaMask/eth-snap-keyring/pull/32))
 
 ## [0.1.1]
 ### Changed
