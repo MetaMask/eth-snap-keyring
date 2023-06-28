@@ -114,6 +114,20 @@ export class SnapKeyring extends EventEmitter {
     assert(state, KeyringStateStruct);
     this.#addressToAccount = state.addressToAccount;
     this.#addressToSnapId = state.addressToSnapId;
+
+    // Normalize addresses to lower case.
+    for (const address of Object.keys(this.#addressToAccount)) {
+      const account = this.#addressToAccount[address];
+      const snapId = this.#addressToSnapId[address];
+      if (account !== undefined && snapId !== undefined) {
+        // Address
+        delete this.#addressToAccount[address];
+        this.#addressToAccount[address.toLowerCase()] = account;
+        // Snap ID
+        delete this.#addressToSnapId[address];
+        this.#addressToSnapId[address.toLowerCase()] = snapId;
+      }
+    }
   }
 
   /**
@@ -321,7 +335,8 @@ export class SnapKeyring extends EventEmitter {
       .listAccounts();
 
     // Remove the old accounts from the maps.
-    for (const account of this.#getAccountsBySnapId(snapId)) {
+    const oldAccounts = this.#getAccountsBySnapId(snapId);
+    for (const account of oldAccounts) {
       this.#removeAccountFromMaps(account);
     }
 
