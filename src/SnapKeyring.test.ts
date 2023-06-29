@@ -58,6 +58,25 @@ describe('SnapKeyring', () => {
         }),
       ).rejects.toThrow('Method not supported: invalid');
     });
+
+    it('should submit an async request and return the result', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({ pending: true });
+      const requestPromise = keyring.signPersonalMessage(
+        accounts[0].address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.request.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: 'submitResponse',
+        params: {
+          id: requestId,
+          result: '0x123',
+        },
+      });
+      expect(await requestPromise).toBe('0x123');
+    });
   });
 
   describe('getAccounts', () => {
@@ -223,6 +242,14 @@ describe('SnapKeyring', () => {
     it('should fail to export an account', async () => {
       expect(() => keyring.exportAccount(accounts[0].address)).toThrow(
         'Exporting accounts from snaps is not supported',
+      );
+    });
+  });
+
+  describe('removeAccount', () => {
+    it('should throw an error if the account is not found', async () => {
+      await expect(keyring.removeAccount('0x0')).rejects.toThrow(
+        'Account address not found: 0x0',
       );
     });
   });
