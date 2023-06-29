@@ -75,7 +75,7 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
-        return Array.from(this.#addressToAccount.values()).filter(
+        return [...this.#addressToAccount.values()].filter(
           (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
       }
@@ -133,7 +133,7 @@ export class SnapKeyring extends EventEmitter {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
     return unique(
-      Array.from(this.#addressToAccount.values(), (account) => account.address),
+      [...this.#addressToAccount.values()].map((account) => account.address),
     );
   }
 
@@ -301,7 +301,7 @@ export class SnapKeyring extends EventEmitter {
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
       console.error(
-        `Account ${address} will be removed from the UI, but it may not have been removed from snap ${snapId}:`,
+        `Account "${address}" may not have been removed from snap "${snapId}":`,
         error,
       );
     }
@@ -313,14 +313,12 @@ export class SnapKeyring extends EventEmitter {
    * @param extraSnapIds - Extra snap IDs to sync accounts for.
    */
   async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = unique(
-      Array.from(this.#addressToSnapId.values()).concat(extraSnapIds),
-    );
-
-    for (const snapId of snapIds) {
+    const snapIds = [...this.#addressToSnapId.values()].concat(extraSnapIds);
+    for (const snapId of unique(snapIds)) {
       try {
         await this.#syncSnapAccounts(snapId);
       } catch (error) {
+        // Log the error and continue with the other snaps.
         console.error(`Failed to sync accounts for snap "${snapId}":`, error);
       }
     }
@@ -376,14 +374,13 @@ export class SnapKeyring extends EventEmitter {
    * @param result - Result of the request.
    */
   #resolveRequest(id: string, result: any): void {
-    const signingPromise = this.#pendingRequests.get(id);
-    if (signingPromise?.resolve === undefined) {
-      console.warn(`No pending request found for ID: ${id}`);
-      return;
+    const promise = this.#pendingRequests.get(id);
+    if (promise?.resolve === undefined) {
+      throw new Error(`No pending request found for ID: ${id}`);
     }
 
     this.#pendingRequests.delete(id);
-    signingPromise.resolve(result);
+    promise.resolve(result);
   }
 
   /**

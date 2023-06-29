@@ -252,5 +252,23 @@ describe('SnapKeyring', () => {
         'Account address not found: 0x0',
       );
     });
+
+    it('should remove an account', async () => {
+      mockSnapController.handleRequest.mockResolvedValue(null);
+      await keyring.removeAccount(accounts[0].address);
+      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+    });
+
+    it('should remove the account and warn if snap fails', async () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation();
+      mockSnapController.handleRequest.mockRejectedValue('error');
+      await keyring.removeAccount(accounts[0].address);
+      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(console.error).toHaveBeenCalledWith(
+        'Account "0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3" may not have been removed from snap "local:snap.mock":',
+        'error',
+      );
+      spy.mockRestore();
+    });
   });
 });
