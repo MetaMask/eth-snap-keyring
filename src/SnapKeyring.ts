@@ -190,7 +190,7 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     transaction: TypedTransaction,
     _opts = {},
-  ) {
+  ): Promise<TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
       type: transaction.type,
