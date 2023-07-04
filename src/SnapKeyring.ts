@@ -158,16 +158,24 @@ export class SnapKeyring extends EventEmitter {
     const promise = new DeferredPromise<Response>();
     this.#pendingRequests.set(id, promise);
 
-    const response = await this.#snapClient.withSnapId(snapId).submitRequest({
-      account: account.id,
-      scope: '', // Chain ID in CAIP-2 format.
-      request: {
-        jsonrpc: '2.0',
-        id,
-        method,
-        ...(params !== undefined && { params }),
-      },
-    });
+    const response = await (async () => {
+      try {
+        return await this.#snapClient.withSnapId(snapId).submitRequest({
+          account: account.id,
+          scope: '', // Chain ID in CAIP-2 format.
+          request: {
+            jsonrpc: '2.0',
+            id,
+            method,
+            ...(params !== undefined && { params }),
+          },
+        });
+      } catch (error) {
+        // If the snap failed to respond, delete the promise to prevent a leak.
+        this.#pendingRequests.delete(id);
+        throw error;
+      }
+    })();
 
     // The snap can respond immediately if the request is not async. In that
     // case we should delete the promise to prevent a leak.
