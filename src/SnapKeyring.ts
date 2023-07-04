@@ -12,8 +12,9 @@ import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
+import { DeferredPromise } from './DeferredPromise';
 import { SnapMessage, SnapMessageStruct } from './types';
-import { DeferredPromise, strictMask, toJson, unique } from './util';
+import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -74,7 +75,7 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
-        return Array.from(this.#addressToAccount.values()).filter(
+        return [...this.#addressToAccount.values()].filter(
           (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
       }
@@ -82,7 +83,7 @@ export class SnapKeyring extends EventEmitter {
       case 'submitResponse': {
         const { id, result } = params as any; // FIXME: add a struct for this
         this.#resolveRequest(id, result);
-        return true;
+        return null;
       }
 
       default:
@@ -132,7 +133,7 @@ export class SnapKeyring extends EventEmitter {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
     return unique(
-      Array.from(this.#addressToAccount.values(), (account) => account.address),
+      [...this.#addressToAccount.values()].map((account) => account.address),
     );
   }
 
@@ -151,6 +152,12 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
     const id = uuid();
+
+    // Create the promise before calling the snap to prevent a race condition
+    // where the snap responds before we have a chance to create it.
+    const promise = new DeferredPromise<Response>();
+    this.#pendingRequests.set(id, promise);
+
     const response = await this.#snapClient.withSnapId(snapId).submitRequest({
       account: account.id,
       scope: '', // Chain ID in CAIP-2 format.
@@ -162,12 +169,13 @@ export class SnapKeyring extends EventEmitter {
       },
     });
 
+    // The snap can respond immediately if the request is not async. In that
+    // case we should delete the promise to prevent a leak.
     if (!response.pending) {
+      this.#pendingRequests.delete(id);
       return response.result;
     }
 
-    const promise = new DeferredPromise<Response>();
-    this.#pendingRequests.set(id, promise);
     return promise.promise;
   }
 
@@ -182,7 +190,7 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     transaction: TypedTransaction,
     _opts = {},
-  ) {
+  ): Promise<TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
       type: transaction.type,
@@ -280,9 +288,10 @@ export class SnapKeyring extends EventEmitter {
    * @param address - Address of the account to remove.
    */
   async removeAccount(address: string): Promise<void> {
+    const { account, snapId } = this.#resolveAddress(address);
+
     // Always remove the account from the maps, even if the snap is going to
     // fail to delete it.
-    const { account, snapId } = this.#resolveAddress(address);
     this.#removeAccountFromMaps(account);
 
     try {
@@ -292,7 +301,7 @@ export class SnapKeyring extends EventEmitter {
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
       console.error(
-        `Cannot talk to snap "${snapId}", continuing with the deletion of account ${address}.`,
+        `Account "${address}" may not have been removed from snap "${snapId}":`,
         error,
       );
     }
@@ -304,14 +313,12 @@ export class SnapKeyring extends EventEmitter {
    * @param extraSnapIds - Extra snap IDs to sync accounts for.
    */
   async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = unique(
-      Array.from(this.#addressToSnapId.values()).concat(extraSnapIds),
-    );
-
-    for (const snapId of snapIds) {
+    const snapIds = [...this.#addressToSnapId.values()].concat(extraSnapIds);
+    for (const snapId of unique(snapIds)) {
       try {
         await this.#syncSnapAccounts(snapId);
       } catch (error) {
+        // Log the error and continue with the other snaps.
         console.error(`Failed to sync accounts for snap "${snapId}":`, error);
       }
     }
@@ -325,12 +332,12 @@ export class SnapKeyring extends EventEmitter {
   async #syncSnapAccounts(snapId: string): Promise<void> {
     // Get new accounts first, before removing the old ones. This way, if
     // something goes wrong, we don't lose the old accounts.
+    const oldAccounts = this.#getAccountsBySnapId(snapId);
     const newAccounts = await this.#snapClient
       .withSnapId(snapId)
       .listAccounts();
 
     // Remove the old accounts from the maps.
-    const oldAccounts = this.#getAccountsBySnapId(snapId);
     for (const account of oldAccounts) {
       this.#removeAccountFromMaps(account);
     }
@@ -367,14 +374,13 @@ export class SnapKeyring extends EventEmitter {
    * @param result - Result of the request.
    */
   #resolveRequest(id: string, result: any): void {
-    const signingPromise = this.#pendingRequests.get(id);
-    if (signingPromise?.resolve === undefined) {
-      console.warn(`No pending request found for ID: ${id}`);
-      return;
+    const promise = this.#pendingRequests.get(id);
+    if (promise?.resolve === undefined) {
+      throw new Error(`No pending request found for ID: ${id}`);
     }
 
     this.#pendingRequests.delete(id);
-    signingPromise.resolve(result);
+    promise.resolve(result);
   }
 
   /**

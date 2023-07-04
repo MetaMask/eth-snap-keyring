@@ -1,15 +1,54 @@
-import { DeferredPromise } from './util';
+import { ensureDefined, toJson, unique } from './util';
 
-describe('DeferredPromise', () => {
-  describe('constructor', () => {
-    it('should not fail to create a DeferredPromise', () => {
-      expect(() => new DeferredPromise()).not.toThrow();
-    });
+describe('unique', () => {
+  it('returns an empty array when given an empty array', () => {
+    const arr: number[] = [];
+    const result = unique(arr);
+    expect(result).toStrictEqual([]);
+  });
 
-    it('should define resolve and reject fields', () => {
-      const promise = new DeferredPromise();
-      expect(promise.resolve).toBeDefined();
-      expect(promise.reject).toBeDefined();
-    });
+  it('returns an array with unique elements', () => {
+    const arr = [1, 2, 2, 3, 3, 3];
+    const result = unique(arr);
+    expect(result).toStrictEqual([1, 2, 3]);
+  });
+
+  it('returns an array with unique objects', () => {
+    const obj1 = { name: 'John' };
+    const obj2 = { name: 'Jane' };
+    const arr = [obj1, obj1, obj2];
+    const result = unique(arr);
+    expect(result).toStrictEqual([{ name: 'John' }, { name: 'Jane' }]);
+  });
+});
+
+describe('toJson', () => {
+  it('correctly serializes an object to JSON', () => {
+    const obj = { name: 'John', age: 30 };
+    const json = toJson(obj);
+    expect(json).toStrictEqual(obj);
+  });
+
+  it('correctly serializes an array to JSON', () => {
+    const arr = [1, 2, 3];
+    const json = toJson(arr);
+    expect(json).toStrictEqual(arr);
+  });
+
+  it('correctly serializes an object with defined and non-undefined fields to JSON', () => {
+    const obj = { name: 'John', age: undefined };
+    const expectedJson = { name: 'John' };
+    const json = toJson(obj);
+    expect(json).toStrictEqual(expectedJson);
+  });
+});
+
+describe('ensureDefined', () => {
+  it('does not throw an error when value is defined', () => {
+    expect(() => ensureDefined('hello')).not.toThrow();
+  });
+
+  it('throws an error when value is undefined', () => {
+    expect(() => ensureDefined(undefined)).toThrow('Argument is undefined');
   });
 });

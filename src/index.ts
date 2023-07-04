@@ -1,2 +1,2 @@
 export * from './types';
-export * from './snap-keyring';
+export * from './SnapKeyring';

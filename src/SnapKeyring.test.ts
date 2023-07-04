@@ -58,6 +58,25 @@ describe('SnapKeyring', () => {
         }),
       ).rejects.toThrow('Method not supported: invalid');
     });
+
+    it('should submit an async request and return the result', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({ pending: true });
+      const requestPromise = keyring.signPersonalMessage(
+        accounts[0].address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.request.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: 'submitResponse',
+        params: {
+          id: requestId,
+          result: '0x123',
+        },
+      });
+      expect(await requestPromise).toBe('0x123');
+    });
   });
 
   describe('getAccounts', () => {
@@ -224,6 +243,32 @@ describe('SnapKeyring', () => {
       expect(() => keyring.exportAccount(accounts[0].address)).toThrow(
         'Exporting accounts from snaps is not supported',
       );
+    });
+  });
+
+  describe('removeAccount', () => {
+    it('should throw an error if the account is not found', async () => {
+      await expect(keyring.removeAccount('0x0')).rejects.toThrow(
+        'Account address not found: 0x0',
+      );
+    });
+
+    it('should remove an account', async () => {
+      mockSnapController.handleRequest.mockResolvedValue(null);
+      await keyring.removeAccount(accounts[0].address);
+      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+    });
+
+    it('should remove the account and warn if snap fails', async () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation();
+      mockSnapController.handleRequest.mockRejectedValue('error');
+      await keyring.removeAccount(accounts[0].address);
+      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(console.error).toHaveBeenCalledWith(
+        'Account "0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3" may not have been removed from snap "local:snap.mock":',
+        'error',
+      );
+      spy.mockRestore();
     });
   });
 });
