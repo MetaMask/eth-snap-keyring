@@ -194,11 +194,33 @@ describe('SnapKeyring', () => {
       );
       expect(signature).toStrictEqual(expectedSignature);
     });
+
     it('should fail if the address is not found', async () => {
       const mockMessage = 'Hello World!';
       await expect(
         keyring.signPersonalMessage('0x0', mockMessage),
       ).rejects.toThrow('Account address not found: 0x0');
+    });
+
+    it("should fail to resolve a request that wasn't submitted correctly", async () => {
+      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
+      const mockMessage = 'Hello World!';
+      await expect(
+        keyring.signPersonalMessage(accounts[0].address, mockMessage),
+      ).rejects.toThrow('error');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.request.id;
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: 'submitResponse',
+        params: {
+          id: requestId,
+          result: '0x123',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        `No pending request found for ID: ${requestId as string}`,
+      );
     });
   });
 
