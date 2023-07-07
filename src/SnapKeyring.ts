@@ -423,4 +423,17 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToAccount.delete(account.address);
     this.#addressToSnapId.delete(account.address);
   }
+
+  /**
+   * List all accounts.
+   *
+   * @param sync - Whether to sync accounts with the snaps.
+   * @returns All accounts.
+   */
+  async listAccounts(sync: boolean): Promise<KeyringAccount[]> {
+    if (sync) {
+      await this.#syncAllSnapsAccounts();
+    }
+    return [...this.#addressToAccount.values()];
+  }
 }
