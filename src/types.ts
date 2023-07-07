@@ -1,3 +1,4 @@
+import { KeyringAccount } from '@metamask/keyring-api';
 import { JsonStruct } from '@metamask/utils';
 import {
   Infer,
@@ -18,3 +19,11 @@ export const SnapMessageStruct = object({
  * Message sent by the snap to manage accounts and requests.
  */
 export type SnapMessage = Infer<typeof SnapMessageStruct>;
+
+export type InternalAccount = KeyringAccount & {
+  metadata: {
+    snapId?: string | undefined;
+    snapName?: string | undefined;
+    keyringType?: string | undefined;
+  };
+};
