@@ -13,7 +13,7 @@ import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
-import { SnapMessage, SnapMessageStruct } from './types';
+import { InternalAccount, SnapMessage, SnapMessageStruct } from './types';
 import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -430,10 +430,18 @@ export class SnapKeyring extends EventEmitter {
    * @param sync - Whether to sync accounts with the snaps.
    * @returns All accounts.
    */
-  async listAccounts(sync: boolean): Promise<KeyringAccount[]> {
+  async listAccounts(sync: boolean): Promise<InternalAccount[]> {
     if (sync) {
       await this.#syncAllSnapsAccounts();
     }
-    return [...this.#addressToAccount.values()];
+    return [...this.#addressToAccount.values()].map((account) => {
+      return {
+        ...account,
+        metadata: {
+          snapId: this.#addressToSnapId.get(account.address),
+          keyringType: this.type,
+        },
+      };
+    });
   }
 }
