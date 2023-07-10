@@ -434,7 +434,7 @@ export class SnapKeyring extends EventEmitter {
     if (sync) {
       await this.#syncAllSnapsAccounts();
     }
-    const tmp = [...this.#addressToAccount.values()].map((account) => {
+    return [...this.#addressToAccount.values()].map((account) => {
       return {
         ...account,
         metadata: {
@@ -443,7 +443,5 @@ export class SnapKeyring extends EventEmitter {
         },
       };
     });
-    console.log('listAccounts', tmp);
-    return tmp;
   }
 }
