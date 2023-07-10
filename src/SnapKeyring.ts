@@ -210,6 +210,7 @@ export class SnapKeyring extends EventEmitter {
       tx,
     ]);
 
+    // @ts-ignore
     if (signedTx?.userOp) {
       return signedTx;
     }
