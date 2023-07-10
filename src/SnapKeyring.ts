@@ -210,6 +210,9 @@ export class SnapKeyring extends EventEmitter {
       tx,
     ]);
 
+    if (signedTx?.userOp) {
+      return signedTx;
+    }
     return TransactionFactory.fromTxData(signedTx as any);
   }
 
