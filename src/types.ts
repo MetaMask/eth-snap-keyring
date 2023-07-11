@@ -22,8 +22,17 @@ export type SnapMessage = Infer<typeof SnapMessageStruct>;
 
 export type InternalAccount = KeyringAccount & {
   metadata: {
-    snapId?: string | undefined;
-    snapName?: string | undefined;
-    keyringType?: string | undefined;
+    snap?:
+      | {
+          id?: string | undefined;
+          name?: string | undefined;
+          enabled?: boolean | undefined;
+        }
+      | undefined;
+    keyring?:
+      | {
+          type?: string | undefined;
+        }
+      | undefined;
   };
 };
