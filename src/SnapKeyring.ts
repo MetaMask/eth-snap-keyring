@@ -398,7 +398,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns All accounts associated with the given snap ID.
    */
   #getAccountsBySnapId(snapId: string): KeyringAccount[] {
-    return Object.values(this.#addressToAccount).filter(
+    return [...this.#addressToAccount.values()].filter(
       (account) => this.#addressToSnapId.get(account.address) === snapId,
     );
   }
