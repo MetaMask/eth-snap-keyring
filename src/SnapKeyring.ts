@@ -7,7 +7,7 @@ import {
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
@@ -316,12 +316,12 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Syncs all accounts for all snaps.
+   * Syncs all accounts from all snaps.
    *
    * @param extraSnapIds - Extra snap IDs to sync accounts for.
    */
   async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = [...this.#addressToSnapId.values()].concat(extraSnapIds);
+    const snapIds = extraSnapIds.concat(...this.#addressToSnapId.values());
     for (const snapId of unique(snapIds)) {
       try {
         await this.#syncSnapAccounts(snapId);
@@ -438,8 +438,12 @@ export class SnapKeyring extends EventEmitter {
       return {
         ...account,
         metadata: {
-          snapId: this.#addressToSnapId.get(account.address),
-          keyringType: this.type,
+          snap: {
+            id: this.#addressToSnapId.get(account.address),
+          },
+          keyring: {
+            type: this.type,
+          },
         },
       };
     });
