@@ -350,6 +350,10 @@ export class SnapKeyring extends EventEmitter {
       .withSnapId(snapId)
       .listAccounts();
 
+    console.log('snapId', snapId);
+    console.log('oldAccounts', oldAccounts);
+    console.log('newAccounts', newAccounts);
+
     // Remove the old accounts from the maps.
     for (const account of oldAccounts) {
       this.#removeAccountFromMaps(account);
