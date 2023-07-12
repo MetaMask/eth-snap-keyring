@@ -1,15 +1,13 @@
-import { KeyringAccountStruct } from '@metamask/keyring-api';
+import { KeyringAccount } from '@metamask/keyring-api';
 import { JsonStruct } from '@metamask/utils';
 import {
   Infer,
   array,
-  boolean,
   object,
   optional,
   record,
   string,
   union,
-  intersection,
 } from 'superstruct';
 
 export const SnapMessageStruct = object({
@@ -22,24 +20,19 @@ export const SnapMessageStruct = object({
  */
 export type SnapMessage = Infer<typeof SnapMessageStruct>;
 
-export const InternalAccountStruct = intersection([
-  KeyringAccountStruct,
-  object({
-    metadata: object({
-      snap: optional(
-        object({
-          id: optional(string()),
-          name: optional(string()),
-          enabled: optional(boolean()),
-        }),
-      ),
-      keyring: optional(
-        object({
-          type: optional(string()),
-        }),
-      ),
-    }),
-  }),
-]);
-
-export type InternalAccount = Infer<typeof InternalAccountStruct>;
+export type InternalAccount = KeyringAccount & {
+  metadata: {
+    snap?:
+      | {
+          id?: string | undefined;
+          name?: string | undefined;
+          enabled?: boolean | undefined;
+        }
+      | undefined;
+    keyring?:
+      | {
+          type?: string | undefined;
+        }
+      | undefined;
+  };
+};
