@@ -198,7 +198,7 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     transaction: TypedTransaction,
     _opts = {},
-  ): Promise<TypedTransaction> {
+  ): Promise<Json | TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
       type: transaction.type,
@@ -210,6 +210,11 @@ export class SnapKeyring extends EventEmitter {
       tx,
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (signedTx?.userOp) {
+      return signedTx;
+    }
     return TransactionFactory.fromTxData(signedTx as any);
   }
 
