@@ -8,22 +8,42 @@ import {
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, object, string, record, Infer } from 'superstruct';
+import {
+  assert,
+  object,
+  string,
+  record,
+  Infer,
+  mask,
+  literal,
+} from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
-import { InternalAccount, SnapMessage, SnapMessageStruct } from './types';
+import {
+  InternalAccount,
+  InternalAccountStruct,
+  SnapMessage,
+  SnapMessageStruct,
+} from './types';
 import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export const KeyringStateStruct = object({
-  addressToAccount: record(string(), KeyringAccountStruct),
+  version: literal(1),
+  addressToAccount: record(string(), InternalAccountStruct),
   addressToSnapId: record(string(), string()),
 });
 
 export type KeyringState = Infer<typeof KeyringStateStruct>;
+
+enum SnapStatus {
+  NotInstalled,
+  Enabled,
+  Disabled,
+}
 
 /**
  * Keyring bridge implementation to support snaps.
@@ -35,16 +55,21 @@ export class SnapKeyring extends EventEmitter {
 
   #snapClient: KeyringSnapControllerClient;
 
-  #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
+  #snapController: SnapController;
+
+  #addressToAccount: CaseInsensitiveMap<InternalAccount>;
 
   #addressToSnapId: CaseInsensitiveMap<string>;
 
   #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
-  constructor(controller: SnapController) {
+  constructor(snapController: SnapController) {
     super();
     this.type = SnapKeyring.type;
-    this.#snapClient = new KeyringSnapControllerClient({ controller });
+    this.#snapClient = new KeyringSnapControllerClient({
+      controller: snapController,
+    });
+    this.#snapController = snapController;
     this.#addressToAccount = new CaseInsensitiveMap();
     this.#addressToSnapId = new CaseInsensitiveMap();
     this.#pendingRequests = new CaseInsensitiveMap();
@@ -67,7 +92,7 @@ export class SnapKeyring extends EventEmitter {
       case 'updateAccount':
       case 'createAccount':
       case 'deleteAccount': {
-        await this.#syncAllSnapsAccounts(snapId);
+        await this.#syncAccounts(snapId);
         return null;
       }
 
@@ -75,9 +100,11 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
-        return [...this.#addressToAccount.values()].filter(
-          (account) => this.#addressToSnapId.get(account.address) === snapId,
-        );
+        return [...this.#addressToAccount.values()]
+          .filter(
+            (account) => this.#addressToSnapId.get(account.address) === snapId,
+          )
+          .map((account) => mask(account, KeyringAccountStruct));
       }
 
       case 'submitResponse': {
@@ -98,6 +125,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async serialize(): Promise<KeyringState> {
     return {
+      version: 1,
       addressToAccount: this.#addressToAccount.toObject(),
       addressToSnapId: this.#addressToSnapId.toObject(),
     };
@@ -320,16 +348,12 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param extraSnapIds - Extra snap IDs to sync accounts for.
    */
-  async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = extraSnapIds.concat(...this.#addressToSnapId.values());
-    for (const snapId of unique(snapIds)) {
-      try {
+  async #syncAccounts(...extraSnapIds: string[]): Promise<void> {
+    extraSnapIds
+      .concat(...this.#addressToSnapId.values())
+      .map(async (snapId) => {
         await this.#syncSnapAccounts(snapId);
-      } catch (error) {
-        // Log the error and continue with the other snaps.
-        console.error(`Failed to sync accounts for snap "${snapId}":`, error);
-      }
-    }
+      });
   }
 
   /**
@@ -341,18 +365,43 @@ export class SnapKeyring extends EventEmitter {
     // Get new accounts first, before removing the old ones. This way, if
     // something goes wrong, we don't lose the old accounts.
     const oldAccounts = this.#getAccountsBySnapId(snapId);
-    const newAccounts = await this.#snapClient
-      .withSnapId(snapId)
-      .listAccounts();
+    const snapStatus = this.#getSnapStatus(snapId);
 
-    // Remove the old accounts from the maps.
-    for (const account of oldAccounts) {
-      this.#removeAccountFromMaps(account);
-    }
+    switch (snapStatus) {
+      case SnapStatus.NotInstalled: {
+        for (const account of oldAccounts) {
+          this.#removeAccountFromMaps(account);
+        }
+        return;
+      }
 
-    // Add the new accounts to the maps.
-    for (const account of newAccounts) {
-      this.#addAccountToMaps(account, snapId);
+      case SnapStatus.Disabled: {
+        for (const account of oldAccounts) {
+          account.metadata.snap = {
+            ...account.metadata.snap,
+            enabled: false,
+          };
+        }
+        return;
+      }
+
+      case SnapStatus.Enabled: {
+        const newAccounts = await this.#snapClient
+          .withSnapId(snapId)
+          .listAccounts();
+
+        for (const account of oldAccounts) {
+          this.#removeAccountFromMaps(account);
+        }
+        for (const account of newAccounts) {
+          this.#addAccountToMaps(this.#toInternalAccount(account), snapId);
+        }
+        return;
+      }
+
+      default: {
+        throw new Error(`Snap status not supported: ${snapStatus as string}`);
+      }
     }
   }
 
@@ -364,7 +413,7 @@ export class SnapKeyring extends EventEmitter {
    * found.
    */
   #resolveAddress(address: string): {
-    account: KeyringAccount;
+    account: InternalAccount;
     snapId: string;
   } {
     const account = this.#addressToAccount.get(address);
@@ -397,7 +446,7 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - The snap ID to get accounts for.
    * @returns All accounts associated with the given snap ID.
    */
-  #getAccountsBySnapId(snapId: string): KeyringAccount[] {
+  #getAccountsBySnapId(snapId: string): InternalAccount[] {
     return [...this.#addressToAccount.values()].filter(
       (account) => this.#addressToSnapId.get(account.address) === snapId,
     );
@@ -409,7 +458,7 @@ export class SnapKeyring extends EventEmitter {
    * @param account - The account to be added.
    * @param snapId - The snap ID of the account.
    */
-  #addAccountToMaps(account: KeyringAccount, snapId: string): void {
+  #addAccountToMaps(account: InternalAccount, snapId: string): void {
     this.#addressToAccount.set(account.address, account);
     this.#addressToSnapId.set(account.address, snapId);
   }
@@ -419,33 +468,54 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param account - The account to be removed.
    */
-  #removeAccountFromMaps(account: KeyringAccount): void {
+  #removeAccountFromMaps(account: InternalAccount): void {
     this.#addressToAccount.delete(account.address);
     this.#addressToSnapId.delete(account.address);
+  }
+
+  #toInternalAccount(account: KeyringAccount): InternalAccount {
+    const snapId = this.#addressToSnapId.get(account.address);
+    if (snapId === undefined) {
+      throw new Error(`Account not found: ${account.address}`);
+    }
+
+    const snap = this.#snapController.get(snapId);
+    if (snap === undefined) {
+      throw new Error(`Snap not found: ${snapId}`);
+    }
+
+    return {
+      ...account,
+      metadata: {
+        snap: {
+          id: snapId,
+          name: snap.manifest.proposedName,
+          enabled: snap.enabled,
+        },
+        keyring: {
+          type: this.type,
+        },
+      },
+    };
   }
 
   /**
    * List all accounts.
    *
-   * @param sync - Whether to sync accounts with the snaps.
    * @returns All accounts.
    */
-  async listAccounts(sync: boolean): Promise<InternalAccount[]> {
-    if (sync) {
-      await this.#syncAllSnapsAccounts();
+  async listAccounts(): Promise<InternalAccount[]> {
+    await this.#syncAccounts();
+    return [...this.#addressToAccount.values()].map((account) =>
+      this.#toInternalAccount(account),
+    );
+  }
+
+  #getSnapStatus(snapId: string): SnapStatus {
+    const snap = this.#snapController.get(snapId);
+    if (snap === undefined) {
+      return SnapStatus.NotInstalled;
     }
-    return [...this.#addressToAccount.values()].map((account) => {
-      return {
-        ...account,
-        metadata: {
-          snap: {
-            id: this.#addressToSnapId.get(account.address),
-          },
-          keyring: {
-            type: this.type,
-          },
-        },
-      };
-    });
+    return snap.enabled ? SnapStatus.Enabled : SnapStatus.Disabled;
   }
 }
