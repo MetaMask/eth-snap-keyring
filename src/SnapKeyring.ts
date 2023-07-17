@@ -415,10 +415,14 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Add an account to the internal maps.
    *
-   * @param account - The account to be added.
+   * @param snapAccount - The account to be added.
    * @param snapId - The snap ID of the account.
    */
-  #addAccountToMaps(account: KeyringAccount, snapId: string): void {
+  #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
+    const account = {
+      ...snapAccount,
+      address: snapAccount.address.toLowerCase(),
+    };
     this.#addressToAccount.set(account.address, account);
     this.#addressToSnapId.set(account.address, snapId);
   }
@@ -446,6 +450,7 @@ export class SnapKeyring extends EventEmitter {
     return [...this.#addressToAccount.values()].map((account) => {
       return {
         ...account,
+        address: account.address.toLowerCase(),
         metadata: {
           snap: {
             id: this.#addressToSnapId.get(account.address),
