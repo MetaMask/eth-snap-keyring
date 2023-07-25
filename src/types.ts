@@ -28,16 +28,14 @@ export const InternalAccountStruct = intersection([
     metadata: object({
       snap: optional(
         object({
-          id: optional(string()),
+          id: string(),
           name: optional(string()),
-          enabled: optional(boolean()),
+          enabled: boolean(),
         }),
       ),
-      keyring: optional(
-        object({
-          type: optional(string()),
-        }),
-      ),
+      keyring: object({
+        type: string(),
+      }),
     }),
   }),
 ]);
