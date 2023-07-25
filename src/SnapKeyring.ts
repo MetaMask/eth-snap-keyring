@@ -454,6 +454,8 @@ export class SnapKeyring extends EventEmitter {
         metadata: {
           snap: {
             id: this.#addressToSnapId.get(account.address),
+            name: account?.name,
+            enabled: true,
           },
           keyring: {
             type: this.type,
