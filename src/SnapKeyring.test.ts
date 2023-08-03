@@ -48,7 +48,9 @@ describe('SnapKeyring', () => {
       const result = await keyring.handleKeyringSnapMessage(snapId, {
         method: 'listAccounts',
       });
-      expect(result).toStrictEqual(accounts);
+      expect(result).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
     });
 
     it('should fail if the method is not supported', async () => {
@@ -82,7 +84,9 @@ describe('SnapKeyring', () => {
   describe('getAccounts', () => {
     it('should return all account addresses', async () => {
       const addresses = await keyring.getAccounts();
-      expect(addresses).toStrictEqual(accounts.map((a) => a.address));
+      expect(addresses).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onRpcRequest',
         origin: 'metamask',
@@ -315,14 +319,18 @@ describe('SnapKeyring', () => {
     it('should remove an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
     });
 
     it('should remove the account and warn if snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('error');
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
       expect(console.error).toHaveBeenCalledWith(
         'Account "0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3" may not have been removed from snap "local:snap.mock":',
         'error',

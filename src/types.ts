@@ -5,6 +5,7 @@ import {
   array,
   boolean,
   intersection,
+  number,
   object,
   optional,
   record,
@@ -22,17 +23,19 @@ export const SnapMessageStruct = object({
  */
 export type SnapMessage = Infer<typeof SnapMessageStruct>;
 
+export const SnapMetadataStruct = object({
+  id: string(),
+  name: optional(string()),
+  enabled: boolean(),
+});
+
 export const InternalAccountStruct = intersection([
   KeyringAccountStruct,
   object({
     metadata: object({
-      snap: optional(
-        object({
-          id: string(),
-          name: optional(string()),
-          enabled: boolean(),
-        }),
-      ),
+      lastActive: optional(number()),
+      lastSelected: optional(number()),
+      snap: optional(SnapMetadataStruct),
       keyring: object({
         type: string(),
       }),

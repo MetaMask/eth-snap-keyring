@@ -350,10 +350,6 @@ export class SnapKeyring extends EventEmitter {
       .withSnapId(snapId)
       .listAccounts();
 
-    console.log('snapId', snapId);
-    console.log('oldAccounts', oldAccounts);
-    console.log('newAccounts', newAccounts);
-
     // Remove the old accounts from the maps.
     for (const account of oldAccounts) {
       this.#removeAccountFromMaps(account);
@@ -448,13 +444,15 @@ export class SnapKeyring extends EventEmitter {
       await this.#syncAllSnapsAccounts();
     }
     return [...this.#addressToAccount.values()].map((account) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const snapId = this.#addressToSnapId.get(account.address)!;
+
       return {
         ...account,
         address: account.address.toLowerCase(),
         metadata: {
           snap: {
-            id: this.#addressToSnapId.get(account.address),
-            name: account?.name,
+            id: snapId,
             enabled: true,
           },
           keyring: {
