@@ -4,6 +4,7 @@ import {
   KeyringSnapControllerClient,
   KeyringAccount,
   KeyringAccountStruct,
+  InternalAccount,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
@@ -13,7 +14,7 @@ import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
-import { InternalAccount, SnapMessage, SnapMessageStruct } from './types';
+import { SnapMessage, SnapMessageStruct } from './types';
 import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -450,12 +451,12 @@ export class SnapKeyring extends EventEmitter {
     return [...this.#addressToAccount.values()].map((account) => {
       return {
         ...account,
+        // FIXME: This workaround should be removed once we are using the
+        // account ID in the UI.
         address: account.address.toLowerCase(),
         metadata: {
           snap: {
             id: this.#addressToSnapId.get(account.address),
-            name: account?.name,
-            enabled: true,
           },
           keyring: {
             type: this.type,
