@@ -1,5 +1,9 @@
 import { TransactionFactory } from '@ethereumjs/tx';
-import { KeyringAccount } from '@metamask/keyring-api';
+import {
+  KeyringAccount,
+  EthMethod,
+  EthAccountType,
+} from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 
 import { KeyringState, SnapKeyring } from '.';
@@ -17,18 +21,16 @@ describe('SnapKeyring', () => {
     {
       id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
       address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3',
-      name: 'Account 1',
-      options: null,
-      supportedMethods: ['personal_sign', 'eth_sendTransaction'],
-      type: 'eip155:eoa',
+      options: {},
+      methods: [EthMethod.PersonalSign],
+      type: EthAccountType.Eoa,
     },
     {
       id: '33c96b60-2237-488e-a7bb-233576f3d22f',
       address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63',
-      name: 'Account 2',
-      options: null,
-      supportedMethods: ['eth_sendTransaction', 'eth_signTypedData'],
-      type: 'eip155:eoa',
+      options: {},
+      methods: [EthMethod.SignTypedData],
+      type: EthAccountType.Eoa,
     },
   ] as const;
 
@@ -60,7 +62,10 @@ describe('SnapKeyring', () => {
     });
 
     it('should submit an async request and return the result', async () => {
-      mockSnapController.handleRequest.mockResolvedValue({ pending: true });
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect: 'https://mock-url.com',
+      });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,
         'hello',
