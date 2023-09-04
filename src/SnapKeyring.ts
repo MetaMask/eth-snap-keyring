@@ -2,8 +2,8 @@ import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import {
   KeyringSnapControllerClient,
-  KeyringAccount,
-  KeyringAccountStruct,
+  InternalAccount,
+  InternalAccountStruct,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
@@ -19,7 +19,7 @@ import { strictMask, toJson, unique } from './util';
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export const KeyringStateStruct = object({
-  addressToAccount: record(string(), KeyringAccountStruct),
+  addressToAccount: record(string(), InternalAccountStruct),
   addressToSnapId: record(string(), string()),
 });
 
@@ -35,7 +35,7 @@ export class SnapKeyring extends EventEmitter {
 
   #snapClient: KeyringSnapControllerClient;
 
-  #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
+  #addressToAccount: CaseInsensitiveMap<InternalAccount>;
 
   #addressToSnapId: CaseInsensitiveMap<string>;
 
@@ -75,6 +75,7 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
+        // @ts-expect-error Check https://github.com/ianstormtaylor/superstruct/issues/983
         return [...this.#addressToAccount.values()].filter(
           (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
@@ -341,9 +342,9 @@ export class SnapKeyring extends EventEmitter {
     // Get new accounts first, before removing the old ones. This way, if
     // something goes wrong, we don't lose the old accounts.
     const oldAccounts = this.#getAccountsBySnapId(snapId);
-    const newAccounts = await this.#snapClient
+    const newAccounts = (await this.#snapClient
       .withSnapId(snapId)
-      .listAccounts();
+      .listAccounts()) as InternalAccount[];
 
     // Remove the old accounts from the maps.
     for (const account of oldAccounts) {
@@ -364,7 +365,7 @@ export class SnapKeyring extends EventEmitter {
    * found.
    */
   #resolveAddress(address: string): {
-    account: KeyringAccount;
+    account: InternalAccount;
     snapId: string;
   } {
     const account = this.#addressToAccount.get(address);
@@ -397,7 +398,7 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - The snap ID to get accounts for.
    * @returns All accounts associated with the given snap ID.
    */
-  #getAccountsBySnapId(snapId: string): KeyringAccount[] {
+  #getAccountsBySnapId(snapId: string): InternalAccount[] {
     return Object.values(this.#addressToAccount).filter(
       (account) => this.#addressToSnapId.get(account.address) === snapId,
     );
@@ -409,7 +410,7 @@ export class SnapKeyring extends EventEmitter {
    * @param account - The account to be added.
    * @param snapId - The snap ID of the account.
    */
-  #addAccountToMaps(account: KeyringAccount, snapId: string): void {
+  #addAccountToMaps(account: InternalAccount, snapId: string): void {
     this.#addressToAccount.set(account.address, account);
     this.#addressToSnapId.set(account.address, snapId);
   }
@@ -419,7 +420,7 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param account - The account to be removed.
    */
-  #removeAccountFromMaps(account: KeyringAccount): void {
+  #removeAccountFromMaps(account: InternalAccount): void {
     this.#addressToAccount.delete(account.address);
     this.#addressToSnapId.delete(account.address);
   }
