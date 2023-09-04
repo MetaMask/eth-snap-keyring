@@ -1,8 +1,8 @@
 import { TransactionFactory } from '@ethereumjs/tx';
 import {
-  KeyringAccount,
   EthMethod,
   EthAccountType,
+  InternalAccount,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 
@@ -40,7 +40,8 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
         method: 'createAccount',
-        params: { account: account as unknown as KeyringAccount },
+        // @ts-expect-error Check https://github.com/ianstormtaylor/superstruct/issues/983
+        params: { account: account as unknown as InternalAccount },
       });
     }
   });
