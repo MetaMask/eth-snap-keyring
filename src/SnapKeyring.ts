@@ -1,13 +1,14 @@
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import {
+  KeyringAccount,
   KeyringSnapControllerClient,
   InternalAccount,
   InternalAccountStruct,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
@@ -199,18 +200,22 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     transaction: TypedTransaction,
     _opts = {},
-  ): Promise<TypedTransaction> {
+  ): Promise<Json | TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
       type: transaction.type,
       chainId: transaction.common.chainId().toString(),
     });
-
     const signedTx = await this.#submitRequest(address, 'eth_sendTransaction', [
       address,
       tx,
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (signedTx?.userOp) {
+      return signedTx;
+    }
     return TransactionFactory.fromTxData(signedTx as any);
   }
 
@@ -317,12 +322,45 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Syncs all accounts for all snaps.
+   * List all accounts.
+   *
+   * @param sync - Whether to sync accounts with the snaps.
+   * @returns All accounts.
+   */
+  async listAccounts(sync: boolean): Promise<InternalAccount[]> {
+    if (sync) {
+      await this.#syncAllSnapsAccounts();
+    }
+
+    return [...this.#addressToAccount.values()].map((account) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const snapId = this.#addressToSnapId.get(account.address)!;
+
+      return {
+        ...account,
+        address: account.address.toLowerCase(),
+        metadata: {
+          name: 'account',
+          snap: {
+            id: snapId,
+            enabled: true,
+            name: 'snap',
+          },
+          keyring: {
+            type: this.type,
+          },
+        },
+      };
+    });
+  }
+
+  /**
+   * Syncs all accounts from all snaps.
    *
    * @param extraSnapIds - Extra snap IDs to sync accounts for.
    */
   async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = [...this.#addressToSnapId.values()].concat(extraSnapIds);
+    const snapIds = extraSnapIds.concat(...this.#addressToSnapId.values());
     for (const snapId of unique(snapIds)) {
       try {
         await this.#syncSnapAccounts(snapId);
@@ -342,9 +380,9 @@ export class SnapKeyring extends EventEmitter {
     // Get new accounts first, before removing the old ones. This way, if
     // something goes wrong, we don't lose the old accounts.
     const oldAccounts = this.#getAccountsBySnapId(snapId);
-    const newAccounts = (await this.#snapClient
+    const newAccounts = await this.#snapClient
       .withSnapId(snapId)
-      .listAccounts()) as InternalAccount[];
+      .listAccounts();
 
     // Remove the old accounts from the maps.
     for (const account of oldAccounts) {
@@ -398,8 +436,8 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - The snap ID to get accounts for.
    * @returns All accounts associated with the given snap ID.
    */
-  #getAccountsBySnapId(snapId: string): InternalAccount[] {
-    return Object.values(this.#addressToAccount).filter(
+  #getAccountsBySnapId(snapId: string): KeyringAccount[] {
+    return [...this.#addressToAccount.values()].filter(
       (account) => this.#addressToSnapId.get(account.address) === snapId,
     );
   }
@@ -407,10 +445,14 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Add an account to the internal maps.
    *
-   * @param account - The account to be added.
+   * @param snapAccount - The account to be added.
    * @param snapId - The snap ID of the account.
    */
-  #addAccountToMaps(account: InternalAccount, snapId: string): void {
+  #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
+    const account = {
+      ...snapAccount,
+      address: snapAccount.address.toLowerCase(),
+    };
     this.#addressToAccount.set(account.address, account);
     this.#addressToSnapId.set(account.address, snapId);
   }
