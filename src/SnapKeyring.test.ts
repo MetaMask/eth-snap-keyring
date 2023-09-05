@@ -13,6 +13,7 @@ describe('SnapKeyring', () => {
 
   const mockSnapController = {
     handleRequest: jest.fn(),
+    get: jest.fn(),
   };
 
   const snapId = 'local:snap.mock';
@@ -404,6 +405,23 @@ describe('SnapKeyring', () => {
         'error',
       );
       spy.mockRestore();
+    });
+  });
+
+  describe('listAccounts', () => {
+    it('should return the list of accounts', async () => {
+      const result = await keyring.listAccounts(true);
+      const expected = accounts.map((a) => ({
+        ...a,
+        metadata: {
+          name: '',
+          snap: undefined,
+          keyring: {
+            type: 'Snap Keyring',
+          },
+        },
+      }));
+      expect(result).toStrictEqual(expected);
     });
   });
 });
