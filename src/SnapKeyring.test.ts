@@ -1,9 +1,5 @@
 import { TransactionFactory } from '@ethereumjs/tx';
-import {
-  EthAccountType,
-  EthMethod,
-  KeyringAccount,
-} from '@metamask/keyring-api';
+import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 
 import { KeyringState, SnapKeyring } from '.';
@@ -52,9 +48,7 @@ describe('SnapKeyring', () => {
       const result = await keyring.handleKeyringSnapMessage(snapId, {
         method: 'listAccounts',
       });
-      expect(result).toStrictEqual(
-        accounts.map((a) => a.address.toLowerCase()),
-      );
+      expect(result).toStrictEqual(accounts);
     });
 
     it('should fail if the method is not supported', async () => {
