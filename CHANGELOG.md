@@ -19,8 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - chore(deps): bump @metamask/approval-controller from 3.3.0 to 3.4.0 ([#44](https://github.com/MetaMask/eth-snap-keyring/pull/44))
 - refactor: rename files to be more idiomatic ([#42](https://github.com/MetaMask/eth-snap-keyring/pull/42))
 - refactor: move internal state from objects to maps ([#41](https://github.com/MetaMask/eth-snap-keyring/pull/41))
+
 ### Fixed
 - fix: remove promise if `submitRequest()` throws ([#43](https://github.com/MetaMask/eth-snap-keyring/pull/43))
+
 ## [0.1.3]
 ### Fixed
 - Remove account from maps before calling the snap. ([#39](https://github.com/MetaMask/eth-snap-keyring/pull/39))
