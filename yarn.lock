@@ -949,15 +949,15 @@ __metadata:
   linkType: hard
 
 "@metamask/approval-controller@npm:^3.0.0":
-  version: 3.4.0
-  resolution: "@metamask/approval-controller@npm:3.4.0"
+  version: 3.5.1
+  resolution: "@metamask/approval-controller@npm:3.5.1"
   dependencies:
-    "@metamask/base-controller": ^3.0.0
-    "@metamask/utils": ^5.0.2
+    "@metamask/base-controller": ^3.2.1
+    "@metamask/utils": ^6.2.0
     eth-rpc-errors: ^4.0.2
     immer: ^9.0.6
     nanoid: ^3.1.31
-  checksum: 153136800fbd8cd50e2d6012740526c55e74e3f8e5aa99a05d5788e8bae04ede622608a1adf67dcf0986162e9e7d1d11b6f6f0df438904b65db7435b881c2e3f
+  checksum: 5d4d1425d44b3848b4486744472fb8eeb31ca9a70d58c6ca6e0603bcbba32f1c5dcd04a8fb2ab6b4bdbf2b4e3309f75387d7d345cd2aedee5e3d6b5d4af4dbad
   languageName: node
   linkType: hard
 
@@ -982,6 +982,16 @@ __metadata:
     "@metamask/utils": ^5.0.2
     immer: ^9.0.6
   checksum: a0853d90b024466c4108531cbf4459bd2f66fa6e0b912e42bd27cdf54262411a5601117649b6061424475ffa6b9714c5199d686c21e4d07c3b7b1ee0b4c17caa
+  languageName: node
+  linkType: hard
+
+"@metamask/base-controller@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "@metamask/base-controller@npm:3.2.1"
+  dependencies:
+    "@metamask/utils": ^6.2.0
+    immer: ^9.0.6
+  checksum: 73723a275ad2c8c6f9fcfcd69fd8b469bf8f4455fc572fc19ac9a8d76e5b65152cb111d95bfb9a4b9443298147e03a5f9778747dec2ca2203495ace54c97688c
   languageName: node
   linkType: hard
 
@@ -1367,6 +1377,20 @@ __metadata:
     semver: ^7.3.8
     superstruct: ^1.0.3
   checksum: d4eac3ce3c08674b8e9ef838d1661a5025690c6f266c26ebdb8e8d0da11fce786e54c326b5d9c6d33b262f37e7057e31d6545a3715613bd0a5bfa10e7755643a
+  languageName: node
+  linkType: hard
+
+"@metamask/utils@npm:^6.2.0":
+  version: 6.2.0
+  resolution: "@metamask/utils@npm:6.2.0"
+  dependencies:
+    "@ethereumjs/tx": ^4.1.2
+    "@noble/hashes": ^1.3.1
+    "@types/debug": ^4.1.7
+    debug: ^4.3.4
+    semver: ^7.3.8
+    superstruct: ^1.0.3
+  checksum: 0bc675358ecc09b3bc04da613d73666295d7afa51ff6b8554801585966900b24b8545bd93b8b2e9a17db867ebe421fe884baf3558ec4ca3199fa65504f677c1b
   languageName: node
   linkType: hard
 
