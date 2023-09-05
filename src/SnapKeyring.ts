@@ -150,7 +150,7 @@ export class SnapKeyring extends EventEmitter {
   async #submitRequest<Response extends Json>(
     address: string,
     method: string,
-    params?: Json[],
+    params?: Json[] | Record<string, Json>,
   ): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
     const id = uuid();
