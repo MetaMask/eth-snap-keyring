@@ -51,7 +51,9 @@ describe('SnapKeyring', () => {
       const result = await keyring.handleKeyringSnapMessage(snapId, {
         method: 'listAccounts',
       });
-      expect(result).toStrictEqual(accounts);
+      expect(result).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
     });
 
     it('should fail if the method is not supported', async () => {
@@ -88,7 +90,9 @@ describe('SnapKeyring', () => {
   describe('getAccounts', () => {
     it('should return all account addresses', async () => {
       const addresses = await keyring.getAccounts();
-      expect(addresses).toStrictEqual(accounts.map((a) => a.address));
+      expect(addresses).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onRpcRequest',
         origin: 'metamask',
@@ -158,7 +162,7 @@ describe('SnapKeyring', () => {
   });
 
   describe('signTransaction', () => {
-    it('should sign a transaction synchronously', async () => {
+    it('should sign a ethereum transaction synchronously', async () => {
       const mockTx = {
         data: '0x0',
         gasLimit: '0x26259fe',
@@ -177,6 +181,43 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       const expectedSignedTx = TransactionFactory.fromTxData(mockSignedTx);
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: mockSignedTx,
+      });
+      const signature = await keyring.signTransaction(accounts[0].address, tx);
+      expect(signature).toStrictEqual(expectedSignedTx);
+    });
+
+    it('should sign a transaction synchronously and return a userOperation', async () => {
+      const mockTx = {
+        data: '0x0',
+        gasLimit: '0x26259fe',
+        gasPrice: '0x1',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        chainId: '0x1',
+        type: '0x00',
+      };
+      const mockSignedTx = {
+        userOp: {
+          sender: accounts[0].address,
+          nonce: '0x0',
+          initCode: '0x',
+          callData: '0x',
+          callGasLimit: '0x0',
+          verificationGasLimit: '0x2DC6C0',
+          preVerificationGas: '0x2DC6C0',
+          maxFeePerGas: '0x0',
+          maxPriorityFeePerGas: '0x3B9ACA00',
+          paymasterAndData: '0x',
+          signature: '0x',
+        },
+        userOpHash: '0x0',
+      };
+      const tx = TransactionFactory.fromTxData(mockTx);
+      const expectedSignedTx = mockSignedTx;
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: mockSignedTx,
@@ -284,14 +325,18 @@ describe('SnapKeyring', () => {
     it('should remove an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
     });
 
     it('should remove the account and warn if snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('error');
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
       expect(console.error).toHaveBeenCalledWith(
         'Account "0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3" may not have been removed from snap "local:snap.mock":',
         'error',
