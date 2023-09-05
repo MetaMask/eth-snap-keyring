@@ -4,6 +4,8 @@ import {
   KeyringSnapControllerClient,
   KeyringAccount,
   KeyringAccountStruct,
+  InternalAccount,
+  EthMethod,
 } from '@metamask/keyring-api';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
@@ -13,7 +15,7 @@ import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
-import { InternalAccount, SnapMessage, SnapMessageStruct } from './types';
+import { SnapMessage, SnapMessageStruct } from './types';
 import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
@@ -148,7 +150,7 @@ export class SnapKeyring extends EventEmitter {
   async #submitRequest<Response extends Json>(
     address: string,
     method: string,
-    params?: Json | Json[],
+    params?: Json[],
   ): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
     const id = uuid();
@@ -161,11 +163,10 @@ export class SnapKeyring extends EventEmitter {
     const response = await (async () => {
       try {
         return await this.#snapClient.withSnapId(snapId).submitRequest({
+          id,
+          scope: '', // FIXME: Pass chain ID in CAIP-2 format.
           account: account.id,
-          scope: '', // Chain ID in CAIP-2 format.
           request: {
-            jsonrpc: '2.0',
-            id,
             method,
             ...(params !== undefined && { params }),
           },
@@ -205,10 +206,11 @@ export class SnapKeyring extends EventEmitter {
       chainId: transaction.common.chainId().toString(),
     });
 
-    const signedTx = await this.#submitRequest(address, 'eth_sendTransaction', [
+    const signedTx = await this.#submitRequest(
       address,
-      tx,
-    ]);
+      EthMethod.SignTransaction,
+      [tx],
+    );
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -223,18 +225,16 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Signer's address.
    * @param data - Data to sign.
-   * @param opts - Signing options.
    * @returns The signature.
    */
   async signTypedData(
     address: string,
     data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
-    opts: any = {},
   ): Promise<string> {
     const signature = await this.#submitRequest(
       address,
-      'eth_signTypedData',
-      toJson<Json[]>([address, data, opts]),
+      EthMethod.SignTypedData,
+      toJson<Json[]>([address, data]),
     );
     return strictMask(signature, string());
   }
@@ -243,15 +243,14 @@ export class SnapKeyring extends EventEmitter {
    * Sign a message.
    *
    * @param address - Signer's address.
-   * @param data - Data to sign.
-   * @param opts - Signing options.
+   * @param hash - Data to sign.
    * @returns The signature.
    */
-  async signMessage(address: string, data: any, opts = {}): Promise<string> {
+  async signMessage(address: string, hash: any): Promise<string> {
     const signature = await this.#submitRequest(
       address,
-      'eth_sign',
-      toJson<Json[]>([address, data, opts]),
+      EthMethod.Sign,
+      toJson<Json[]>([address, hash]),
     );
     return strictMask(signature, string());
   }
@@ -264,18 +263,13 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Signer's address.
    * @param data - Data to sign.
-   * @param _opts - Unused options.
    * @returns Promise of the signature.
    */
-  async signPersonalMessage(
-    address: string,
-    data: any,
-    _opts = {},
-  ): Promise<string> {
+  async signPersonalMessage(address: string, data: any): Promise<string> {
     const signature = await this.#submitRequest(
       address,
-      'personal_sign',
-      toJson<Json[]>([address, data]),
+      EthMethod.PersonalSign,
+      toJson<Json[]>([data, address]),
     );
     return strictMask(signature, string());
   }
@@ -417,6 +411,10 @@ export class SnapKeyring extends EventEmitter {
   #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
     const account = {
       ...snapAccount,
+      // FIXME: Do not lowercase the address here. This is a workaround to
+      // support the current UI which expects the account address to be
+      // lowercase. This workaround should be removed once we migrated the UI
+      // to use the account ID instead of the account address.
       address: snapAccount.address.toLowerCase(),
     };
     this.#addressToAccount.set(account.address, account);
@@ -433,6 +431,28 @@ export class SnapKeyring extends EventEmitter {
     this.#addressToSnapId.delete(account.address);
   }
 
+  #getSnapMetadata(
+    address: string,
+  ): InternalAccount['metadata']['snap'] | undefined {
+    const snapId = this.#addressToSnapId.get(address);
+    if (snapId === undefined) {
+      console.error(`Cannot find account: ${address}`);
+      return undefined;
+    }
+
+    const snap = this.#snapClient.getController().get(snapId);
+    if (snap === undefined) {
+      console.error(`Cannot find snap: ${snapId}`);
+      return undefined;
+    }
+
+    return {
+      id: snapId,
+      name: snap.manifest.proposedName,
+      enabled: snap.enabled,
+    };
+  }
+
   /**
    * List all accounts.
    *
@@ -444,17 +464,16 @@ export class SnapKeyring extends EventEmitter {
       await this.#syncAllSnapsAccounts();
     }
     return [...this.#addressToAccount.values()].map((account) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const snapId = this.#addressToSnapId.get(account.address)!;
-
       return {
         ...account,
+        // FIXME: Do not lowercase the address here. This is a workaround to
+        // support the current UI which expects the account address to be
+        // lowercase. This workaround should be removed once we migrated the UI
+        // to use the account ID instead of the account address.
         address: account.address.toLowerCase(),
         metadata: {
-          snap: {
-            id: snapId,
-            enabled: true,
-          },
+          name: '',
+          snap: this.#getSnapMetadata(account.address),
           keyring: {
             type: this.type,
           },
