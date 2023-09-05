@@ -1,7 +1,6 @@
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
 import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import {
-  KeyringSnapControllerClient,
   KeyringAccount,
   KeyringAccountStruct,
   InternalAccount,
@@ -21,7 +20,7 @@ import { strictMask, toJson, unique } from './util';
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export const KeyringStateStruct = object({
-  addressToAccount: record(string(), KeyringAccountStruct),
+  addressToAccount: record(string(), InternalAccountStruct),
   addressToSnapId: record(string(), string()),
 });
 
@@ -37,7 +36,7 @@ export class SnapKeyring extends EventEmitter {
 
   #snapClient: KeyringSnapControllerClient;
 
-  #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
+  #addressToAccount: CaseInsensitiveMap<InternalAccount>;
 
   #addressToSnapId: CaseInsensitiveMap<string>;
 
@@ -77,6 +76,7 @@ export class SnapKeyring extends EventEmitter {
         // Don't call the snap back to list the accounts. The main use case for
         // this method is to allow the snap to verify if the keyring's state is
         // in sync with the snap's state.
+        // @ts-expect-error Check https://github.com/ianstormtaylor/superstruct/issues/983
         return [...this.#addressToAccount.values()].filter(
           (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
@@ -363,7 +363,7 @@ export class SnapKeyring extends EventEmitter {
    * found.
    */
   #resolveAddress(address: string): {
-    account: KeyringAccount;
+    account: InternalAccount;
     snapId: string;
   } {
     const account = this.#addressToAccount.get(address);
@@ -426,7 +426,7 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param account - The account to be removed.
    */
-  #removeAccountFromMaps(account: KeyringAccount): void {
+  #removeAccountFromMaps(account: InternalAccount): void {
     this.#addressToAccount.delete(account.address);
     this.#addressToSnapId.delete(account.address);
   }

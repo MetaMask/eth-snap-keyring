@@ -41,7 +41,8 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
         method: 'createAccount',
-        params: { account: account as unknown as KeyringAccount },
+        // @ts-expect-error Check https://github.com/ianstormtaylor/superstruct/issues/983
+        params: { account: account as unknown as InternalAccount },
       });
     }
   });
@@ -51,7 +52,9 @@ describe('SnapKeyring', () => {
       const result = await keyring.handleKeyringSnapMessage(snapId, {
         method: 'listAccounts',
       });
-      expect(result).toStrictEqual(accounts);
+      expect(result).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
     });
 
     it('should fail if the method is not supported', async () => {
@@ -88,7 +91,9 @@ describe('SnapKeyring', () => {
   describe('getAccounts', () => {
     it('should return all account addresses', async () => {
       const addresses = await keyring.getAccounts();
-      expect(addresses).toStrictEqual(accounts.map((a) => a.address));
+      expect(addresses).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onRpcRequest',
         origin: 'metamask',
@@ -392,14 +397,18 @@ describe('SnapKeyring', () => {
     it('should remove an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
     });
 
     it('should remove the account and warn if snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('error');
       await keyring.removeAccount(accounts[0].address);
-      expect(await keyring.getAccounts()).toStrictEqual([accounts[1].address]);
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
       expect(console.error).toHaveBeenCalledWith(
         'Account "0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3" may not have been removed from snap "local:snap.mock":',
         'error',
