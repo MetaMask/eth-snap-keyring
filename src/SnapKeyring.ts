@@ -206,18 +206,16 @@ export class SnapKeyring extends EventEmitter {
       chainId: transaction.common.chainId().toString(),
     });
 
-    const signedTx = await this.#submitRequest(
+    const signature = await this.#submitRequest(
       address,
       EthMethod.SignTransaction,
       [tx],
     );
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (signedTx?.userOp) {
-      return signedTx;
-    }
-    return TransactionFactory.fromTxData(signedTx as any);
+    return TransactionFactory.fromTxData({
+      ...(tx as Record<string, Json>),
+      ...(signature as Record<string, Json>),
+    });
   }
 
   /**
