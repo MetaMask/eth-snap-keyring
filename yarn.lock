@@ -1086,7 +1086,7 @@ __metadata:
     "@metamask/eslint-config-nodejs": ^11.0.1
     "@metamask/eslint-config-typescript": ^11.0.0
     "@metamask/eth-sig-util": ^5.1.0
-    "@metamask/keyring-api": "github:MetaMask/keyring-api#500c89522d459bbd508ee2edefe35cf3dfc3e609"
+    "@metamask/keyring-api": ^0.2.2
     "@metamask/snaps-controllers": ^0.38.2-flask.1
     "@metamask/utils": ^8.1.0
     "@types/jest": ^28.1.6
@@ -1130,9 +1130,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/keyring-api@github:MetaMask/keyring-api#500c89522d459bbd508ee2edefe35cf3dfc3e609":
-  version: 0.2.1
-  resolution: "@metamask/keyring-api@https://github.com/MetaMask/keyring-api.git#commit=500c89522d459bbd508ee2edefe35cf3dfc3e609"
+"@metamask/keyring-api@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@metamask/keyring-api@npm:0.2.2"
   dependencies:
     "@metamask/providers": ^11.0.0
     "@metamask/rpc-methods": ^0.38.1-flask.1
@@ -1142,7 +1142,7 @@ __metadata:
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: d2c5c7849a5a573f5b9d30988c07c640d7826f20d351d9ec72e5f451383e69ce8ff53e20fede8258832c530536ea6f88de0a46b655822770a59329fe6842006c
+  checksum: eefa5408c04e203db4d3a711e0b621193fd5d15c31e155331a0af8da9d150629074ca847aeb55654f39c104eff01060452d7d3ac43b5122f8b565b249581a8df
   languageName: node
   linkType: hard
 
@@ -1203,25 +1203,6 @@ __metadata:
     pump: ^3.0.0
     webextension-polyfill: ^0.10.0
   checksum: f406f79750e7705b5e843e2c17a407e5952e946ccb2c036786251118b27ec8948743ac7bb3b11ce3cec897f101ca9c59c28b0b2e3343e3f75c526b6396d9c118
-  languageName: node
-  linkType: hard
-
-"@metamask/providers@npm:^11.1.1":
-  version: 11.1.1
-  resolution: "@metamask/providers@npm:11.1.1"
-  dependencies:
-    "@metamask/object-multiplex": ^1.1.0
-    "@metamask/safe-event-emitter": ^3.0.0
-    detect-browser: ^5.2.0
-    eth-rpc-errors: ^4.0.2
-    extension-port-stream: ^2.0.1
-    fast-deep-equal: ^3.1.3
-    is-stream: ^2.0.0
-    json-rpc-engine: ^6.1.0
-    json-rpc-middleware-stream: ^4.2.1
-    pump: ^3.0.0
-    webextension-polyfill: ^0.10.0
-  checksum: ca0339e5219ef43bccdf1debbf610f5f06c95d879c7bba124463c4c6e6dd34fae30c0cdf673985d85d9326a87e94a6ee7ad5d29ef154dca85a0c672fdab152d1
   languageName: node
   linkType: hard
 
@@ -1399,34 +1380,6 @@ __metadata:
   linkType: hard
 
 "@metamask/utils@npm:^8.0.0, @metamask/utils@npm:^8.1.0":
-  version: 8.1.0
-  resolution: "@metamask/utils@npm:8.1.0"
-  dependencies:
-    "@ethereumjs/tx": ^4.1.2
-    "@noble/hashes": ^1.3.1
-    "@types/debug": ^4.1.7
-    debug: ^4.3.4
-    semver: ^7.5.4
-    superstruct: ^1.0.3
-  checksum: 4cbee36d0c227f3e528930e83f75a0c6b71b55b332c3e162f0e87f3dd86ae017d0b20405d76ea054ab99e4d924d3d9b8b896ed12a12aae57b090350e5a625999
-  languageName: node
-  linkType: hard
-
-"@metamask/utils@npm:^6.2.0":
-  version: 6.2.0
-  resolution: "@metamask/utils@npm:6.2.0"
-  dependencies:
-    "@ethereumjs/tx": ^4.1.2
-    "@noble/hashes": ^1.3.1
-    "@types/debug": ^4.1.7
-    debug: ^4.3.4
-    semver: ^7.3.8
-    superstruct: ^1.0.3
-  checksum: 0bc675358ecc09b3bc04da613d73666295d7afa51ff6b8554801585966900b24b8545bd93b8b2e9a17db867ebe421fe884baf3558ec4ca3199fa65504f677c1b
-  languageName: node
-  linkType: hard
-
-"@metamask/utils@npm:^8.0.0":
   version: 8.1.0
   resolution: "@metamask/utils@npm:8.1.0"
   dependencies:
@@ -6856,17 +6809,6 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: ae47d06de28836adb9d3e25f22a92943477371292d9b665fb023fae278d345d508ca1958232af086d85e0155aee22e313e100971898bbb8d5d89b8b1d4054ca2
-  languageName: node
-  linkType: hard
-
-"semver@npm:^7.5.4":
-  version: 7.5.4
-  resolution: "semver@npm:7.5.4"
-  dependencies:
-    lru-cache: ^6.0.0
-  bin:
-    semver: bin/semver.js
-  checksum: 12d8ad952fa353b0995bf180cdac205a4068b759a140e5d3c608317098b3575ac2f1e09182206bf2eb26120e1c0ed8fb92c48c592f6099680de56bb071423ca3
   languageName: node
   linkType: hard
 
