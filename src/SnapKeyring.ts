@@ -7,6 +7,7 @@ import {
   EthMethod,
   KeyringSnapControllerClient,
 } from '@metamask/keyring-api';
+import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json } from '@metamask/utils';
 import { EventEmitter } from 'events';
@@ -73,6 +74,24 @@ export class SnapKeyring extends EventEmitter {
     assert(message, SnapMessageStruct);
     const { method, params } = message;
     switch (method) {
+      case KeyringEvent.AccountCreated: {
+        await this.#syncAllSnapsAccounts(snapId);
+        console.log('TODO: handle account created event');
+        return null;
+      }
+
+      case KeyringEvent.AccountDeleted: {
+        await this.#syncAllSnapsAccounts(snapId);
+        console.log('TODO: handle account deleted event');
+        return null;
+      }
+
+      case KeyringEvent.AccountUpdated: {
+        await this.#syncAllSnapsAccounts(snapId);
+        console.log('TODO: handle account updated event');
+        return null;
+      }
+
       case 'updateAccount':
       case 'createAccount':
       case 'deleteAccount': {
@@ -470,6 +489,7 @@ export class SnapKeyring extends EventEmitter {
       await this.#syncAllSnapsAccounts();
     }
     return [...this.#addressToAccount.values()].map((account) => {
+      const snapMetadata = this.#getSnapMetadata(account.address);
       return {
         ...account,
         // FIXME: Do not lowercase the address here. This is a workaround to
@@ -479,7 +499,7 @@ export class SnapKeyring extends EventEmitter {
         address: account.address.toLowerCase(),
         metadata: {
           name: '',
-          snap: this.#getSnapMetadata(account.address),
+          ...(snapMetadata !== undefined && { snap: snapMetadata }),
           keyring: {
             type: this.type,
           },
