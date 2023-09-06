@@ -75,25 +75,25 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const { method, params } = message;
+
     switch (method) {
-      case KeyringEvent.AccountCreated: {
-        console.log('Account created:', params);
-        await this.#syncAllSnapsAccounts(snapId);
-        await saveCallback();
-        return null;
-      }
-
+      case KeyringEvent.AccountCreated:
+      case KeyringEvent.AccountUpdated:
       case KeyringEvent.AccountDeleted: {
-        console.log('Account deleted:', params);
         await this.#syncAllSnapsAccounts(snapId);
         await saveCallback();
         return null;
       }
 
-      case KeyringEvent.AccountUpdated: {
-        console.log('Account updated:', params);
-        await this.#syncAllSnapsAccounts(snapId);
-        await saveCallback();
+      case KeyringEvent.RequestApproved: {
+        const { id, result } = params as any;
+        this.#resolveRequest(id, result);
+        return null;
+      }
+
+      case KeyringEvent.RequestRejected: {
+        const { id } = params as any;
+        this.#rejectRequest(id);
         return null;
       }
 
@@ -104,12 +104,6 @@ export class SnapKeyring extends EventEmitter {
         return [...this.#addressToAccount.values()].filter(
           (account) => this.#addressToSnapId.get(account.address) === snapId,
         );
-      }
-
-      case 'submitResponse': {
-        const { id, result } = params as any; // FIXME: add a struct for this
-        this.#resolveRequest(id, result);
-        return null;
       }
 
       default:
@@ -177,17 +171,17 @@ export class SnapKeyring extends EventEmitter {
     params?: Json[] | Record<string, Json>,
   ): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
-    const id = uuid();
+    const requestId = uuid();
 
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
     const promise = new DeferredPromise<Response>();
-    this.#pendingRequests.set(id, promise);
+    this.#pendingRequests.set(requestId, promise);
 
     const response = await (async () => {
       try {
         return await this.#snapClient.withSnapId(snapId).submitRequest({
-          id,
+          id: requestId,
           scope: '', // FIXME: Pass chain ID in CAIP-2 format.
           account: account.id,
           request: {
@@ -197,7 +191,7 @@ export class SnapKeyring extends EventEmitter {
         });
       } catch (error) {
         // If the snap failed to respond, delete the promise to prevent a leak.
-        this.#pendingRequests.delete(id);
+        this.#pendingRequests.delete(requestId);
         throw error;
       }
     })();
@@ -205,7 +199,7 @@ export class SnapKeyring extends EventEmitter {
     // The snap can respond immediately if the request is not async. In that
     // case we should delete the promise to prevent a leak.
     if (!response.pending) {
-      this.#pendingRequests.delete(id);
+      this.#pendingRequests.delete(requestId);
       return response.result;
     }
 
@@ -410,6 +404,21 @@ export class SnapKeyring extends EventEmitter {
 
     this.#pendingRequests.delete(id);
     promise.resolve(result);
+  }
+
+  /**
+   * Reject a pending request.
+   *
+   * @param id - ID of the request to reject.
+   */
+  #rejectRequest(id: string): void {
+    const promise = this.#pendingRequests.get(id);
+    if (promise?.reject === undefined) {
+      throw new Error(`No pending request found for ID: ${id}`);
+    }
+
+    this.#pendingRequests.delete(id);
+    promise.reject(new Error(`Request rejected by user or snap.`));
   }
 
   /**
