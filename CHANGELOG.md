@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.1.4]
-### Uncategorized
-- feat: receive a callback to trigger `saveState`
+### Changed
+- Receive a callback to trigger `saveState`
 
 ## [0.1.3]
 ### Fixed
