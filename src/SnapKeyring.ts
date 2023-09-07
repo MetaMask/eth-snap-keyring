@@ -27,6 +27,10 @@ export const KeyringStateStruct = object({
 
 export type KeyringState = Infer<typeof KeyringStateStruct>;
 
+export type SnapKeyringCallbacks = {
+  saveState: () => Promise<void>;
+};
+
 /**
  * Keyring bridge implementation to support snaps.
  */
@@ -43,13 +47,16 @@ export class SnapKeyring extends EventEmitter {
 
   #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
-  constructor(controller: SnapController) {
+  #callbacks: SnapKeyringCallbacks;
+
+  constructor(controller: SnapController, callbacks: SnapKeyringCallbacks) {
     super();
     this.type = SnapKeyring.type;
     this.#snapClient = new KeyringSnapControllerClient({ controller });
     this.#addressToAccount = new CaseInsensitiveMap();
     this.#addressToSnapId = new CaseInsensitiveMap();
     this.#pendingRequests = new CaseInsensitiveMap();
+    this.#callbacks = callbacks;
   }
 
   /**
@@ -70,6 +77,7 @@ export class SnapKeyring extends EventEmitter {
       case 'createAccount':
       case 'deleteAccount': {
         await this.#syncAllSnapsAccounts(snapId);
+        await this.#callbacks.saveState();
         return null;
       }
 
