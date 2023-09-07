@@ -65,13 +65,11 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param snapId - ID of the snap.
    * @param message - Message sent by the snap.
-   * @param saveCallback - Callback to save the keyring state.
    * @returns The execution result.
    */
   async handleKeyringSnapMessage(
     snapId: string,
     message: SnapMessage,
-    saveCallback: () => Promise<void>,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const { method, params } = message;
@@ -81,7 +79,7 @@ export class SnapKeyring extends EventEmitter {
       case KeyringEvent.AccountUpdated:
       case KeyringEvent.AccountDeleted: {
         await this.#syncAllSnapsAccounts(snapId);
-        await saveCallback();
+        await this.#callbacks.saveState();
         return null;
       }
 
