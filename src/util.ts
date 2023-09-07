@@ -2,30 +2,6 @@ import type { Json } from '@metamask/utils';
 import { Struct, assert } from 'superstruct';
 
 /**
- * A deferred promise can be resolved by a caller different from the one who
- * created it.
- *
- * Example:
- * - "A" creates a deferred promise "P", adds it to a list, and awaits it
- * - "B" gets "P" from the list and resolves it
- * - "A" gets the resolved value
- */
-export class DeferredPromise<T> {
-  promise: Promise<T>;
-
-  resolve?: (value: T | PromiseLike<T>) => void;
-
-  reject?: (reason?: any) => void;
-
-  constructor() {
-    this.promise = new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-    });
-  }
-}
-
-/**
  * Assert that a value is valid according to a struct.
  *
  * It is similar to superstruct's mask function, but it does not ignore extra
@@ -67,4 +43,15 @@ export function unique<T>(array: T[]): T[] {
  */
 export function toJson<T extends Json = Json>(value: any): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/**
+ * Asserts that the given value is defined.
+ *
+ * @param value - Value to check.
+ */
+export function ensureDefined<T>(value: T | undefined): asserts value is T {
+  if (value === undefined) {
+    throw new Error('Argument is undefined');
+  }
 }
