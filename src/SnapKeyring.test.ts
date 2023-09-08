@@ -12,6 +12,10 @@ describe('SnapKeyring', () => {
     get: jest.fn(),
   };
 
+  const mockCallbacks = {
+    saveState: jest.fn(),
+  };
+
   const snapId = 'local:snap.mock';
 
   const accounts = [
@@ -32,7 +36,10 @@ describe('SnapKeyring', () => {
   ] as const;
 
   beforeEach(async () => {
-    keyring = new SnapKeyring(mockSnapController as unknown as SnapController);
+    keyring = new SnapKeyring(
+      mockSnapController as unknown as SnapController,
+      mockCallbacks,
+    );
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
@@ -139,6 +146,7 @@ describe('SnapKeyring', () => {
       // Reset the keyring so it's empty.
       keyring = new SnapKeyring(
         mockSnapController as unknown as SnapController,
+        mockCallbacks,
       );
       await keyring.deserialize(undefined as unknown as KeyringState);
       expect(await keyring.getAccounts()).toStrictEqual([]);
@@ -148,6 +156,7 @@ describe('SnapKeyring', () => {
       // Reset the keyring so it's empty.
       keyring = new SnapKeyring(
         mockSnapController as unknown as SnapController,
+        mockCallbacks,
       );
       await expect(
         keyring.deserialize({} as unknown as KeyringState),
