@@ -331,7 +331,7 @@ export class SnapKeyring extends EventEmitter {
         await this.#syncSnapAccounts(snapId);
       } catch (error) {
         // Log the error and continue with the other snaps.
-        console.error(`Failed to sync accounts for snap "${snapId}":`, error);
+        console.error(`Failed to sync accounts for snap '${snapId}':`, error);
       }
     }
   }

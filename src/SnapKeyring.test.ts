@@ -63,7 +63,7 @@ describe('SnapKeyring', () => {
       ).rejects.toThrow('Method not supported: invalid');
     });
 
-    it('submits an async request and return the result', async () => {
+    it('approves an async request', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
         redirect: {},
@@ -83,6 +83,27 @@ describe('SnapKeyring', () => {
         },
       });
       expect(await requestPromise).toBe('0x123');
+    });
+
+    it('rejects an async request', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect: {},
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        accounts[0].address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: { id: requestId },
+      });
+      await expect(requestPromise).rejects.toThrow(
+        'Request rejected by user or snap.',
+      );
     });
   });
 
