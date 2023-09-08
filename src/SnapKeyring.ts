@@ -95,15 +95,6 @@ export class SnapKeyring extends EventEmitter {
         return null;
       }
 
-      case 'listAccounts': {
-        // Don't call the snap back to list the accounts. The main use case for
-        // this method is to allow the snap to verify if the keyring's state is
-        // in sync with the snap's state.
-        return [...this.#addressToAccount.values()].filter(
-          (account) => this.#addressToSnapId.get(account.address) === snapId,
-        );
-      }
-
       default:
         throw new Error(`Method not supported: ${method}`);
     }
