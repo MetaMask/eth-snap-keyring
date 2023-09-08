@@ -452,9 +452,9 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * List all accounts.
+   * List all snap keyring accounts.
    *
-   * @returns All accounts.
+   * @returns An array containing all snap keyring accounts.
    */
   async listAccounts(): Promise<InternalAccount[]> {
     await this.#syncAllSnapsAccounts();
