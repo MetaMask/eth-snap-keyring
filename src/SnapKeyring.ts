@@ -371,12 +371,10 @@ export class SnapKeyring extends EventEmitter {
     account: KeyringAccount;
     snapId: string;
   } {
-    const account = this.#addressToAccount.get(address);
-    const snapId = this.#addressToSnapId.get(address);
-    if (snapId === undefined || account === undefined) {
-      throw new Error(`Account address not found: ${address}`);
-    }
-    return { account, snapId };
+    return {
+      account: this.#addressToAccount.getOrThrow(address, 'Account'),
+      snapId: this.#addressToSnapId.getOrThrow(address, 'Snap'),
+    };
   }
 
   /**
@@ -386,11 +384,7 @@ export class SnapKeyring extends EventEmitter {
    * @param result - Result of the request.
    */
   #resolveRequest(id: string, result: any): void {
-    const promise = this.#pendingRequests.get(id);
-    if (promise?.resolve === undefined) {
-      throw new Error(`No pending request found for ID: ${id}`);
-    }
-
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
     this.#pendingRequests.delete(id);
     promise.resolve(result);
   }
@@ -401,11 +395,7 @@ export class SnapKeyring extends EventEmitter {
    * @param id - ID of the request to reject.
    */
   #rejectRequest(id: string): void {
-    const promise = this.#pendingRequests.get(id);
-    if (promise?.reject === undefined) {
-      throw new Error(`No pending request found for ID: ${id}`);
-    }
-
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
     this.#pendingRequests.delete(id);
     promise.reject(new Error(`Request rejected by user or snap.`));
   }
@@ -454,37 +444,22 @@ export class SnapKeyring extends EventEmitter {
   #getSnapMetadata(
     address: string,
   ): InternalAccount['metadata']['snap'] | undefined {
-    const snapId = this.#addressToSnapId.get(address);
-    if (snapId === undefined) {
-      console.error(`Cannot find account: ${address}`);
-      return undefined;
-    }
-
+    const snapId = this.#addressToSnapId.getOrThrow(address);
     const snap = this.#snapClient.getController().get(snapId);
-    if (snap === undefined) {
-      console.error(`Cannot find snap: ${snapId}`);
-      return undefined;
-    }
-
-    return {
-      id: snapId,
-      name: snap.manifest.proposedName,
-      enabled: snap.enabled,
-    };
+    return snap
+      ? { id: snapId, name: snap.manifest.proposedName, enabled: snap.enabled }
+      : undefined;
   }
 
   /**
    * List all accounts.
    *
-   * @param sync - Whether to sync accounts with the snaps.
    * @returns All accounts.
    */
-  async listAccounts(sync: boolean): Promise<InternalAccount[]> {
-    if (sync) {
-      await this.#syncAllSnapsAccounts();
-    }
+  async listAccounts(): Promise<InternalAccount[]> {
+    await this.#syncAllSnapsAccounts();
     return [...this.#addressToAccount.values()].map((account) => {
-      const snapMetadata = this.#getSnapMetadata(account.address);
+      const snap = this.#getSnapMetadata(account.address);
       return {
         ...account,
         // FIXME: Do not lowercase the address here. This is a workaround to
@@ -494,10 +469,10 @@ export class SnapKeyring extends EventEmitter {
         address: account.address.toLowerCase(),
         metadata: {
           name: '',
-          ...(snapMetadata !== undefined && { snap: snapMetadata }),
           keyring: {
             type: this.type,
           },
+          ...(snap && { snap }),
         },
       };
     });

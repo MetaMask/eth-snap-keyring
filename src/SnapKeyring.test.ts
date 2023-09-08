@@ -1,5 +1,10 @@
 import { TransactionFactory } from '@ethereumjs/tx';
-import { EthAccountType, EthMethod } from '@metamask/keyring-api';
+import {
+  EthAccountType,
+  EthMethod,
+  InternalAccount,
+} from '@metamask/keyring-api';
+import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { SnapController } from '@metamask/snaps-controllers';
 
 import { KeyringState, SnapKeyring } from '.';
@@ -43,22 +48,14 @@ describe('SnapKeyring', () => {
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
-        method: 'createAccount',
-        // @ts-expect-error Check https://github.com/ianstormtaylor/superstruct/issues/983
+        method: KeyringEvent.AccountCreated,
         params: { account: account as unknown as InternalAccount },
       });
     }
   });
 
   describe('handleKeyringSnapMessage', () => {
-    it('should return the list of accounts', async () => {
-      const result = await keyring.handleKeyringSnapMessage(snapId, {
-        method: 'listAccounts',
-      });
-      expect(result).toStrictEqual(accounts);
-    });
-
-    it('should fail if the method is not supported', async () => {
+    it('fails when the method is not supported', async () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
           method: 'invalid',
@@ -66,10 +63,10 @@ describe('SnapKeyring', () => {
       ).rejects.toThrow('Method not supported: invalid');
     });
 
-    it('should submit an async request and return the result', async () => {
+    it('submits an async request and return the result', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
-        redirect: null,
+        redirect: {},
       });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,
@@ -79,7 +76,7 @@ describe('SnapKeyring', () => {
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId = calls[calls.length - 1][0].request.params.id;
       await keyring.handleKeyringSnapMessage(snapId, {
-        method: 'submitResponse',
+        method: KeyringEvent.RequestApproved,
         params: {
           id: requestId,
           result: '0x123',
@@ -284,7 +281,7 @@ describe('SnapKeyring', () => {
       const mockMessage = 'Hello World!';
       await expect(
         keyring.signPersonalMessage('0x0', mockMessage),
-      ).rejects.toThrow('Account address not found: 0x0');
+      ).rejects.toThrow("Account '0x0' not found");
     });
 
     it("should fail to resolve a request that wasn't submitted correctly", async () => {
@@ -297,14 +294,14 @@ describe('SnapKeyring', () => {
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId = calls[calls.length - 1][0].request.params.id;
       const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: 'submitResponse',
+        method: KeyringEvent.RequestApproved,
         params: {
           id: requestId,
           result: '0x123',
         },
       });
       await expect(responsePromise).rejects.toThrow(
-        `No pending request found for ID: ${requestId as string}`,
+        `Pending request '${requestId as string}' not found`,
       );
     });
   });
@@ -356,7 +353,7 @@ describe('SnapKeyring', () => {
   describe('removeAccount', () => {
     it('should throw an error if the account is not found', async () => {
       await expect(keyring.removeAccount('0x0')).rejects.toThrow(
-        'Account address not found: 0x0',
+        "Account '0x0' not found",
       );
     });
 
@@ -385,12 +382,25 @@ describe('SnapKeyring', () => {
 
   describe('listAccounts', () => {
     it('should return the list of accounts', async () => {
-      const result = await keyring.listAccounts(true);
+      const snapMetadata = {
+        id: snapId,
+        name: 'Snap Name',
+        enabled: true,
+      };
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          proposedName: 'Snap Name',
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+      const result = await keyring.listAccounts();
       const expected = accounts.map((a) => ({
         ...a,
         metadata: {
           name: '',
-          snap: undefined,
+          snap: snapMetadata,
           keyring: {
             type: 'Snap Keyring',
           },
