@@ -1104,7 +1104,7 @@ __metadata:
     "@metamask/eslint-config-nodejs": ^11.0.1
     "@metamask/eslint-config-typescript": ^11.0.0
     "@metamask/eth-sig-util": ^5.1.0
-    "@metamask/keyring-api": "github:MetaMask/keyring-api#54fdcb1e44d197ffee3f61e1e89b9fbd47b98726"
+    "@metamask/keyring-api": "github:MetaMask/keyring-api#ac354ec2e045ec46067a01f7b143e08fa6804660"
     "@metamask/snaps-controllers": ^0.38.2-flask.1
     "@metamask/utils": ^8.1.0
     "@types/jest": ^28.1.6
@@ -1134,6 +1134,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@metamask/json-rpc-engine@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "@metamask/json-rpc-engine@npm:7.1.1"
+  dependencies:
+    "@metamask/rpc-errors": ^6.0.0
+    "@metamask/safe-event-emitter": ^3.0.0
+    "@metamask/utils": ^8.1.0
+  checksum: 9dddd9142965ccd86313cda5bf13f15bf99c6c14631f93aab78de353317d548a334b5b125cdc134edd7d54e2f2e4961a0bdcd24fba997b2913083955df8fefa1
+  languageName: node
+  linkType: hard
+
 "@metamask/key-tree@npm:^9.0.0":
   version: 9.0.0
   resolution: "@metamask/key-tree@npm:9.0.0"
@@ -1148,11 +1159,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/keyring-api@github:MetaMask/keyring-api#54fdcb1e44d197ffee3f61e1e89b9fbd47b98726":
+"@metamask/keyring-api@github:MetaMask/keyring-api#ac354ec2e045ec46067a01f7b143e08fa6804660":
   version: 0.2.2
-  resolution: "@metamask/keyring-api@https://github.com/MetaMask/keyring-api.git#commit=54fdcb1e44d197ffee3f61e1e89b9fbd47b98726"
+  resolution: "@metamask/keyring-api@https://github.com/MetaMask/keyring-api.git#commit=ac354ec2e045ec46067a01f7b143e08fa6804660"
   dependencies:
-    "@metamask/providers": ^11.0.0
+    "@metamask/providers": ^12.0.0
     "@metamask/rpc-methods": ^0.38.1-flask.1
     "@metamask/snaps-controllers": ^0.38.2-flask.1
     "@metamask/snaps-utils": ^0.38.2-flask.1
@@ -1160,7 +1171,7 @@ __metadata:
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: 324e72c0d710870496397bc21149d9d33f5b948d4fb5a42820d22be88858b081b3d41b0f5c69ba1ec7e01f452e9555efc61f22f7ff49e006d308a3a4973ab951
+  checksum: da911256c10cfd69388032b86706481349415c42b8103a49ac5a2634394703343da6237f51ad724efaf1d1bebd8453b0c845ef6a3285a9db3cc36aaefd47d835
   languageName: node
   linkType: hard
 
@@ -1205,7 +1216,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/providers@npm:^11.0.0, @metamask/providers@npm:^11.1.1":
+"@metamask/providers@npm:^11.1.1":
   version: 11.1.2
   resolution: "@metamask/providers@npm:11.1.2"
   dependencies:
@@ -1221,6 +1232,36 @@ __metadata:
     pump: ^3.0.0
     webextension-polyfill: ^0.10.0
   checksum: f406f79750e7705b5e843e2c17a407e5952e946ccb2c036786251118b27ec8948743ac7bb3b11ce3cec897f101ca9c59c28b0b2e3343e3f75c526b6396d9c118
+  languageName: node
+  linkType: hard
+
+"@metamask/providers@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "@metamask/providers@npm:12.0.0"
+  dependencies:
+    "@metamask/json-rpc-engine": ^7.1.1
+    "@metamask/object-multiplex": ^1.1.0
+    "@metamask/rpc-errors": ^6.0.0
+    "@metamask/safe-event-emitter": ^3.0.0
+    "@metamask/utils": ^8.1.0
+    detect-browser: ^5.2.0
+    extension-port-stream: ^2.1.1
+    fast-deep-equal: ^3.1.3
+    is-stream: ^2.0.0
+    json-rpc-middleware-stream: ^4.2.1
+    pump: ^3.0.0
+    webextension-polyfill: ^0.10.0
+  checksum: 4e466322b3e020607ddb16599555bacc1c4fe8bfe2f781e123c012019f79bbc8206207adc3150d04fb7e36fbd959abf5fc54a6edd072fbed4f4edcabf7dd1ce2
+  languageName: node
+  linkType: hard
+
+"@metamask/rpc-errors@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@metamask/rpc-errors@npm:6.0.0"
+  dependencies:
+    "@metamask/utils": ^8.0.0
+    fast-safe-stringify: ^2.0.6
+  checksum: 7e1ee1a98972266af4a34f0bbc842cdc11dc565056f0b8fbc93aa95663a7027eab8ff1fecbe3e09c38a1dc199f8219a6c69b2237015b2fdb8de0e5b35027c3f8
   languageName: node
   linkType: hard
 
@@ -1423,7 +1464,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/utils@npm:^8.1.0":
+"@metamask/utils@npm:^8.0.0, @metamask/utils@npm:^8.1.0":
   version: 8.1.0
   resolution: "@metamask/utils@npm:8.1.0"
   dependencies:
