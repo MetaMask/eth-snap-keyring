@@ -1050,6 +1050,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metamask/eth-query@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "@metamask/eth-query@npm:3.0.1"
+  dependencies:
+    json-rpc-random-id: ^1.0.0
+    xtend: ^4.0.1
+  checksum: b9a323dff67328eace7d54fc8b0bc4dd763bf15760870656cbd5aad5380d1ee4489fb5c59506290d5f77cf55e74e530ee97b52702a329f1090ec03a6158434b7
+  languageName: node
+  linkType: hard
+
 "@metamask/eth-sig-util@npm:^6.0.0":
   version: 6.0.0
   resolution: "@metamask/eth-sig-util@npm:6.0.0"
