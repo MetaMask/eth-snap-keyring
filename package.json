@@ -25,7 +25,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^4.1.2",
+    "@ethereumjs/tx": "^4.2.0",
     "@metamask/eth-sig-util": "^6.0.0",
     "@metamask/keyring-api": "^0.2.2",
     "@metamask/snaps-controllers": "^0.38.2-flask.1",
