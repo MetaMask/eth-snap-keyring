@@ -149,16 +149,24 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Submit a request to a snap.
    *
-   * @param address - Account address.
-   * @param method - Method to call.
-   * @param params - Method parameters.
+   * @param opts - Request options.
+   * @param opts.address - Account address.
+   * @param opts.method - Method to call.
+   * @param opts.params - Method parameters.
+   * @param opts.chainId - Selected chain ID (CAIP-2).
    * @returns Promise that resolves to the result of the method call.
    */
-  async #submitRequest<Response extends Json>(
-    address: string,
-    method: string,
-    params?: Json[] | Record<string, Json>,
-  ): Promise<Json> {
+  async #submitRequest<Response extends Json>({
+    address,
+    method,
+    params,
+    chainId = '',
+  }: {
+    address: string;
+    method: string;
+    params?: Json[] | Record<string, Json>;
+    chainId?: string;
+  }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
     const requestId = uuid();
 
@@ -171,7 +179,7 @@ export class SnapKeyring extends EventEmitter {
       try {
         return await this.#snapClient.withSnapId(snapId).submitRequest({
           id: requestId,
-          scope: '', // FIXME: Pass chain ID in CAIP-2 format.
+          scope: chainId,
           account: account.id,
           request: {
             method,
@@ -213,11 +221,11 @@ export class SnapKeyring extends EventEmitter {
       chainId: transaction.common.chainId().toString(),
     });
 
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.SignTransaction,
-      [tx],
-    );
+      method: EthMethod.SignTransaction,
+      params: [tx],
+    });
 
     return TransactionFactory.fromTxData({
       ...(tx as Record<string, Json>),
@@ -236,11 +244,11 @@ export class SnapKeyring extends EventEmitter {
     address: string,
     data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
   ): Promise<string> {
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.SignTypedData,
-      toJson<Json[]>([address, data]),
-    );
+      method: EthMethod.SignTypedData,
+      params: toJson<Json[]>([address, data]),
+    });
     return strictMask(signature, string());
   }
 
@@ -252,11 +260,11 @@ export class SnapKeyring extends EventEmitter {
    * @returns The signature.
    */
   async signMessage(address: string, hash: any): Promise<string> {
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.Sign,
-      toJson<Json[]>([address, hash]),
-    );
+      method: EthMethod.Sign,
+      params: toJson<Json[]>([address, hash]),
+    });
     return strictMask(signature, string());
   }
 
@@ -271,11 +279,11 @@ export class SnapKeyring extends EventEmitter {
    * @returns Promise of the signature.
    */
   async signPersonalMessage(address: string, data: any): Promise<string> {
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.PersonalSign,
-      toJson<Json[]>([data, address]),
-    );
+      method: EthMethod.PersonalSign,
+      params: toJson<Json[]>([data, address]),
+    });
     return strictMask(signature, string());
   }
 
