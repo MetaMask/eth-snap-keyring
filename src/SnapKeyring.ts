@@ -1,5 +1,9 @@
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
-import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
+import {
+  SignTypedDataVersion,
+  TypedDataV1,
+  TypedMessage,
+} from '@metamask/eth-sig-util';
 import {
   KeyringAccount,
   KeyringAccountStruct,
@@ -238,17 +242,29 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Signer's address.
    * @param data - Data to sign.
+   * @param opts - Signing options.
    * @returns The signature.
    */
   async signTypedData(
     address: string,
     data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
+    opts = { version: SignTypedDataVersion.V1 },
   ): Promise<string> {
+    const methods = {
+      [SignTypedDataVersion.V1]: EthMethod.SignTypedDataV1,
+      [SignTypedDataVersion.V3]: EthMethod.SignTypedDataV3,
+      [SignTypedDataVersion.V4]: EthMethod.SignTypedDataV4,
+    };
+
+    // Use 'V1' by default to match other keyring implementations.
+    const method = methods[opts.version] || EthMethod.SignTypedDataV1;
+
     const signature = await this.#submitRequest({
       address,
-      method: EthMethod.SignTypedData,
+      method,
       params: toJson<Json[]>([address, data]),
     });
+
     return strictMask(signature, string());
   }
 
