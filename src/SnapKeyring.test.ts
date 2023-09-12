@@ -1,14 +1,12 @@
 import { TransactionFactory } from '@ethereumjs/tx';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import {
-  EthAccountType,
-  EthMethod,
-  InternalAccount,
-} from '@metamask/keyring-api';
+import type { InternalAccount } from '@metamask/keyring-api';
+import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { SnapController } from '@metamask/snaps-controllers';
+import type { SnapController } from '@metamask/snaps-controllers';
 
-import { KeyringState, SnapKeyring } from '.';
+import type { KeyringState } from '.';
+import { SnapKeyring } from '.';
 
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;

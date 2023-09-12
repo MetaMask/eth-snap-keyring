@@ -1,26 +1,26 @@
-import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
+import type { TypedTransaction } from '@ethereumjs/tx';
+import { TransactionFactory } from '@ethereumjs/tx';
+import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
+import { SignTypedDataVersion } from '@metamask/eth-sig-util';
+import type { KeyringAccount, InternalAccount } from '@metamask/keyring-api';
 import {
-  SignTypedDataVersion,
-  TypedDataV1,
-  TypedMessage,
-} from '@metamask/eth-sig-util';
-import {
-  KeyringAccount,
   KeyringAccountStruct,
-  InternalAccount,
   EthMethod,
   KeyringSnapControllerClient,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { SnapController } from '@metamask/snaps-controllers';
-import { Json, bigIntToHex } from '@metamask/utils';
+import type { SnapController } from '@metamask/snaps-controllers';
+import type { Json } from '@metamask/utils';
+import { bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, object, string, record, Infer, mask } from 'superstruct';
+import type { Infer } from 'superstruct';
+import { assert, object, string, record, mask } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
-import { SnapMessage, SnapMessageStruct } from './types';
+import type { SnapMessage } from './types';
+import { SnapMessageStruct } from './types';
 import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
