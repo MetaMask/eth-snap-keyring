@@ -1,5 +1,9 @@
 import { TransactionFactory, TypedTransaction } from '@ethereumjs/tx';
-import { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
+import {
+  SignTypedDataVersion,
+  TypedDataV1,
+  TypedMessage,
+} from '@metamask/eth-sig-util';
 import {
   KeyringAccount,
   KeyringAccountStruct,
@@ -7,10 +11,11 @@ import {
   EthMethod,
   KeyringSnapControllerClient,
 } from '@metamask/keyring-api';
+import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { SnapController } from '@metamask/snaps-controllers';
-import { Json } from '@metamask/utils';
+import { Json, bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, object, string, record, Infer } from 'superstruct';
+import { assert, object, string, record, Infer, mask } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
@@ -72,27 +77,25 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
     const { method, params } = message;
+
     switch (method) {
-      case 'updateAccount':
-      case 'createAccount':
-      case 'deleteAccount': {
+      case KeyringEvent.AccountCreated:
+      case KeyringEvent.AccountUpdated:
+      case KeyringEvent.AccountDeleted: {
         await this.#syncAllSnapsAccounts(snapId);
         await this.#callbacks.saveState();
         return null;
       }
 
-      case 'listAccounts': {
-        // Don't call the snap back to list the accounts. The main use case for
-        // this method is to allow the snap to verify if the keyring's state is
-        // in sync with the snap's state.
-        return [...this.#addressToAccount.values()].filter(
-          (account) => this.#addressToSnapId.get(account.address) === snapId,
-        );
+      case KeyringEvent.RequestApproved: {
+        const { id, result } = params as any;
+        this.#resolveRequest(id, result);
+        return null;
       }
 
-      case 'submitResponse': {
-        const { id, result } = params as any; // FIXME: add a struct for this
-        this.#resolveRequest(id, result);
+      case KeyringEvent.RequestRejected: {
+        const { id } = params as any;
+        this.#rejectRequest(id);
         return null;
       }
 
@@ -150,29 +153,37 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Submit a request to a snap.
    *
-   * @param address - Account address.
-   * @param method - Method to call.
-   * @param params - Method parameters.
+   * @param opts - Request options.
+   * @param opts.address - Account address.
+   * @param opts.method - Method to call.
+   * @param opts.params - Method parameters.
+   * @param opts.chainId - Selected chain ID (CAIP-2).
    * @returns Promise that resolves to the result of the method call.
    */
-  async #submitRequest<Response extends Json>(
-    address: string,
-    method: string,
-    params?: Json[] | Record<string, Json>,
-  ): Promise<Json> {
+  async #submitRequest<Response extends Json>({
+    address,
+    method,
+    params,
+    chainId = '',
+  }: {
+    address: string;
+    method: string;
+    params?: Json[] | Record<string, Json>;
+    chainId?: string;
+  }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
-    const id = uuid();
+    const requestId = uuid();
 
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
     const promise = new DeferredPromise<Response>();
-    this.#pendingRequests.set(id, promise);
+    this.#pendingRequests.set(requestId, promise);
 
     const response = await (async () => {
       try {
         return await this.#snapClient.withSnapId(snapId).submitRequest({
-          id,
-          scope: '', // FIXME: Pass chain ID in CAIP-2 format.
+          id: requestId,
+          scope: chainId,
           account: account.id,
           request: {
             method,
@@ -181,7 +192,7 @@ export class SnapKeyring extends EventEmitter {
         });
       } catch (error) {
         // If the snap failed to respond, delete the promise to prevent a leak.
-        this.#pendingRequests.delete(id);
+        this.#pendingRequests.delete(requestId);
         throw error;
       }
     })();
@@ -189,7 +200,7 @@ export class SnapKeyring extends EventEmitter {
     // The snap can respond immediately if the request is not async. In that
     // case we should delete the promise to prevent a leak.
     if (!response.pending) {
-      this.#pendingRequests.delete(id);
+      this.#pendingRequests.delete(requestId);
       return response.result;
     }
 
@@ -210,19 +221,31 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<Json | TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
-      type: transaction.type,
-      chainId: transaction.common.chainId().toString(),
+      from: address,
+      type: `0x${transaction.type.toString(16)}`,
+      chainId: bigIntToHex(transaction.common.chainId()),
     });
 
-    const signature = await this.#submitRequest(
+    const signedTx = await this.#submitRequest({
       address,
-      EthMethod.SignTransaction,
-      [tx],
+      method: EthMethod.SignTransaction,
+      params: [tx],
+    });
+
+    const signature = mask(
+      signedTx,
+      object({
+        r: string(),
+        s: string(),
+        v: string(),
+      }),
     );
 
     return TransactionFactory.fromTxData({
       ...(tx as Record<string, Json>),
-      ...(signature as Record<string, Json>),
+      r: signature.r,
+      s: signature.s,
+      v: signature.v,
     });
   }
 
@@ -231,17 +254,28 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Signer's address.
    * @param data - Data to sign.
+   * @param opts - Signing options.
    * @returns The signature.
    */
   async signTypedData(
     address: string,
     data: Record<string, unknown>[] | TypedDataV1 | TypedMessage<any>,
+    opts = { version: SignTypedDataVersion.V1 },
   ): Promise<string> {
-    const signature = await this.#submitRequest(
+    const methods = {
+      [SignTypedDataVersion.V1]: EthMethod.SignTypedDataV1,
+      [SignTypedDataVersion.V3]: EthMethod.SignTypedDataV3,
+      [SignTypedDataVersion.V4]: EthMethod.SignTypedDataV4,
+    };
+
+    // Use 'V1' by default to match other keyring implementations.
+    const method = methods[opts.version] || EthMethod.SignTypedDataV1;
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.SignTypedData,
-      toJson<Json[]>([address, data]),
-    );
+      method,
+      params: toJson<Json[]>([address, data]),
+    });
+
     return strictMask(signature, string());
   }
 
@@ -253,11 +287,11 @@ export class SnapKeyring extends EventEmitter {
    * @returns The signature.
    */
   async signMessage(address: string, hash: any): Promise<string> {
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.Sign,
-      toJson<Json[]>([address, hash]),
-    );
+      method: EthMethod.Sign,
+      params: toJson<Json[]>([address, hash]),
+    });
     return strictMask(signature, string());
   }
 
@@ -272,11 +306,11 @@ export class SnapKeyring extends EventEmitter {
    * @returns Promise of the signature.
    */
   async signPersonalMessage(address: string, data: any): Promise<string> {
-    const signature = await this.#submitRequest(
+    const signature = await this.#submitRequest({
       address,
-      EthMethod.PersonalSign,
-      toJson<Json[]>([data, address]),
-    );
+      method: EthMethod.PersonalSign,
+      params: toJson<Json[]>([data, address]),
+    });
     return strictMask(signature, string());
   }
 
@@ -332,7 +366,7 @@ export class SnapKeyring extends EventEmitter {
         await this.#syncSnapAccounts(snapId);
       } catch (error) {
         // Log the error and continue with the other snaps.
-        console.error(`Failed to sync accounts for snap "${snapId}":`, error);
+        console.error(`Failed to sync accounts for snap '${snapId}':`, error);
       }
     }
   }
@@ -372,12 +406,10 @@ export class SnapKeyring extends EventEmitter {
     account: KeyringAccount;
     snapId: string;
   } {
-    const account = this.#addressToAccount.get(address);
-    const snapId = this.#addressToSnapId.get(address);
-    if (snapId === undefined || account === undefined) {
-      throw new Error(`Account address not found: ${address}`);
-    }
-    return { account, snapId };
+    return {
+      account: this.#addressToAccount.getOrThrow(address, 'Account'),
+      snapId: this.#addressToSnapId.getOrThrow(address, 'Snap'),
+    };
   }
 
   /**
@@ -387,13 +419,20 @@ export class SnapKeyring extends EventEmitter {
    * @param result - Result of the request.
    */
   #resolveRequest(id: string, result: any): void {
-    const promise = this.#pendingRequests.get(id);
-    if (promise?.resolve === undefined) {
-      throw new Error(`No pending request found for ID: ${id}`);
-    }
-
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
     this.#pendingRequests.delete(id);
     promise.resolve(result);
+  }
+
+  /**
+   * Reject a pending request.
+   *
+   * @param id - ID of the request to reject.
+   */
+  #rejectRequest(id: string): void {
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
+    this.#pendingRequests.delete(id);
+    promise.reject(new Error(`Request rejected by user or snap.`));
   }
 
   /**
@@ -440,36 +479,22 @@ export class SnapKeyring extends EventEmitter {
   #getSnapMetadata(
     address: string,
   ): InternalAccount['metadata']['snap'] | undefined {
-    const snapId = this.#addressToSnapId.get(address);
-    if (snapId === undefined) {
-      console.error(`Cannot find account: ${address}`);
-      return undefined;
-    }
-
+    const snapId = this.#addressToSnapId.getOrThrow(address);
     const snap = this.#snapClient.getController().get(snapId);
-    if (snap === undefined) {
-      console.error(`Cannot find snap: ${snapId}`);
-      return undefined;
-    }
-
-    return {
-      id: snapId,
-      name: snap.manifest.proposedName,
-      enabled: snap.enabled,
-    };
+    return snap
+      ? { id: snapId, name: snap.manifest.proposedName, enabled: snap.enabled }
+      : undefined;
   }
 
   /**
-   * List all accounts.
+   * List all snap keyring accounts.
    *
-   * @param sync - Whether to sync accounts with the snaps.
-   * @returns All accounts.
+   * @returns An array containing all snap keyring accounts.
    */
-  async listAccounts(sync: boolean): Promise<InternalAccount[]> {
-    if (sync) {
-      await this.#syncAllSnapsAccounts();
-    }
+  async listAccounts(): Promise<InternalAccount[]> {
+    await this.#syncAllSnapsAccounts();
     return [...this.#addressToAccount.values()].map((account) => {
+      const snap = this.#getSnapMetadata(account.address);
       return {
         ...account,
         // FIXME: Do not lowercase the address here. This is a workaround to
@@ -479,10 +504,10 @@ export class SnapKeyring extends EventEmitter {
         address: account.address.toLowerCase(),
         metadata: {
           name: '',
-          snap: this.#getSnapMetadata(account.address),
           keyring: {
             type: this.type,
           },
+          ...(snap && { snap }),
         },
       };
     });

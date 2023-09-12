@@ -523,19 +523,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ethereumjs/util@npm:^8.0.6":
-  version: 8.0.6
-  resolution: "@ethereumjs/util@npm:8.0.6"
-  dependencies:
-    "@chainsafe/ssz": ^0.11.1
-    "@ethereumjs/rlp": ^4.0.1
-    ethereum-cryptography: ^2.0.0
-    micro-ftch: ^0.3.1
-  checksum: 034e06cddec27417318434a1a7cd7a9dc0f0b447c1f54423c515d8809c9697386eee6429d0a1c13517a85c696e6fdba570b243d882e65764c274859606027015
-  languageName: node
-  linkType: hard
-
-"@ethereumjs/util@npm:^8.1.0":
+"@ethereumjs/util@npm:^8.0.6, @ethereumjs/util@npm:^8.1.0":
   version: 8.1.0
   resolution: "@ethereumjs/util@npm:8.1.0"
   dependencies:
@@ -1108,7 +1096,7 @@ __metadata:
     "@metamask/eslint-config-nodejs": ^11.0.1
     "@metamask/eslint-config-typescript": ^11.0.0
     "@metamask/eth-sig-util": ^6.0.0
-    "@metamask/keyring-api": ^0.2.2
+    "@metamask/keyring-api": ^0.2.3
     "@metamask/snaps-controllers": ^0.38.2-flask.1
     "@metamask/utils": ^8.1.0
     "@types/jest": ^28.1.6
@@ -1138,6 +1126,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@metamask/json-rpc-engine@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "@metamask/json-rpc-engine@npm:7.1.1"
+  dependencies:
+    "@metamask/rpc-errors": ^6.0.0
+    "@metamask/safe-event-emitter": ^3.0.0
+    "@metamask/utils": ^8.1.0
+  checksum: 9dddd9142965ccd86313cda5bf13f15bf99c6c14631f93aab78de353317d548a334b5b125cdc134edd7d54e2f2e4961a0bdcd24fba997b2913083955df8fefa1
+  languageName: node
+  linkType: hard
+
 "@metamask/key-tree@npm:^9.0.0":
   version: 9.0.0
   resolution: "@metamask/key-tree@npm:9.0.0"
@@ -1152,19 +1151,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/keyring-api@npm:^0.2.2":
-  version: 0.2.2
-  resolution: "@metamask/keyring-api@npm:0.2.2"
+"@metamask/keyring-api@npm:^0.2.3":
+  version: 0.2.3
+  resolution: "@metamask/keyring-api@npm:0.2.3"
   dependencies:
-    "@metamask/providers": ^11.0.0
+    "@metamask/providers": ^12.0.0
     "@metamask/rpc-methods": ^0.38.1-flask.1
     "@metamask/snaps-controllers": ^0.38.2-flask.1
     "@metamask/snaps-utils": ^0.38.2-flask.1
-    "@metamask/utils": ^8.0.0
+    "@metamask/utils": ^8.1.0
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: eefa5408c04e203db4d3a711e0b621193fd5d15c31e155331a0af8da9d150629074ca847aeb55654f39c104eff01060452d7d3ac43b5122f8b565b249581a8df
+  checksum: c4549ead94f5558c418af5b5c44946801a0c0822c2aa8b7f87fe177d3eae5d4938c5e7c3539c20903e5b68ff11407d535bbd2caf955daa85238a5d2fc03ccdf5
   languageName: node
   linkType: hard
 
@@ -1209,7 +1208,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/providers@npm:^11.0.0, @metamask/providers@npm:^11.1.1":
+"@metamask/providers@npm:^11.1.1":
   version: 11.1.2
   resolution: "@metamask/providers@npm:11.1.2"
   dependencies:
@@ -1225,6 +1224,36 @@ __metadata:
     pump: ^3.0.0
     webextension-polyfill: ^0.10.0
   checksum: f406f79750e7705b5e843e2c17a407e5952e946ccb2c036786251118b27ec8948743ac7bb3b11ce3cec897f101ca9c59c28b0b2e3343e3f75c526b6396d9c118
+  languageName: node
+  linkType: hard
+
+"@metamask/providers@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "@metamask/providers@npm:12.0.0"
+  dependencies:
+    "@metamask/json-rpc-engine": ^7.1.1
+    "@metamask/object-multiplex": ^1.1.0
+    "@metamask/rpc-errors": ^6.0.0
+    "@metamask/safe-event-emitter": ^3.0.0
+    "@metamask/utils": ^8.1.0
+    detect-browser: ^5.2.0
+    extension-port-stream: ^2.1.1
+    fast-deep-equal: ^3.1.3
+    is-stream: ^2.0.0
+    json-rpc-middleware-stream: ^4.2.1
+    pump: ^3.0.0
+    webextension-polyfill: ^0.10.0
+  checksum: 4e466322b3e020607ddb16599555bacc1c4fe8bfe2f781e123c012019f79bbc8206207adc3150d04fb7e36fbd959abf5fc54a6edd072fbed4f4edcabf7dd1ce2
+  languageName: node
+  linkType: hard
+
+"@metamask/rpc-errors@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@metamask/rpc-errors@npm:6.0.0"
+  dependencies:
+    "@metamask/utils": ^8.0.0
+    fast-safe-stringify: ^2.0.6
+  checksum: 7e1ee1a98972266af4a34f0bbc842cdc11dc565056f0b8fbc93aa95663a7027eab8ff1fecbe3e09c38a1dc199f8219a6c69b2237015b2fdb8de0e5b35027c3f8
   languageName: node
   linkType: hard
 
@@ -1441,15 +1470,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/curves@npm:1.0.0, @noble/curves@npm:~1.0.0":
-  version: 1.0.0
-  resolution: "@noble/curves@npm:1.0.0"
-  dependencies:
-    "@noble/hashes": 1.3.0
-  checksum: 6bcef44d626c640dc8961819d68dd67dffb907e3b973b7c27efe0ecdd9a5c6ce62c7b9e3dfc930c66605dced7f1ec0514d191c09a2ce98d6d52b66e3315ffa79
-  languageName: node
-  linkType: hard
-
 "@noble/curves@npm:1.1.0, @noble/curves@npm:~1.1.0":
   version: 1.1.0
   resolution: "@noble/curves@npm:1.1.0"
@@ -1466,17 +1486,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:1.3.0":
-  version: 1.3.0
-  resolution: "@noble/hashes@npm:1.3.0"
-  checksum: d7ddb6d7c60f1ce1f87facbbef5b724cdea536fc9e7f59ae96e0fc9de96c8f1a2ae2bdedbce10f7dcc621338dfef8533daa73c873f2b5c87fa1a4e05a95c2e2e
-  languageName: node
-  linkType: hard
-
-"@noble/hashes@npm:1.3.1, @noble/hashes@npm:^1.0.0, @noble/hashes@npm:^1.3.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.3.0":
+"@noble/hashes@npm:1.3.1":
   version: 1.3.1
   resolution: "@noble/hashes@npm:1.3.1"
   checksum: 7fdefc0f7a0c1ec27acc6ff88841793e3f93ec4ce6b8a6a12bfc0dd70ae6b7c4c82fe305fdfeda1735d5ad4a9eebe761e6693b3d355689c559e91242f4bc95b1
+  languageName: node
+  linkType: hard
+
+"@noble/hashes@npm:^1.0.0, @noble/hashes@npm:^1.3.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.3.0, @noble/hashes@npm:~1.3.1":
+  version: 1.3.2
+  resolution: "@noble/hashes@npm:1.3.2"
+  checksum: fe23536b436539d13f90e4b9be843cc63b1b17666a07634a2b1259dded6f490be3d050249e6af98076ea8f2ea0d56f578773c2197f2aa0eeaa5fba5bc18ba474
   languageName: node
   linkType: hard
 
@@ -1484,13 +1504,6 @@ __metadata:
   version: 1.1.5
   resolution: "@noble/hashes@npm:1.1.5"
   checksum: de3f095a7ac1cbf5b4b3d09f193288d4f2eec35fbadf2ed9fd7e47d8a3042fef410052ba62dc0296a185f994c11192f5357fdb1bd9178c905efd82e946c53b00
-  languageName: node
-  linkType: hard
-
-"@noble/hashes@npm:~1.3.1":
-  version: 1.3.2
-  resolution: "@noble/hashes@npm:1.3.2"
-  checksum: fe23536b436539d13f90e4b9be843cc63b1b17666a07634a2b1259dded6f490be3d050249e6af98076ea8f2ea0d56f578773c2197f2aa0eeaa5fba5bc18ba474
   languageName: node
   linkType: hard
 
@@ -1600,17 +1613,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@scure/bip32@npm:1.3.0":
-  version: 1.3.0
-  resolution: "@scure/bip32@npm:1.3.0"
-  dependencies:
-    "@noble/curves": ~1.0.0
-    "@noble/hashes": ~1.3.0
-    "@scure/base": ~1.1.0
-  checksum: 6eae997f9bdf41fe848134898960ac48e645fa10e63d579be965ca331afd0b7c1b8ebac170770d237ab4099dafc35e5a82995384510025ccf2abe669f85e8918
-  languageName: node
-  linkType: hard
-
 "@scure/bip32@npm:1.3.1":
   version: 1.3.1
   resolution: "@scure/bip32@npm:1.3.1"
@@ -1619,16 +1621,6 @@ __metadata:
     "@noble/hashes": ~1.3.1
     "@scure/base": ~1.1.0
   checksum: 394d65f77a40651eba21a5096da0f4233c3b50d422864751d373fcf142eeedb94a1149f9ab1dbb078086dab2d0bc27e2b1afec8321bf22d4403c7df2fea5bfe2
-  languageName: node
-  linkType: hard
-
-"@scure/bip39@npm:1.2.0":
-  version: 1.2.0
-  resolution: "@scure/bip39@npm:1.2.0"
-  dependencies:
-    "@noble/hashes": ~1.3.0
-    "@scure/base": ~1.1.0
-  checksum: 980d761f53e63de04a9e4db840eb13bfb1bd1b664ecb04a71824c12c190f4972fd84146f3ed89b2a8e4c6bd2c17c15f8b592b7ac029e903323b0f9e2dae6916b
   languageName: node
   linkType: hard
 
@@ -3792,19 +3784,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethereum-cryptography@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "ethereum-cryptography@npm:2.0.0"
-  dependencies:
-    "@noble/curves": 1.0.0
-    "@noble/hashes": 1.3.0
-    "@scure/bip32": 1.3.0
-    "@scure/bip39": 1.2.0
-  checksum: 958f8aab2d1b32aa759fb27a27877b3647410e8bb9aca7d65d1d477db4864cf7fc46b918eb52a1e246c25e98ee0a35a632c88b496aeaefa13469ee767a76c8db
-  languageName: node
-  linkType: hard
-
-"ethereum-cryptography@npm:^2.1.2":
+"ethereum-cryptography@npm:^2.0.0, ethereum-cryptography@npm:^2.1.2":
   version: 2.1.2
   resolution: "ethereum-cryptography@npm:2.1.2"
   dependencies:
