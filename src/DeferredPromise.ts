@@ -7,10 +7,10 @@
  * - "B" gets "P" from the list and resolves it
  * - "A" gets the resolved value
  */
-export class DeferredPromise<T> {
-  promise: Promise<T>;
+export class DeferredPromise<Type> {
+  promise: Promise<Type>;
 
-  resolve: (value: T | PromiseLike<T>) => void = undefined as any;
+  resolve: (value: Type | PromiseLike<Type>) => void = undefined as any;
 
   reject: (reason?: any) => void = undefined as any;
 

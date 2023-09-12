@@ -1,13 +1,6 @@
 import { JsonStruct } from '@metamask/utils';
-import {
-  Infer,
-  array,
-  object,
-  optional,
-  record,
-  string,
-  union,
-} from 'superstruct';
+import type { Infer } from 'superstruct';
+import { array, object, optional, record, string, union } from 'superstruct';
 
 export const SnapMessageStruct = object({
   method: string(),

@@ -1,5 +1,6 @@
 import type { Json } from '@metamask/utils';
-import { Struct, assert } from 'superstruct';
+import type { Struct } from 'superstruct';
+import { assert } from 'superstruct';
 
 /**
  * Assert that a value is valid according to a struct.
@@ -12,11 +13,11 @@ import { Struct, assert } from 'superstruct';
  * @param message - Error message to throw if the value is not valid.
  * @returns The value if it is valid.
  */
-export function strictMask<T, S>(
+export function strictMask<Type, Schema>(
   value: unknown,
-  struct: Struct<T, S>,
+  struct: Struct<Type, Schema>,
   message?: string,
-): T {
+): Type {
   assert(value, struct, message);
   return value;
 }
@@ -27,7 +28,7 @@ export function strictMask<T, S>(
  * @param array - Array to remove duplicates from.
  * @returns Array with duplicates removed.
  */
-export function unique<T>(array: T[]): T[] {
+export function unique<Type>(array: Type[]): Type[] {
   return [...new Set(array)];
 }
 
@@ -41,8 +42,8 @@ export function unique<T>(array: T[]): T[] {
  * @param value - Value to convert to JSON.
  * @returns JSON representation of the value.
  */
-export function toJson<T extends Json = Json>(value: any): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+export function toJson<Type extends Json = Json>(value: any): Type {
+  return JSON.parse(JSON.stringify(value)) as Type;
 }
 
 /**
@@ -50,7 +51,9 @@ export function toJson<T extends Json = Json>(value: any): T {
  *
  * @param value - Value to check.
  */
-export function ensureDefined<T>(value: T | undefined): asserts value is T {
+export function ensureDefined<Type>(
+  value: Type | undefined,
+): asserts value is Type {
   if (value === undefined) {
     throw new Error('Argument is undefined');
   }

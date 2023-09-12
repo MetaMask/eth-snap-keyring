@@ -1,14 +1,16 @@
 /**
  * A case-insensitive map that stores key-value pairs.
  */
-export class CaseInsensitiveMap<T> extends Map<string, T> {
+export class CaseInsensitiveMap<Value> extends Map<string, Value> {
   /**
    * Create a new case-insensitive map from a plain object.
    *
    * @param obj - An object with entries to initialize the map with.
    * @returns A new case-insensitive map with all entries from `obj`.
    */
-  static fromObject<T>(obj: Record<string, T>): CaseInsensitiveMap<T> {
+  static fromObject<Value>(
+    obj: Record<string, Value>,
+  ): CaseInsensitiveMap<Value> {
     return new CaseInsensitiveMap(Object.entries(obj));
   }
 
@@ -17,7 +19,7 @@ export class CaseInsensitiveMap<T> extends Map<string, T> {
    *
    * @returns A plain object with all entries from this map.
    */
-  toObject(): Record<string, T> {
+  toObject(): Record<string, Value> {
     return Object.fromEntries(this.entries());
   }
 
@@ -29,7 +31,7 @@ export class CaseInsensitiveMap<T> extends Map<string, T> {
    * @returns The value associated to the given key, or `undefined` if the key
    * is not found.
    */
-  get(key: string): T | undefined {
+  get(key: string): Value | undefined {
     return super.get(key.toLowerCase());
   }
 
@@ -41,7 +43,7 @@ export class CaseInsensitiveMap<T> extends Map<string, T> {
    * @param name - Optional name of the key to include in the error message.
    * @returns The value associated with the given key.
    */
-  getOrThrow(key: string, name = 'Key'): T {
+  getOrThrow(key: string, name = 'Key'): Value {
     const value = this.get(key);
     if (value === undefined) {
       throw new Error(`${name} '${key}' not found`);
@@ -70,7 +72,7 @@ export class CaseInsensitiveMap<T> extends Map<string, T> {
    * @param value - The value to set.
    * @returns The map instance.
    */
-  set(key: string, value: T): this {
+  set(key: string, value: Value): this {
     return super.set(key.toLowerCase(), value);
   }
 
