@@ -13,7 +13,7 @@ import {
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { SnapController } from '@metamask/snaps-controllers';
-import { Json } from '@metamask/utils';
+import { Json, bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
 import { assert, object, string, record, Infer } from 'superstruct';
 import { v4 as uuid } from 'uuid';
@@ -221,8 +221,9 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<Json | TypedTransaction> {
     const tx = toJson({
       ...transaction.toJSON(),
-      type: transaction.type,
-      chainId: transaction.common.chainId().toString(),
+      from: address,
+      type: `0x${transaction.type.toString(16)}`,
+      chainId: bigIntToHex(transaction.common.chainId()),
     });
 
     const signature = await this.#submitRequest({
@@ -258,7 +259,6 @@ export class SnapKeyring extends EventEmitter {
 
     // Use 'V1' by default to match other keyring implementations.
     const method = methods[opts.version] || EthMethod.SignTypedDataV1;
-
     const signature = await this.#submitRequest({
       address,
       method,
