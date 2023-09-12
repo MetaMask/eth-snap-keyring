@@ -1,4 +1,5 @@
 import { TransactionFactory } from '@ethereumjs/tx';
+import { SignTypedDataVersion } from '@metamask/eth-sig-util';
 import {
   EthAccountType,
   EthMethod,
@@ -213,53 +214,57 @@ describe('SnapKeyring', () => {
   });
 
   describe('signTypedData', () => {
-    it('signs a typed data', async () => {
-      const data = {
-        types: {
-          EIP712Domain: [
-            { name: 'name', type: 'string' },
-            { name: 'version', type: 'string' },
-            { name: 'chainId', type: 'uint256' },
-            { name: 'verifyingContract', type: 'address' },
-          ],
-          Person: [
-            { name: 'name', type: 'string' },
-            { name: 'wallet', type: 'address' },
-          ],
-          Mail: [
-            { name: 'from', type: 'Person' },
-            { name: 'to', type: 'Person' },
-            { name: 'contents', type: 'string' },
-          ],
+    const dataToSign = {
+      types: {
+        EIP712Domain: [
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' },
+        ],
+        Person: [
+          { name: 'name', type: 'string' },
+          { name: 'wallet', type: 'address' },
+        ],
+        Mail: [
+          { name: 'from', type: 'Person' },
+          { name: 'to', type: 'Person' },
+          { name: 'contents', type: 'string' },
+        ],
+      },
+      primaryType: 'Mail',
+      domain: {
+        name: 'Ether Mail',
+        version: '1',
+        chainId: 1,
+        verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+      },
+      message: {
+        from: {
+          name: 'Cow',
+          wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
         },
-        primaryType: 'Mail',
-        domain: {
-          name: 'Ether Mail',
-          version: '1',
-          chainId: 1,
-          verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+        to: {
+          name: 'Bob',
+          wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
         },
-        message: {
-          from: {
-            name: 'Cow',
-            wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
-          },
-          to: {
-            name: 'Bob',
-            wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
-          },
-          contents: 'Hello, Bob!',
-        },
-      };
-      const expectedSignature =
-        '0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c';
+        contents: 'Hello, Bob!',
+      },
+    };
 
+    const expectedSignature =
+      '0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c';
+
+    it('signs typed data without options', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: expectedSignature,
       });
 
-      const signature = await keyring.signTypedData(accounts[0].address, data);
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSign,
+      );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         snapId,
         handler: 'onRpcRequest',
@@ -273,8 +278,74 @@ describe('SnapKeyring', () => {
             scope: expect.any(String),
             account: accounts[0].id,
             request: {
-              method: 'eth_signTypedData',
-              params: [accounts[0].address, data],
+              method: 'eth_signTypedData_v1',
+              params: [accounts[0].address, dataToSign],
+            },
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSignature);
+    });
+
+    it('signs typed data options (v4)', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSign,
+        { version: SignTypedDataVersion.V4 },
+      );
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onRpcRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTypedData_v4',
+              params: [accounts[0].address, dataToSign],
+            },
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSignature);
+    });
+
+    it('signs typed data invalid options (v2)', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSign,
+        { version: 'V2' as any },
+      );
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onRpcRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTypedData_v1',
+              params: [accounts[0].address, dataToSign],
             },
           },
         },
