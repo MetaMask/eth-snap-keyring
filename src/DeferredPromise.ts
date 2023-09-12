@@ -10,14 +10,21 @@
 export class DeferredPromise<T> {
   promise: Promise<T>;
 
-  resolve?: (value: T | PromiseLike<T>) => void;
+  resolve: (value: T | PromiseLike<T>) => void = undefined as any;
 
-  reject?: (reason?: any) => void;
+  reject: (reason?: any) => void = undefined as any;
 
   constructor() {
     this.promise = new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
     });
+
+    // This is a sanity check to make sure that the promise constructor
+    // actually set the resolve and reject functions.
+    /* istanbul ignore next */
+    if (!this.resolve || !this.reject) {
+      throw new Error('Promise constructor failed');
+    }
   }
 }
