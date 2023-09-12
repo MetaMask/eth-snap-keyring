@@ -15,7 +15,7 @@ import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { SnapController } from '@metamask/snaps-controllers';
 import { Json, bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, object, string, record, Infer } from 'superstruct';
+import { assert, object, string, record, Infer, mask } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
@@ -226,15 +226,26 @@ export class SnapKeyring extends EventEmitter {
       chainId: bigIntToHex(transaction.common.chainId()),
     });
 
-    const signature = await this.#submitRequest({
+    const signedTx = await this.#submitRequest({
       address,
       method: EthMethod.SignTransaction,
       params: [tx],
     });
 
+    const signature = mask(
+      signedTx,
+      object({
+        r: string(),
+        s: string(),
+        v: string(),
+      }),
+    );
+
     return TransactionFactory.fromTxData({
       ...(tx as Record<string, Json>),
-      ...(signature as Record<string, Json>),
+      r: signature.r,
+      s: signature.s,
+      v: signature.v,
     });
   }
 
