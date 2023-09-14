@@ -7,12 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.2.2]
-### Uncategorized
-- chore(deps): bump @metamask/post-message-stream from 6.1.2 to 6.2.0 ([#93](https://github.com/MetaMask/eth-snap-keyring/pull/93))
-- chore(deps): bump @metamask/snaps-registry from 1.2.1 to 1.2.2 ([#95](https://github.com/MetaMask/eth-snap-keyring/pull/95))
-- chore(deps-dev): bump @metamask/auto-changelog from 3.1.0 to 3.2.0 ([#94](https://github.com/MetaMask/eth-snap-keyring/pull/94))
-- chore(deps): bump @metamask/keyring-api from 0.2.3 to 0.2.4 ([#92](https://github.com/MetaMask/eth-snap-keyring/pull/92))
-- feat: add `removeAccount` callback to constructor ([#96](https://github.com/MetaMask/eth-snap-keyring/pull/96))
+### Changed
+- Add `removeAccount` callback to constructor ([#96](https://github.com/MetaMask/eth-snap-keyring/pull/96)).
 
 ## [0.2.1]
 ### Changed
