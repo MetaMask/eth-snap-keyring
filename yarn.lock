@@ -1139,8 +1139,8 @@ __metadata:
   linkType: hard
 
 "@metamask/keyring-api@npm:^0.2.3":
-  version: 0.2.3
-  resolution: "@metamask/keyring-api@npm:0.2.3"
+  version: 0.2.4
+  resolution: "@metamask/keyring-api@npm:0.2.4"
   dependencies:
     "@metamask/providers": ^12.0.0
     "@metamask/rpc-methods": ^0.38.1-flask.1
@@ -1150,7 +1150,7 @@ __metadata:
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: c4549ead94f5558c418af5b5c44946801a0c0822c2aa8b7f87fe177d3eae5d4938c5e7c3539c20903e5b68ff11407d535bbd2caf955daa85238a5d2fc03ccdf5
+  checksum: b557321bf85b1d264467cbddf3551942dee882fb544706537fa9dc544ec7f0e6900fe75b5280af0637d47014073ebfe7b9ab68f8e99ce8b31bdd8e3859c883d2
   languageName: node
   linkType: hard
 
