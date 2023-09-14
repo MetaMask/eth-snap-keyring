@@ -21,7 +21,7 @@ import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
-import { strictMask, toJson, unique } from './util';
+import { strictMask, throwError, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -34,6 +34,7 @@ export type KeyringState = Infer<typeof KeyringStateStruct>;
 
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
+  removeAccount(address: string): Promise<void>;
 };
 
 /**
@@ -80,10 +81,18 @@ export class SnapKeyring extends EventEmitter {
 
     switch (method) {
       case KeyringEvent.AccountCreated:
-      case KeyringEvent.AccountUpdated:
-      case KeyringEvent.AccountDeleted: {
+      case KeyringEvent.AccountUpdated: {
         await this.#syncAllSnapsAccounts(snapId);
         await this.#callbacks.saveState();
+        return null;
+      }
+
+      case KeyringEvent.AccountDeleted: {
+        const { id } = params as any;
+        const account =
+          this.#getAccountById(id) ??
+          throwError(`Account '${id as string}' not found`);
+        await this.#callbacks.removeAccount(account.address);
         return null;
       }
 
@@ -474,6 +483,18 @@ export class SnapKeyring extends EventEmitter {
   #removeAccountFromMaps(account: KeyringAccount): void {
     this.#addressToAccount.delete(account.address);
     this.#addressToSnapId.delete(account.address);
+  }
+
+  /**
+   * Get an account by its ID. Returns undefined if the account is not found.
+   *
+   * @param id - Account ID.
+   * @returns The account object or undefined if the account is not found.
+   */
+  #getAccountById(id: string): KeyringAccount | undefined {
+    return [...this.#addressToAccount.values()].filter(
+      (account) => account.id === id,
+    )[0];
   }
 
   #getSnapMetadata(
