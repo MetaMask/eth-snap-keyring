@@ -58,3 +58,12 @@ export function ensureDefined<Type>(
     throw new Error('Argument is undefined');
   }
 }
+
+/**
+ * Helper function that throws an error.
+ *
+ * @param message - Error message to throw.
+ */
+export function throwError(message: string): never {
+  throw new Error(message);
+}

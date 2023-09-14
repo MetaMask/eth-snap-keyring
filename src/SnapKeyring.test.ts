@@ -18,6 +18,7 @@ describe('SnapKeyring', () => {
 
   const mockCallbacks = {
     saveState: jest.fn(),
+    removeAccount: jest.fn(),
   };
 
   const snapId = 'local:snap.mock';
@@ -54,6 +55,35 @@ describe('SnapKeyring', () => {
   });
 
   describe('handleKeyringSnapMessage', () => {
+    it('removes an account', async () => {
+      mockCallbacks.removeAccount.mockImplementation(async (address) => {
+        await keyring.removeAccount(address);
+      });
+
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.AccountDeleted,
+        params: { id: accounts[0].id },
+      });
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[1].address.toLowerCase(),
+      ]);
+    });
+
+    it('throws when removing an account that does not exist', async () => {
+      mockCallbacks.removeAccount.mockImplementation(async (address) => {
+        await keyring.removeAccount(address);
+      });
+
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountDeleted,
+          params: { id: 'bcda5b5f-098f-4706-919b-ee919402f0dd' },
+        }),
+      ).rejects.toThrow(
+        "Account 'bcda5b5f-098f-4706-919b-ee919402f0dd' not found",
+      );
+    });
+
     it('fails when the method is not supported', async () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
