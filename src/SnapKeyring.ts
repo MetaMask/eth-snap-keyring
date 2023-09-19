@@ -68,6 +68,14 @@ export type SnapKeyringCallbacks = {
     snapId: string,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
+<<<<<<< HEAD
+=======
+  removeAccount(
+    address: string,
+    snapId: string,
+    handleUserInput: (accepted: boolean) => Promise<void>,
+  ): Promise<void>;
+>>>>>>> 3959cec (add `handleUserInput` callback to `removeAccount`)
 };
 
 /**
