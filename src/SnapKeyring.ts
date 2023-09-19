@@ -60,7 +60,7 @@ export type KeyringState = Infer<typeof KeyringStateStruct>;
  * These callbacks are used to interact with other components.
  */
 export type SnapKeyringCallbacks = {
-  saveState: () => Promise<void>;
+  saveState: (origin: string) => Promise<void>;
   removeAccount(address: string): Promise<void>;
   addressExists(address: string): Promise<boolean>;
 };
@@ -294,7 +294,6 @@ export class SnapKeyring extends EventEmitter {
       case KeyringEvent.AccountUpdated: {
         return this.#handleAccountUpdated(snapId, message);
       }
-
       case KeyringEvent.AccountDeleted: {
         return this.#handleAccountDeleted(snapId, message);
       }
