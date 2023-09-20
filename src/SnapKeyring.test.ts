@@ -35,7 +35,7 @@ describe('SnapKeyring', () => {
       id: '33c96b60-2237-488e-a7bb-233576f3d22f',
       address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63'.toLowerCase(),
       options: {},
-      methods: [EthMethod.SignTransaction, EthMethod.SignTypedData],
+      methods: [EthMethod.SignTransaction, EthMethod.SignTypedDataV1],
       type: EthAccountType.Eoa,
     },
   ] as const;
