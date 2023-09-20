@@ -1,4 +1,4 @@
-import { ensureDefined, toJson, unique } from './util';
+import { ensureDefined, throwError, toJson, unique } from './util';
 
 describe('unique', () => {
   it('returns an empty array when given an empty array', () => {
@@ -50,5 +50,11 @@ describe('ensureDefined', () => {
 
   it('throws an error when value is undefined', () => {
     expect(() => ensureDefined(undefined)).toThrow('Argument is undefined');
+  });
+});
+
+describe('throwError', () => {
+  it('throws an error with the given message', () => {
+    expect(() => throwError('hello')).toThrow('hello');
   });
 });
