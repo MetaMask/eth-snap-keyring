@@ -21,7 +21,7 @@ import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
-import { strictMask, throwError, toJson, unique } from './util';
+import { strictMask, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -89,10 +89,17 @@ export class SnapKeyring extends EventEmitter {
 
       case KeyringEvent.AccountDeleted: {
         const { id } = params as any;
-        const account =
-          this.#getAccountById(id) ??
-          throwError(`Account '${id as string}' not found`);
-        await this.#callbacks.removeAccount(account.address);
+        const account = this.#getAccountById(id);
+
+        // We can ignore the case where the account was already removed from
+        // the keyring.
+        //
+        // This happens when the keyring calls the snap to delete an account,
+        // and the snap responds with an AccountDeleted event.
+        if (account !== undefined) {
+          await this.#callbacks.removeAccount(account.address);
+        }
+
         return null;
       }
 
