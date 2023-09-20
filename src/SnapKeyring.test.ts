@@ -69,19 +69,17 @@ describe('SnapKeyring', () => {
       ]);
     });
 
-    it('throws when removing an account that does not exist', async () => {
+    it('returns null when removing an account that does not exist', async () => {
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
       });
 
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
+      expect(
+        await keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountDeleted,
           params: { id: 'bcda5b5f-098f-4706-919b-ee919402f0dd' },
         }),
-      ).rejects.toThrow(
-        "Account 'bcda5b5f-098f-4706-919b-ee919402f0dd' not found",
-      );
+      ).toBeNull();
     });
 
     it('fails when the method is not supported', async () => {
