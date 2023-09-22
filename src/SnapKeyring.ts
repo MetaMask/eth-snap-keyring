@@ -82,34 +82,52 @@ export class SnapKeyring extends EventEmitter {
 
     switch (method) {
       case KeyringEvent.AccountCreated: {
-        const { account } = params as any;
+        const { account } = params as { account: KeyringAccount };
 
         // TODO: The UI still uses the account address to identify accounts, so
         // we need to prevent the creation of duplicate accounts for now to
         // prevent accounts from being overwritten.
         if (await this.#callbacks.addressExists(account.address)) {
-          throw new Error(
-            `Account '${account.address as string}' already exists`,
-          );
+          throw new Error(`Account '${account.address}' already exists`);
         }
 
-        await this.#syncAllSnapsAccounts(snapId);
+        this.#addAccountToMaps(account, snapId);
         await this.#callbacks.saveState();
         return null;
       }
 
       case KeyringEvent.AccountUpdated: {
-        await this.#syncAllSnapsAccounts(snapId);
+        const { account } = params as { account: KeyringAccount };
+
+        // A snap cannot update an account that doesn't exist.
+        const currentAccount = this.#getAccountById(account.id);
+        if (currentAccount === undefined) {
+          throw new Error(`Account '${account.id}' not found`);
+        }
+
+        // The address of the account cannot be changed. In the future, we will
+        // support changing the address of an account since it will be required
+        // to support UTXO-based chains.
+        if (currentAccount.address !== account.address) {
+          throw new Error(`Cannot change address of account '${account.id}'`);
+        }
+
+        // A snap cannot update an account that it doesn't own.
+        if (this.#addressToSnapId.get(account.address) !== snapId) {
+          throw new Error(`Cannot update account '${account.id}'`);
+        }
+
+        this.#addAccountToMaps(account, snapId);
         await this.#callbacks.saveState();
         return null;
       }
 
       case KeyringEvent.AccountDeleted: {
-        const { id } = params as any;
+        const { id } = params as { id: string };
         const account = this.#getAccountById(id);
 
         // We can ignore the case where the account was already removed from
-        // the keyring.
+        // the keyring, making the deletion idempotent.
         //
         // This happens when the keyring calls the snap to delete an account,
         // and the snap responds with an AccountDeleted event.
@@ -121,13 +139,13 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.RequestApproved: {
-        const { id, result } = params as any;
+        const { id, result } = params as { id: string; result: any };
         this.#resolveRequest(id, result);
         return null;
       }
 
       case KeyringEvent.RequestRejected: {
-        const { id } = params as any;
+        const { id } = params as { id: string };
         this.#rejectRequest(id);
         return null;
       }
@@ -178,9 +196,7 @@ export class SnapKeyring extends EventEmitter {
   async getAccounts(): Promise<string[]> {
     // Do not call the snap here. This method is called by the UI, keep it
     // _fast_.
-    return unique(
-      [...this.#addressToAccount.values()].map((account) => account.address),
-    );
+    return unique([...this.#addressToAccount.keys()]);
   }
 
   /**
@@ -240,10 +256,9 @@ export class SnapKeyring extends EventEmitter {
     // TODO: In the future, this should be handled by the UI. For now, we just
     // log the redirect information for debugging purposes.
     if (response.redirect?.message || response.redirect?.url) {
+      const { message = '', url = '' } = response.redirect;
       console.log(
-        `The snap requested a redirect: message="${
-          response.redirect.message ?? ''
-        }", url="${response.redirect.url ?? ''}"`,
+        `The snap requested a redirect: message="${message}", url="${url}"`,
       );
     }
 
@@ -499,7 +514,7 @@ export class SnapKeyring extends EventEmitter {
   #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
     const account = {
       ...snapAccount,
-      // FIXME: Do not lowercase the address here. This is a workaround to
+      // TODO: Do not lowercase the address here. This is a workaround to
       // support the current UI which expects the account address to be
       // lowercase. This workaround should be removed once we migrated the UI
       // to use the account ID instead of the account address.
@@ -526,9 +541,9 @@ export class SnapKeyring extends EventEmitter {
    * @returns The account object or undefined if the account is not found.
    */
   #getAccountById(id: string): KeyringAccount | undefined {
-    return [...this.#addressToAccount.values()].filter(
+    return [...this.#addressToAccount.values()].find(
       (account) => account.id === id,
-    )[0];
+    );
   }
 
   #getSnapMetadata(

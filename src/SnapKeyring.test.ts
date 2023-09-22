@@ -85,6 +85,41 @@ describe('SnapKeyring', () => {
       expect(keyringAccounts[0]?.methods).toStrictEqual([]);
     });
 
+    it("cannot updated an account that doesn't exist", async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: { account: { id: 'some-invalid-id' } },
+        }),
+      ).rejects.toThrow("Account 'some-invalid-id' not found");
+    });
+
+    it('cannot change the address of an account', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: { id: accounts[0].id, address: accounts[1].address },
+          },
+        }),
+      ).rejects.toThrow(
+        "Cannot change address of account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
+    });
+
+    it('cannot updated an account owned by another snap', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage('invalid-snap-id', {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: { id: accounts[0].id, address: accounts[0].address },
+          },
+        }),
+      ).rejects.toThrow(
+        "Cannot update account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
+    });
+
     it('removes an account', async () => {
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
@@ -207,16 +242,6 @@ describe('SnapKeyring', () => {
       expect(addresses).toStrictEqual(
         accounts.map((a) => a.address.toLowerCase()),
       );
-      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
-        handler: 'onRpcRequest',
-        origin: 'metamask',
-        request: {
-          id: expect.any(String),
-          jsonrpc: '2.0',
-          method: 'keyring_listAccounts',
-        },
-        snapId,
-      });
     });
   });
 
