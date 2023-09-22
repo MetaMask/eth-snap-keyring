@@ -413,47 +413,6 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Syncs all accounts from all snaps.
-   *
-   * @param extraSnapIds - Extra snap IDs to sync accounts for.
-   */
-  async #syncAllSnapsAccounts(...extraSnapIds: string[]): Promise<void> {
-    const snapIds = extraSnapIds.concat(...this.#addressToSnapId.values());
-    for (const snapId of unique(snapIds)) {
-      try {
-        await this.#syncSnapAccounts(snapId);
-      } catch (error) {
-        // Log the error and continue with the other snaps.
-        console.error(`Failed to sync accounts for snap '${snapId}':`, error);
-      }
-    }
-  }
-
-  /**
-   * Syncs all accounts for a snap.
-   *
-   * @param snapId - ID of the snap to sync accounts for.
-   */
-  async #syncSnapAccounts(snapId: string): Promise<void> {
-    // Get new accounts first, before removing the old ones. This way, if
-    // something goes wrong, we don't lose the old accounts.
-    const oldAccounts = this.#getAccountsBySnapId(snapId);
-    const newAccounts = await this.#snapClient
-      .withSnapId(snapId)
-      .listAccounts();
-
-    // Remove the old accounts from the maps.
-    for (const account of oldAccounts) {
-      this.#removeAccountFromMaps(account);
-    }
-
-    // Add the new accounts to the maps.
-    for (const account of newAccounts) {
-      this.#addAccountToMaps(account, snapId);
-    }
-  }
-
-  /**
    * Resolve an address to an account and snap ID.
    *
    * @param address - Address of the account to resolve.
@@ -491,18 +450,6 @@ export class SnapKeyring extends EventEmitter {
     const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
     this.#pendingRequests.delete(id);
     promise.reject(new Error(`Request rejected by user or snap.`));
-  }
-
-  /**
-   * Get all accounts associated with a snap ID.
-   *
-   * @param snapId - The snap ID to get accounts for.
-   * @returns All accounts associated with the given snap ID.
-   */
-  #getAccountsBySnapId(snapId: string): KeyringAccount[] {
-    return [...this.#addressToAccount.values()].filter(
-      (account) => this.#addressToSnapId.get(account.address) === snapId,
-    );
   }
 
   /**
@@ -562,12 +509,11 @@ export class SnapKeyring extends EventEmitter {
    * @returns An array containing all snap keyring accounts.
    */
   async listAccounts(): Promise<InternalAccount[]> {
-    await this.#syncAllSnapsAccounts();
     return [...this.#addressToAccount.values()].map((account) => {
       const snap = this.#getSnapMetadata(account.address);
       return {
         ...account,
-        // FIXME: Do not lowercase the address here. This is a workaround to
+        // TODO: Do not lowercase the address here. This is a workaround to
         // support the current UI which expects the account address to be
         // lowercase. This workaround should be removed once we migrated the UI
         // to use the account ID instead of the account address.

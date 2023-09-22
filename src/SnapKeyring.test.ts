@@ -618,28 +618,5 @@ describe('SnapKeyring', () => {
       }));
       expect(result).toStrictEqual(expected);
     });
-
-    it('continues to list account even if one fails', async () => {
-      mockSnapController.handleRequest.mockImplementation(() => {
-        throw new Error('error');
-      });
-      const expected = accounts.map((a) => ({
-        ...a,
-        metadata: {
-          name: '',
-          keyring: {
-            type: 'Snap Keyring',
-          },
-        },
-      }));
-      const spy = jest.spyOn(console, 'error').mockImplementation();
-      const result = await keyring.listAccounts();
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to sync accounts for snap 'local:snap.mock':",
-        expect.any(Error),
-      );
-      expect(result).toStrictEqual(expected);
-      spy.mockRestore();
-    });
   });
 });
