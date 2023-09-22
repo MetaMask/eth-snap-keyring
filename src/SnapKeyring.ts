@@ -85,7 +85,7 @@ export class SnapKeyring extends EventEmitter {
         const { account } = params as { account: KeyringAccount };
 
         // TODO: The UI still uses the account address to identify accounts, so
-        // we need to prevent the creation of duplicate accounts for now to
+        // we need to block the creation of duplicate accounts for now to
         // prevent accounts from being overwritten.
         if (await this.#callbacks.addressExists(account.address)) {
           throw new Error(`Account '${account.address}' already exists`);
@@ -194,8 +194,6 @@ export class SnapKeyring extends EventEmitter {
    * @returns The list of account addresses.
    */
   async getAccounts(): Promise<string[]> {
-    // Do not call the snap here. This method is called by the UI, keep it
-    // _fast_.
     return unique([...this.#addressToAccount.keys()]);
   }
 
