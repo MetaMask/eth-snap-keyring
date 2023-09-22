@@ -1,6 +1,6 @@
 import { TransactionFactory } from '@ethereumjs/tx';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import type { InternalAccount } from '@metamask/keyring-api';
+import type { KeyringAccount } from '@metamask/keyring-api';
 import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
@@ -19,6 +19,7 @@ describe('SnapKeyring', () => {
   const mockCallbacks = {
     saveState: jest.fn(),
     removeAccount: jest.fn(),
+    addressExists: jest.fn(),
   };
 
   const snapId = 'local:snap.mock';
@@ -49,12 +50,41 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountCreated,
-        params: { account: account as unknown as InternalAccount },
+        params: { account: account as unknown as KeyringAccount },
       });
     }
   });
 
   describe('handleKeyringSnapMessage', () => {
+    it('throws if we try to add an account that already exists', async () => {
+      mockCallbacks.addressExists.mockResolvedValue(true);
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountCreated,
+          params: { account: accounts[0] as unknown as KeyringAccount },
+        }),
+      ).rejects.toThrow(`Account '${accounts[0].address}' already exists`);
+    });
+
+    it('updated the methods of an account', async () => {
+      // Return the updated list of accounts when the keyring requests it.
+      mockSnapController.handleRequest.mockResolvedValue([
+        { ...accounts[0], methods: [] },
+        { ...accounts[1] },
+      ]);
+
+      expect(
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: { account: { ...accounts[0], methods: [] } },
+        }),
+      ).toBeNull();
+
+      const keyringAccounts = await keyring.listAccounts();
+      expect(keyringAccounts.length).toBeGreaterThan(0);
+      expect(keyringAccounts[0]?.methods).toStrictEqual([]);
+    });
+
     it('removes an account', async () => {
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
@@ -93,7 +123,6 @@ describe('SnapKeyring', () => {
     it('approves an async request', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
-        redirect: {},
       });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,
@@ -112,10 +141,48 @@ describe('SnapKeyring', () => {
       expect(await requestPromise).toBe('0x123');
     });
 
+    it.each([
+      [
+        { message: 'Go to dapp to continue.' },
+        'The snap requested a redirect: message="Go to dapp to continue.", url=""',
+      ],
+      [
+        { url: 'https://example.com/sign?tx=1234' },
+        'The snap requested a redirect: message="", url="https://example.com/sign?tx=1234"',
+      ],
+    ])('returns a redirect %s', async (redirect, message) => {
+      const spy = jest.spyOn(console, 'log').mockImplementation();
+
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect,
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        accounts[0].address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: { id: requestId },
+      });
+
+      // We need to await on the request promise because the request submission
+      // is async, so if we don't await, the test will exit before the promise
+      // gets resolved.
+      await expect(requestPromise).rejects.toThrow(
+        'Request rejected by user or snap.',
+      );
+
+      expect(console.log).toHaveBeenCalledWith(message);
+      spy.mockRestore();
+    });
+
     it('rejects an async request', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
-        redirect: {},
       });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,

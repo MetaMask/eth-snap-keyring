@@ -35,6 +35,7 @@ export type KeyringState = Infer<typeof KeyringStateStruct>;
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
   removeAccount(address: string): Promise<void>;
+  addressExists(address: string): Promise<boolean>;
 };
 
 /**
@@ -80,7 +81,23 @@ export class SnapKeyring extends EventEmitter {
     const { method, params } = message;
 
     switch (method) {
-      case KeyringEvent.AccountCreated:
+      case KeyringEvent.AccountCreated: {
+        const { account } = params as any;
+
+        // TODO: The UI still uses the account address to identify accounts, so
+        // we need to prevent the creation of duplicate accounts for now to
+        // prevent accounts from being overwritten.
+        if (await this.#callbacks.addressExists(account.address)) {
+          throw new Error(
+            `Account '${account.address as string}' already exists`,
+          );
+        }
+
+        await this.#syncAllSnapsAccounts(snapId);
+        await this.#callbacks.saveState();
+        return null;
+      }
+
       case KeyringEvent.AccountUpdated: {
         await this.#syncAllSnapsAccounts(snapId);
         await this.#callbacks.saveState();
@@ -218,6 +235,16 @@ export class SnapKeyring extends EventEmitter {
     if (!response.pending) {
       this.#pendingRequests.delete(requestId);
       return response.result;
+    }
+
+    // TODO: In the future, this should be handled by the UI. For now, we just
+    // log the redirect information for debugging purposes.
+    if (response.redirect?.message || response.redirect?.url) {
+      console.log(
+        `The snap requested a redirect: message="${
+          response.redirect.message ?? ''
+        }", url="${response.redirect.url ?? ''}"`,
+      );
     }
 
     return promise.promise;
