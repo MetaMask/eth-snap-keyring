@@ -61,21 +61,17 @@ export type KeyringState = Infer<typeof KeyringStateStruct>;
  */
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
-  removeAccount(address: string): Promise<void>;
   addressExists(address: string): Promise<boolean>;
   addAccount(
     address: string,
     snapId: string,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
-<<<<<<< HEAD
-=======
   removeAccount(
     address: string,
     snapId: string,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
->>>>>>> 3959cec (add `handleUserInput` callback to `removeAccount`)
 };
 
 /**

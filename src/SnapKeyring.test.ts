@@ -18,8 +18,15 @@ describe('SnapKeyring', () => {
 
   const mockCallbacks = {
     saveState: jest.fn(),
-    removeAccount: jest.fn(),
     addressExists: jest.fn(),
+    addAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
+      await handleUserInput(true);
+      return Promise.resolve();
+    }),
+    removeAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
+      await handleUserInput(true);
+      return Promise.resolve();
+    }),
   };
 
   const snapId = 'local:snap.mock';
