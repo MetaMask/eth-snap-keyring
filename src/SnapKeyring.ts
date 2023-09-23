@@ -355,8 +355,8 @@ export class SnapKeyring extends EventEmitter {
       return response.result;
     }
 
-    // TODO: In the future, this should be handled by the UI. For now, we just
-    // log the redirect information for debugging purposes.
+    // In the future, this should be handled by the UI. For now, we just log
+    // the redirect information for debugging purposes.
     if (response.redirect?.message || response.redirect?.url) {
       const { message = '', url = '' } = response.redirect;
       console.log(
