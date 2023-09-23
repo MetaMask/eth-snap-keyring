@@ -107,9 +107,9 @@ export class SnapKeyring extends EventEmitter {
     assert(message, AccountCreatedEventStruct);
     const { account } = message.params;
 
-    // TODO: The UI still uses the account address to identify accounts, so
-    // we need to block the creation of duplicate accounts for now to
-    // prevent accounts from being overwritten.
+    // The UI still uses the account address to identify accounts, so we need
+    // to block the creation of duplicate accounts for now to prevent accounts
+    // from being overwritten.
     if (await this.#callbacks.addressExists(account.address)) {
       throw new Error(`Account '${account.address}' already exists`);
     }
