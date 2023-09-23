@@ -200,7 +200,6 @@ export class SnapKeyring extends EventEmitter {
 
     this.#pendingRequests.delete(id);
     promise.resolve(result);
-
     return null;
   }
 
@@ -217,7 +216,6 @@ export class SnapKeyring extends EventEmitter {
 
     this.#pendingRequests.delete(id);
     promise.reject(new Error(`Request rejected by user or snap.`));
-
     return null;
   }
 
