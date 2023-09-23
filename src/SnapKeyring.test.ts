@@ -89,9 +89,16 @@ describe('SnapKeyring', () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountUpdated,
-          params: { account: { id: 'some-invalid-id' } },
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              id: '0b3551da-1685-4750-ad4c-01fc3a9e90b1',
+            },
+          },
         }),
-      ).rejects.toThrow("Account 'some-invalid-id' not found");
+      ).rejects.toThrow(
+        "Account '0b3551da-1685-4750-ad4c-01fc3a9e90b1' not found",
+      );
     });
 
     it('cannot change the address of an account', async () => {
@@ -99,7 +106,10 @@ describe('SnapKeyring', () => {
         keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountUpdated,
           params: {
-            account: { id: accounts[0].id, address: accounts[1].address },
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              address: accounts[1].address,
+            },
           },
         }),
       ).rejects.toThrow(
@@ -112,7 +122,9 @@ describe('SnapKeyring', () => {
         keyring.handleKeyringSnapMessage('invalid-snap-id', {
           method: KeyringEvent.AccountUpdated,
           params: {
-            account: { id: accounts[0].id, address: accounts[0].address },
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+            },
           },
         }),
       ).rejects.toThrow(

@@ -27,7 +27,7 @@
   "dependencies": {
     "@ethereumjs/tx": "^4.2.0",
     "@metamask/eth-sig-util": "^7.0.0",
-    "@metamask/keyring-api": "^0.2.6",
+    "@metamask/keyring-api": "github:MetaMask/keyring-api#37c0e66548194607ed0715ce0f1abe9665ff3adc",
     "@metamask/snaps-controllers": "^2.0.0",
     "@metamask/utils": "^8.1.0",
     "@types/uuid": "^9.0.1",

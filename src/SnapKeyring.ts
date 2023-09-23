@@ -7,8 +7,13 @@ import {
   KeyringAccountStruct,
   EthMethod,
   KeyringSnapControllerClient,
+  KeyringEvent,
+  AccountCreatedEventStruct,
+  AccountUpdatedEventStruct,
+  AccountDeletedEventStruct,
+  RequestApprovedEventStruct,
+  RequestRejectedEventStruct,
 } from '@metamask/keyring-api';
-import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { Json } from '@metamask/utils';
 import { bigIntToHex } from '@metamask/utils';
@@ -67,10 +72,17 @@ export class SnapKeyring extends EventEmitter {
   #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
   /**
-   * Callbacks used by the snap keyring to interact with other components.
+   * Callbacks used to interact with other components.
    */
   #callbacks: SnapKeyringCallbacks;
 
+  /**
+   * Create a new snap keyring.
+   *
+   * @param controller - Snaps controller.
+   * @param callbacks - Callbacks used to interact with other components.
+   * @returns A new snap keyring.
+   */
   constructor(controller: SnapController, callbacks: SnapKeyringCallbacks) {
     super();
     this.type = SnapKeyring.type;
@@ -93,11 +105,11 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
-    const { method, params } = message;
 
-    switch (method) {
+    switch (message.method) {
       case KeyringEvent.AccountCreated: {
-        const { account } = params as { account: KeyringAccount };
+        assert(message, AccountCreatedEventStruct);
+        const { account } = message.params;
 
         // TODO: The UI still uses the account address to identify accounts, so
         // we need to block the creation of duplicate accounts for now to
@@ -112,7 +124,8 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.AccountUpdated: {
-        const { account } = params as { account: KeyringAccount };
+        assert(message, AccountUpdatedEventStruct);
+        const { account } = message.params;
 
         // A snap cannot update an account that doesn't exist.
         const currentAccount = this.#getAccountById(account.id);
@@ -138,7 +151,8 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.AccountDeleted: {
-        const { id } = params as { id: string };
+        assert(message, AccountDeletedEventStruct);
+        const { id } = message.params;
         const account = this.#getAccountById(id);
 
         // We can ignore the case where the account was already removed from
@@ -154,19 +168,21 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.RequestApproved: {
-        const { id, result } = params as { id: string; result: Json };
+        assert(message, RequestApprovedEventStruct);
+        const { id, result } = message.params;
         this.#resolveRequest(id, result);
         return null;
       }
 
       case KeyringEvent.RequestRejected: {
-        const { id } = params as { id: string };
+        assert(message, RequestRejectedEventStruct);
+        const { id } = message.params;
         this.#rejectRequest(id);
         return null;
       }
 
       default:
-        throw new Error(`Method not supported: ${method}`);
+        throw new Error(`Method not supported: ${message.method}`);
     }
   }
 

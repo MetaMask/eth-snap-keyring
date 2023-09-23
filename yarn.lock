@@ -1064,7 +1064,7 @@ __metadata:
     "@metamask/eslint-config-nodejs": ^12.1.0
     "@metamask/eslint-config-typescript": ^12.1.0
     "@metamask/eth-sig-util": ^7.0.0
-    "@metamask/keyring-api": ^0.2.6
+    "@metamask/keyring-api": "github:MetaMask/keyring-api#37c0e66548194607ed0715ce0f1abe9665ff3adc"
     "@metamask/snaps-controllers": ^2.0.0
     "@metamask/utils": ^8.1.0
     "@types/jest": ^28.1.6
@@ -1120,9 +1120,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/keyring-api@npm:^0.2.6":
+"@metamask/keyring-api@github:MetaMask/keyring-api#37c0e66548194607ed0715ce0f1abe9665ff3adc":
   version: 0.2.6
-  resolution: "@metamask/keyring-api@npm:0.2.6"
+  resolution: "@metamask/keyring-api@https://github.com/MetaMask/keyring-api.git#commit=37c0e66548194607ed0715ce0f1abe9665ff3adc"
   dependencies:
     "@metamask/providers": ^13.0.0
     "@metamask/rpc-methods": ^2.0.0
@@ -1132,7 +1132,7 @@ __metadata:
     "@types/uuid": ^9.0.1
     superstruct: ^1.0.3
     uuid: ^9.0.0
-  checksum: 68a1181b72bc07d2fc41806f6526f6b9cdae53ff976cf4038f00d6d07de94e3dbef7e03c6533e30f84e1025baa7d5503f18b83f3bc6a0f8e3452b8037fc97d96
+  checksum: 2728047361c62989272aefd9b9eabca6c980c553fe19e617cc7d5da0237fce51f0e68d005d66d5f32b621dc3d03490ddb773e64f5b082d66dffe7a972e28a5ce
   languageName: node
   linkType: hard
 
