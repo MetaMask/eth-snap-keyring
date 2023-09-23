@@ -111,7 +111,13 @@ export class SnapKeyring extends EventEmitter {
     // to block the creation of duplicate accounts for now to prevent accounts
     // from being overwritten.
     if (await this.#callbacks.addressExists(account.address)) {
-      throw new Error(`Account '${account.address}' already exists`);
+      throw new Error(`Account address '${account.address}' already exists`);
+    }
+
+    // A snap could try to create an account with a different address but with
+    // an existing ID, so the above test only is not enough.
+    if (this.#getAccountById(account.id) !== undefined) {
+      throw new Error(`Account ID '${account.id}' already exists`);
     }
 
     this.#addAccountToMaps(account, snapId);

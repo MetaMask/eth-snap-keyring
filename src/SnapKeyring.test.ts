@@ -56,14 +56,36 @@ describe('SnapKeyring', () => {
   });
 
   describe('handleKeyringSnapMessage', () => {
-    it('throws if we try to add an account that already exists', async () => {
+    it('cannot add an account that already exists (address)', async () => {
       mockCallbacks.addressExists.mockResolvedValue(true);
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountCreated,
-          params: { account: accounts[0] as unknown as KeyringAccount },
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
+            },
+          },
         }),
-      ).rejects.toThrow(`Account '${accounts[0].address}' already exists`);
+      ).rejects.toThrow(
+        `Account address '${accounts[0].address}' already exists`,
+      );
+    });
+
+    it('cannot add an account that already exists (ID)', async () => {
+      mockCallbacks.addressExists.mockResolvedValue(false);
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountCreated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              address: '0x0',
+            },
+          },
+        }),
+      ).rejects.toThrow(`Account ID '${accounts[0].id}' already exists`);
     });
 
     it('updated the methods of an account', async () => {
