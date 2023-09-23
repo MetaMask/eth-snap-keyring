@@ -46,14 +46,29 @@ export class SnapKeyring extends EventEmitter {
 
   type: string;
 
+  /**
+   * Client used to call the snap keyring.
+   */
   #snapClient: KeyringSnapControllerClient;
 
+  /**
+   * Mapping between account addresses and account objects.
+   */
   #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
 
+  /**
+   * Mapping between account addresses and snap IDs.
+   */
   #addressToSnapId: CaseInsensitiveMap<string>;
 
+  /**
+   * Mapping between request IDs and their deferred promises.
+   */
   #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
+  /**
+   * Callbacks used by the snap keyring to interact with other components.
+   */
   #callbacks: SnapKeyringCallbacks;
 
   constructor(controller: SnapController, callbacks: SnapKeyringCallbacks) {
@@ -491,6 +506,12 @@ export class SnapKeyring extends EventEmitter {
     );
   }
 
+  /**
+   * Get the metadata of a snap keyring account.
+   *
+   * @param address - Account address.
+   * @returns The snap metadata or undefined if the snap cannot be found.
+   */
   #getSnapMetadata(
     address: string,
   ): InternalAccount['metadata']['snap'] | undefined {
