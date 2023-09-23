@@ -618,7 +618,7 @@ export class SnapKeyring extends EventEmitter {
           keyring: {
             type: this.type,
           },
-          ...(snap && { snap }),
+          ...(snap !== undefined && { snap }),
         },
       };
     });
