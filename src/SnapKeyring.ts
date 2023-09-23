@@ -350,8 +350,8 @@ export class SnapKeyring extends EventEmitter {
       }
     })();
 
-    // The snap can respond immediately if the request is not async. In that
-    // case we must delete the promise to prevent a leak.
+    // If the snap answers synchronously, the promise must be removed from the
+    // map to prevent a leak.
     if (!response.pending) {
       this.#pendingRequests.delete(requestId);
       return response.result;
