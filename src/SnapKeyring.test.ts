@@ -147,6 +147,17 @@ describe('SnapKeyring', () => {
       ]);
     });
 
+    it('cannot delete an account owned by another snap', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage('invalid-snap-id', {
+          method: KeyringEvent.AccountDeleted,
+          params: { id: accounts[0].id },
+        }),
+      ).rejects.toThrow(
+        "Cannot delete account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
+    });
+
     it('returns null when removing an account that does not exist', async () => {
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);

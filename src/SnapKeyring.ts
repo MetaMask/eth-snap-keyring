@@ -94,6 +94,134 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
+   * Handle an Account Created event from a snap.
+   *
+   * @param snapId - Snap ID.
+   * @param message - Event message.
+   * @returns `null`.
+   */
+  async #handleAccountCreated(
+    snapId: string,
+    message: SnapMessage,
+  ): Promise<null> {
+    assert(message, AccountCreatedEventStruct);
+    const { account } = message.params;
+
+    // TODO: The UI still uses the account address to identify accounts, so
+    // we need to block the creation of duplicate accounts for now to
+    // prevent accounts from being overwritten.
+    if (await this.#callbacks.addressExists(account.address)) {
+      throw new Error(`Account '${account.address}' already exists`);
+    }
+
+    this.#addAccountToMaps(account, snapId);
+    await this.#callbacks.saveState();
+    return null;
+  }
+
+  /**
+   * Handle an Account Updated event from a snap.
+   *
+   * @param snapId - Snap ID.
+   * @param message - Event message.
+   * @returns `null`.
+   */
+  async #handleAccountUpdated(
+    snapId: string,
+    message: SnapMessage,
+  ): Promise<null> {
+    assert(message, AccountUpdatedEventStruct);
+    const { account } = message.params;
+
+    // A snap cannot update an account that doesn't exist.
+    const currentAccount = this.#getAccountById(account.id);
+    if (currentAccount === undefined) {
+      throw new Error(`Account '${account.id}' not found`);
+    }
+
+    // The address of the account cannot be changed. In the future, we will
+    // support changing the address of an account since it will be required
+    // to support UTXO-based chains.
+    if (currentAccount.address !== account.address) {
+      throw new Error(`Cannot change address of account '${account.id}'`);
+    }
+
+    // ! A snap cannot update an account it doesn't own.
+    if (this.#addressToSnapId.get(account.address) !== snapId) {
+      throw new Error(`Cannot update account '${account.id}'`);
+    }
+
+    this.#addAccountToMaps(account, snapId);
+    await this.#callbacks.saveState();
+    return null;
+  }
+
+  /**
+   * Handle an Account Deleted event from a snap.
+   *
+   * @param snapId - Snap ID.
+   * @param message - Event message.
+   * @returns `null`.
+   */
+  async #handleAccountDeleted(
+    snapId: string,
+    message: SnapMessage,
+  ): Promise<null> {
+    assert(message, AccountDeletedEventStruct);
+    const { id } = message.params;
+    const account = this.#getAccountById(id);
+
+    // We can ignore the case where the account was already removed from
+    // the keyring, making the deletion idempotent.
+    //
+    // This happens when the keyring calls the snap to delete an account,
+    // and the snap responds with an AccountDeleted event.
+    if (account !== undefined) {
+      // ! A snap cannot delete an account it doesn't own.
+      if (this.#addressToSnapId.get(account.address) !== snapId) {
+        throw new Error(`Cannot delete account '${account.id}'`);
+      }
+      await this.#callbacks.removeAccount(account.address);
+    }
+
+    return null;
+  }
+
+  /**
+   * Handle an Request Approved event from a snap.
+   *
+   * @param message - Event message.
+   * @returns `null`.
+   */
+  async #handleRequestApproved(message: SnapMessage): Promise<null> {
+    assert(message, RequestApprovedEventStruct);
+    const { id, result } = message.params;
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
+
+    this.#pendingRequests.delete(id);
+    promise.resolve(result);
+
+    return null;
+  }
+
+  /**
+   * Handle an Request Rejected event from a snap.
+   *
+   * @param message - Event message.
+   * @returns `null`.
+   */
+  async #handleRequestRejected(message: SnapMessage): Promise<null> {
+    assert(message, RequestRejectedEventStruct);
+    const { id } = message.params;
+    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
+
+    this.#pendingRequests.delete(id);
+    promise.reject(new Error(`Request rejected by user or snap.`));
+
+    return null;
+  }
+
+  /**
    * Handle a message from a snap.
    *
    * @param snapId - ID of the snap.
@@ -107,77 +235,23 @@ export class SnapKeyring extends EventEmitter {
     assert(message, SnapMessageStruct);
     switch (message.method) {
       case KeyringEvent.AccountCreated: {
-        assert(message, AccountCreatedEventStruct);
-        const { account } = message.params;
-
-        // TODO: The UI still uses the account address to identify accounts, so
-        // we need to block the creation of duplicate accounts for now to
-        // prevent accounts from being overwritten.
-        if (await this.#callbacks.addressExists(account.address)) {
-          throw new Error(`Account '${account.address}' already exists`);
-        }
-
-        this.#addAccountToMaps(account, snapId);
-        await this.#callbacks.saveState();
-        return null;
+        return this.#handleAccountCreated(snapId, message);
       }
 
       case KeyringEvent.AccountUpdated: {
-        assert(message, AccountUpdatedEventStruct);
-        const { account } = message.params;
-
-        // A snap cannot update an account that doesn't exist.
-        const currentAccount = this.#getAccountById(account.id);
-        if (currentAccount === undefined) {
-          throw new Error(`Account '${account.id}' not found`);
-        }
-
-        // The address of the account cannot be changed. In the future, we will
-        // support changing the address of an account since it will be required
-        // to support UTXO-based chains.
-        if (currentAccount.address !== account.address) {
-          throw new Error(`Cannot change address of account '${account.id}'`);
-        }
-
-        // A snap cannot update an account that it doesn't own.
-        if (this.#addressToSnapId.get(account.address) !== snapId) {
-          throw new Error(`Cannot update account '${account.id}'`);
-        }
-
-        this.#addAccountToMaps(account, snapId);
-        await this.#callbacks.saveState();
-        return null;
+        return this.#handleAccountUpdated(snapId, message);
       }
 
       case KeyringEvent.AccountDeleted: {
-        assert(message, AccountDeletedEventStruct);
-        const { id } = message.params;
-        const account = this.#getAccountById(id);
-
-        // We can ignore the case where the account was already removed from
-        // the keyring, making the deletion idempotent.
-        //
-        // This happens when the keyring calls the snap to delete an account,
-        // and the snap responds with an AccountDeleted event.
-        if (account !== undefined) {
-          await this.#callbacks.removeAccount(account.address);
-        }
-
-        return null;
+        return this.#handleAccountDeleted(snapId, message);
       }
 
       case KeyringEvent.RequestApproved: {
-        assert(message, RequestApprovedEventStruct);
-        const { id, result } = message.params;
-        this.#approveRequest(id, result);
-        return null;
+        return this.#handleRequestApproved(message);
       }
 
       case KeyringEvent.RequestRejected: {
-        assert(message, RequestRejectedEventStruct);
-        const { id } = message.params;
-        this.#rejectRequest(id);
-        return null;
+        return this.#handleRequestRejected(message);
       }
 
       default:
@@ -457,29 +531,6 @@ export class SnapKeyring extends EventEmitter {
       account: this.#addressToAccount.getOrThrow(address, 'Account'),
       snapId: this.#addressToSnapId.getOrThrow(address, 'Snap'),
     };
-  }
-
-  /**
-   * Resolve a pending request.
-   *
-   * @param id - ID of the request to resolve.
-   * @param result - Result of the request.
-   */
-  #approveRequest(id: string, result: any): void {
-    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
-    this.#pendingRequests.delete(id);
-    promise.resolve(result);
-  }
-
-  /**
-   * Reject a pending request.
-   *
-   * @param id - ID of the request to reject.
-   */
-  #rejectRequest(id: string): void {
-    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
-    this.#pendingRequests.delete(id);
-    promise.reject(new Error(`Request rejected by user or snap.`));
   }
 
   /**
