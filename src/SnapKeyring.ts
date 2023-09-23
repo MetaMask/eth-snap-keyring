@@ -105,7 +105,6 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
-
     switch (message.method) {
       case KeyringEvent.AccountCreated: {
         assert(message, AccountCreatedEventStruct);
@@ -170,7 +169,7 @@ export class SnapKeyring extends EventEmitter {
       case KeyringEvent.RequestApproved: {
         assert(message, RequestApprovedEventStruct);
         const { id, result } = message.params;
-        this.#resolveRequest(id, result);
+        this.#approveRequest(id, result);
         return null;
       }
 
@@ -466,7 +465,7 @@ export class SnapKeyring extends EventEmitter {
    * @param id - ID of the request to resolve.
    * @param result - Result of the request.
    */
-  #resolveRequest(id: string, result: any): void {
+  #approveRequest(id: string, result: any): void {
     const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
     this.#pendingRequests.delete(id);
     promise.resolve(result);
