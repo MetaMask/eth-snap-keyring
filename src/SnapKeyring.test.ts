@@ -121,6 +121,7 @@ describe('SnapKeyring', () => {
     });
 
     it('removes an account', async () => {
+      mockSnapController.handleRequest.mockResolvedValue(null);
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
       });
