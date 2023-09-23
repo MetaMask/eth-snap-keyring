@@ -211,7 +211,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns The addresses of the accounts in this keyring.
    */
   async getAccounts(): Promise<string[]> {
-    return unique([...this.#addressToAccount.keys()]);
+    return unique(this.#addressToAccount.keys());
   }
 
   /**

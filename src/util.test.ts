@@ -20,6 +20,16 @@ describe('unique', () => {
     const result = unique(arr);
     expect(result).toStrictEqual([{ name: 'John' }, { name: 'Jane' }]);
   });
+
+  it('returns an array with unique values from a map', () => {
+    const map = new Map<number, string>([
+      [1, 'John'],
+      [2, 'Jane'],
+      [3, 'John'],
+    ]);
+    const result = unique(map.values());
+    expect(result).toStrictEqual(['John', 'Jane']);
+  });
 });
 
 describe('toJson', () => {
