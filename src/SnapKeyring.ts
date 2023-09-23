@@ -154,7 +154,7 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.RequestApproved: {
-        const { id, result } = params as { id: string; result: any };
+        const { id, result } = params as { id: string; result: Json };
         this.#resolveRequest(id, result);
         return null;
       }
@@ -195,18 +195,20 @@ export class SnapKeyring extends EventEmitter {
     }
 
     assert(state, KeyringStateStruct);
+
     this.#addressToAccount = CaseInsensitiveMap.fromObject(
       state.addressToAccount,
     );
+
     this.#addressToSnapId = CaseInsensitiveMap.fromObject(
       state.addressToSnapId,
     );
   }
 
   /**
-   * Get the address of the accounts present in this keyring.
+   * Get the addresses of the accounts in this keyring.
    *
-   * @returns The list of account addresses.
+   * @returns The addresses of the accounts in this keyring.
    */
   async getAccounts(): Promise<string[]> {
     return unique([...this.#addressToAccount.keys()]);
@@ -260,7 +262,7 @@ export class SnapKeyring extends EventEmitter {
     })();
 
     // The snap can respond immediately if the request is not async. In that
-    // case we should delete the promise to prevent a leak.
+    // case we must delete the promise to prevent a leak.
     if (!response.pending) {
       this.#pendingRequests.delete(requestId);
       return response.result;
@@ -303,6 +305,8 @@ export class SnapKeyring extends EventEmitter {
       params: [tx],
     });
 
+    // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
+    // ! snap could overwrite the transaction.
     const signature = mask(
       signedTx,
       object({
@@ -314,9 +318,7 @@ export class SnapKeyring extends EventEmitter {
 
     return TransactionFactory.fromTxData({
       ...(tx as Record<string, Json>),
-      r: signature.r,
-      s: signature.s,
-      v: signature.v,
+      ...signature,
     });
   }
 
@@ -474,10 +476,12 @@ export class SnapKeyring extends EventEmitter {
   #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
     const account = {
       ...snapAccount,
-      // TODO: Do not lowercase the address here. This is a workaround to
-      // support the current UI which expects the account address to be
-      // lowercase. This workaround should be removed once we migrated the UI
-      // to use the account ID instead of the account address.
+      // TODO: Do not convert the address to lowercase.
+      //
+      // This is a workaround to support the current UI which expects the
+      // account address to be lowercase. This workaround should be removed
+      // once we migrated the UI to use the account ID instead of the account
+      // address.
       address: snapAccount.address.toLowerCase(),
     };
     this.#addressToAccount.set(account.address, account);
@@ -532,10 +536,16 @@ export class SnapKeyring extends EventEmitter {
       const snap = this.#getSnapMetadata(account.address);
       return {
         ...account,
-        // TODO: Do not lowercase the address here. This is a workaround to
-        // support the current UI which expects the account address to be
-        // lowercase. This workaround should be removed once we migrated the UI
-        // to use the account ID instead of the account address.
+        // TODO: Do not convert the address to lowercase.
+        //
+        // This is a workaround to support the current UI which expects the
+        // account address to be lowercase. This workaround should be removed
+        // once we migrated the UI to use the account ID instead of the account
+        // address.
+        //
+        // This is an extra step to ensure that the address is lowercase, it
+        // shouldn't be necessary since the address is already converted to
+        // lowercase when the account is added to the internal maps.
         address: account.address.toLowerCase(),
         metadata: {
           name: '',
