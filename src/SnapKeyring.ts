@@ -216,7 +216,7 @@ export class SnapKeyring extends EventEmitter {
     const { promise, snapId: expectedSnapId } =
       this.#pendingRequests.getOrThrow(id, 'Pending request');
 
-    // ! A snap cannot approve a request it didn't create.
+    // ! A snap cannot approve a request it didn't receive.
     if (snapId !== expectedSnapId) {
       throw new Error(`Cannot approve request '${id}'`);
     }
@@ -242,7 +242,7 @@ export class SnapKeyring extends EventEmitter {
     const { promise, snapId: expectedSnapId } =
       this.#pendingRequests.getOrThrow(id, 'Pending request');
 
-    // ! A snap cannot reject a request it didn't create.
+    // ! A snap cannot reject a request it didn't receive.
     if (snapId !== expectedSnapId) {
       throw new Error(`Cannot reject request '${id}'`);
     }
