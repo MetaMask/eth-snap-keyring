@@ -73,7 +73,7 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Mapping between request IDs and their deferred promises.
    */
-  #pendingRequests: CaseInsensitiveMap<{
+  #requests: CaseInsensitiveMap<{
     promise: DeferredPromise<any>;
     snapId: string;
   }>;
@@ -94,7 +94,7 @@ export class SnapKeyring extends EventEmitter {
     super();
     this.type = SnapKeyring.type;
     this.#snapClient = new KeyringSnapControllerClient({ controller });
-    this.#pendingRequests = new CaseInsensitiveMap();
+    this.#requests = new CaseInsensitiveMap();
     this.#accounts = new CaseInsensitiveMap();
     this.#callbacks = callbacks;
   }
@@ -213,15 +213,17 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, RequestApprovedEventStruct);
     const { id, result } = message.params;
-    const { promise, snapId: expectedSnapId } =
-      this.#pendingRequests.getOrThrow(id, 'Pending request');
+    const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
+      id,
+      'Pending request',
+    );
 
     // ! A snap cannot approve a request it didn't receive.
     if (snapId !== expectedSnapId) {
       throw new Error(`Cannot approve request '${id}'`);
     }
 
-    this.#pendingRequests.delete(id);
+    this.#requests.delete(id);
     promise.resolve(result);
     return null;
   }
@@ -239,15 +241,17 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, RequestRejectedEventStruct);
     const { id } = message.params;
-    const { promise, snapId: expectedSnapId } =
-      this.#pendingRequests.getOrThrow(id, 'Pending request');
+    const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
+      id,
+      'Pending request',
+    );
 
     // ! A snap cannot reject a request it didn't receive.
     if (snapId !== expectedSnapId) {
       throw new Error(`Cannot reject request '${id}'`);
     }
 
-    this.#pendingRequests.delete(id);
+    this.#requests.delete(id);
     promise.reject(new Error(`Request rejected by user or snap.`));
     return null;
   }
@@ -354,7 +358,7 @@ export class SnapKeyring extends EventEmitter {
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
     const promise = new DeferredPromise<Response>();
-    this.#pendingRequests.set(requestId, { promise, snapId });
+    this.#requests.set(requestId, { promise, snapId });
 
     const response = await (async () => {
       try {
@@ -369,7 +373,7 @@ export class SnapKeyring extends EventEmitter {
         });
       } catch (error) {
         // If the snap failed to respond, delete the promise to prevent a leak.
-        this.#pendingRequests.delete(requestId);
+        this.#requests.delete(requestId);
         throw error;
       }
     })();
@@ -377,7 +381,7 @@ export class SnapKeyring extends EventEmitter {
     // If the snap answers synchronously, the promise must be removed from the
     // map to prevent a leak.
     if (!response.pending) {
-      this.#pendingRequests.delete(requestId);
+      this.#requests.delete(requestId);
       return response.result;
     }
 
