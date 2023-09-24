@@ -1,4 +1,10 @@
-import { ensureDefined, throwError, toJson, unique } from './util';
+import {
+  ensureDefined,
+  equalsIgnoreCase,
+  throwError,
+  toJson,
+  unique,
+} from './util';
 
 describe('unique', () => {
   it('returns an empty array when given an empty array', () => {
@@ -66,5 +72,15 @@ describe('ensureDefined', () => {
 describe('throwError', () => {
   it('throws an error with the given message', () => {
     expect(() => throwError('hello')).toThrow('hello');
+  });
+});
+
+describe('equalsIgnoreCase', () => {
+  it('returns true for equal strings', () => {
+    expect(equalsIgnoreCase('hello', 'HELLO')).toBe(true);
+  });
+
+  it('returns false for different strings', () => {
+    expect(equalsIgnoreCase('hello', 'world')).toBe(false);
   });
 });

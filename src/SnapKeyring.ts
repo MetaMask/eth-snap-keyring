@@ -26,7 +26,13 @@ import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
-import { strictMask, throwError, toJson, unique } from './util';
+import {
+  equalsIgnoreCase,
+  strictMask,
+  throwError,
+  toJson,
+  unique,
+} from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
@@ -116,7 +122,7 @@ export class SnapKeyring extends EventEmitter {
     // The UI still uses the account address to identify accounts, so we need
     // to block the creation of duplicate accounts for now to prevent accounts
     // from being overwritten.
-    if (await this.#callbacks.addressExists(account.address)) {
+    if (await this.#callbacks.addressExists(account.address.toLowerCase())) {
       throw new Error(`Account address '${account.address}' already exists`);
     }
 
@@ -126,7 +132,7 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Account '${account.id}' already exists`);
     }
 
-    this.#addAccountToMaps(account, snapId);
+    this.#accounts.set(account.id, { account, snapId });
     await this.#callbacks.saveState();
     return null;
   }
@@ -150,7 +156,7 @@ export class SnapKeyring extends EventEmitter {
     // The address of the account cannot be changed. In the future, we will
     // support changing the address of an account since it will be required to
     // support UTXO-based chains.
-    if (oldAccount.address !== newAccount.address) {
+    if (!equalsIgnoreCase(oldAccount.address, newAccount.address)) {
       throw new Error(`Cannot change address of account '${newAccount.id}'`);
     }
 
@@ -159,7 +165,7 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Cannot update account '${newAccount.id}'`);
     }
 
-    this.#addAccountToMaps(newAccount, snapId);
+    this.#accounts.set(newAccount.id, { account: newAccount, snapId });
     await this.#callbacks.saveState();
     return null;
   }
@@ -194,7 +200,7 @@ export class SnapKeyring extends EventEmitter {
         throw new Error(`Cannot delete account '${id}'`);
       }
 
-      await this.#callbacks.removeAccount(address);
+      await this.#callbacks.removeAccount(address.toLowerCase());
     }
 
     return null;
@@ -327,7 +333,9 @@ export class SnapKeyring extends EventEmitter {
    */
   async getAccounts(): Promise<string[]> {
     return unique(
-      Array.from(this.#accounts.values()).map(({ account }) => account.address),
+      Array.from(this.#accounts.values()).map(({ account }) =>
+        account.address.toLowerCase(),
+      ),
     );
   }
 
@@ -529,7 +537,7 @@ export class SnapKeyring extends EventEmitter {
 
     // Always remove the account from the maps, even if the snap is going to
     // fail to delete it.
-    this.#removeAccountFromMaps(account);
+    this.#accounts.delete(account.id);
 
     try {
       await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
@@ -537,8 +545,8 @@ export class SnapKeyring extends EventEmitter {
       // If the snap failed to delete the account, log the error and continue
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
-      console.error(
-        `Account "${address}" may not have been removed from snap "${snapId}":`,
+      console.warn(
+        `Account '${address}' may not have been removed from snap '${snapId}':`,
         error,
       );
     }
@@ -556,39 +564,10 @@ export class SnapKeyring extends EventEmitter {
     snapId: string;
   } {
     return (
-      Array.from(this.#accounts.values()).find(
-        ({ account }) => account.address === address,
+      Array.from(this.#accounts.values()).find(({ account }) =>
+        equalsIgnoreCase(account.address, address),
       ) ?? throwError(`Account '${address}' not found`)
     );
-  }
-
-  /**
-   * Add an account to the internal maps.
-   *
-   * @param snapAccount - The account to be added.
-   * @param snapId - The snap ID of the account.
-   */
-  #addAccountToMaps(snapAccount: KeyringAccount, snapId: string): void {
-    const account = {
-      ...snapAccount,
-      // TODO: Do not convert the address to lowercase.
-      //
-      // This is a workaround to support the current UI which expects the
-      // account address to be lowercase. This workaround should be removed
-      // once we migrated the UI to use the account ID instead of the account
-      // address.
-      address: snapAccount.address.toLowerCase(),
-    };
-    this.#accounts.set(account.id, { account, snapId });
-  }
-
-  /**
-   * Remove an account from the internal maps.
-   *
-   * @param account - The account to be removed.
-   */
-  #removeAccountFromMaps(account: KeyringAccount): void {
-    this.#accounts.delete(account.id);
   }
 
   /**
@@ -622,10 +601,6 @@ export class SnapKeyring extends EventEmitter {
         // account address to be lowercase. This workaround should be removed
         // once we migrated the UI to use the account ID instead of the account
         // address.
-        //
-        // This is an extra step to ensure that the address is lowercase, it
-        // shouldn't be necessary since the address is already converted to
-        // lowercase when the account is added to the internal maps.
         address: account.address.toLowerCase(),
         metadata: {
           name: '',

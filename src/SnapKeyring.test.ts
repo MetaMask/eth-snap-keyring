@@ -649,15 +649,15 @@ describe('SnapKeyring', () => {
     });
 
     it('removes the account and warn if snap fails', async () => {
-      const spy = jest.spyOn(console, 'error').mockImplementation();
-      mockSnapController.handleRequest.mockRejectedValue('error');
+      const spy = jest.spyOn(console, 'warn').mockImplementation();
+      mockSnapController.handleRequest.mockRejectedValue('some error');
       await keyring.removeAccount(accounts[0].address);
       expect(await keyring.getAccounts()).toStrictEqual([
         accounts[1].address.toLowerCase(),
       ]);
-      expect(console.error).toHaveBeenCalledWith(
-        'Account "0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3" may not have been removed from snap "local:snap.mock":',
-        'error',
+      expect(console.warn).toHaveBeenCalledWith(
+        "Account '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3' may not have been removed from snap 'local:snap.mock':",
+        'some error',
       );
       spy.mockRestore();
     });
