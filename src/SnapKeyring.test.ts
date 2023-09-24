@@ -85,7 +85,7 @@ describe('SnapKeyring', () => {
             },
           },
         }),
-      ).rejects.toThrow(`Account ID '${accounts[0].id}' already exists`);
+      ).rejects.toThrow(`Account '${accounts[0].id}' already exists`);
     });
 
     it('updated the methods of an account', async () => {
@@ -280,6 +280,40 @@ describe('SnapKeyring', () => {
         'Request rejected by user or snap.',
       );
     });
+
+    it("cannot approve another snap's request", async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+      });
+      // eslint-disable-next-line no-void
+      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId: string = calls[calls.length - 1][0].request.params.id;
+      await expect(
+        keyring.handleKeyringSnapMessage('another-snap-id', {
+          method: KeyringEvent.RequestApproved,
+          params: { id: requestId, result: '0x1234' },
+        }),
+      ).rejects.toThrow(`Cannot approve request '${requestId}'`);
+    });
+
+    it("cannot reject another snap's request", async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+      });
+      // eslint-disable-next-line no-void
+      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId: string = calls[calls.length - 1][0].request.params.id;
+      await expect(
+        keyring.handleKeyringSnapMessage('another-snap-id', {
+          method: KeyringEvent.RequestRejected,
+          params: { id: requestId },
+        }),
+      ).rejects.toThrow(`Cannot reject request '${requestId}'`);
+    });
   });
 
   describe('getAccounts', () => {
@@ -294,13 +328,9 @@ describe('SnapKeyring', () => {
   describe('serialize', () => {
     it('returns the keyring state', async () => {
       const expectedState = {
-        addressToAccount: {
-          [accounts[0].address.toLowerCase()]: accounts[0],
-          [accounts[1].address.toLowerCase()]: accounts[1],
-        },
-        addressToSnapId: {
-          [accounts[0].address.toLowerCase()]: snapId,
-          [accounts[1].address.toLowerCase()]: snapId,
+        accounts: {
+          [accounts[0].id]: { account: accounts[0], snapId },
+          [accounts[1].id]: { account: accounts[1], snapId },
         },
       };
       const state = await keyring.serialize();
@@ -312,11 +342,8 @@ describe('SnapKeyring', () => {
     it('restores the keyring state', async () => {
       // State only contains the first account
       const state = {
-        addressToAccount: {
-          [accounts[0].address]: accounts[0],
-        },
-        addressToSnapId: {
-          [accounts[0].address]: snapId,
+        accounts: {
+          [accounts[0].id]: { account: accounts[0], snapId },
         },
       };
       const expectedAddresses = [accounts[0].address];

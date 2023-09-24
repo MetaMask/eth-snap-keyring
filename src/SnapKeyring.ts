@@ -26,13 +26,18 @@ import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 import { DeferredPromise } from './DeferredPromise';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
-import { strictMask, toJson, unique } from './util';
+import { strictMask, throwError, toJson, unique } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 export const KeyringStateStruct = object({
-  addressToAccount: record(string(), KeyringAccountStruct),
-  addressToSnapId: record(string(), string()),
+  accounts: record(
+    string(),
+    object({
+      account: KeyringAccountStruct,
+      snapId: string(),
+    }),
+  ),
 });
 
 export type KeyringState = Infer<typeof KeyringStateStruct>;
@@ -57,19 +62,21 @@ export class SnapKeyring extends EventEmitter {
   #snapClient: KeyringSnapControllerClient;
 
   /**
-   * Mapping between account addresses and account objects.
+   * Mapping between account IDs and an object that contains the associated
+   * account object and snap ID.
    */
-  #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
-
-  /**
-   * Mapping between account addresses and snap IDs.
-   */
-  #addressToSnapId: CaseInsensitiveMap<string>;
+  #accounts: CaseInsensitiveMap<{
+    account: KeyringAccount;
+    snapId: string;
+  }>;
 
   /**
    * Mapping between request IDs and their deferred promises.
    */
-  #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
+  #pendingRequests: CaseInsensitiveMap<{
+    promise: DeferredPromise<any>;
+    snapId: string;
+  }>;
 
   /**
    * Callbacks used to interact with other components.
@@ -87,9 +94,8 @@ export class SnapKeyring extends EventEmitter {
     super();
     this.type = SnapKeyring.type;
     this.#snapClient = new KeyringSnapControllerClient({ controller });
-    this.#addressToAccount = new CaseInsensitiveMap();
-    this.#addressToSnapId = new CaseInsensitiveMap();
     this.#pendingRequests = new CaseInsensitiveMap();
+    this.#accounts = new CaseInsensitiveMap();
     this.#callbacks = callbacks;
   }
 
@@ -116,8 +122,8 @@ export class SnapKeyring extends EventEmitter {
 
     // A snap could try to create an account with a different address but with
     // an existing ID, so the above test only is not enough.
-    if (this.#getAccountById(account.id) !== undefined) {
-      throw new Error(`Account ID '${account.id}' already exists`);
+    if (this.#accounts.has(account.id)) {
+      throw new Error(`Account '${account.id}' already exists`);
     }
 
     this.#addAccountToMaps(account, snapId);
@@ -137,27 +143,23 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountUpdatedEventStruct);
-    const { account } = message.params;
-
-    // A snap cannot update an account that doesn't exist.
-    const currentAccount = this.#getAccountById(account.id);
-    if (currentAccount === undefined) {
-      throw new Error(`Account '${account.id}' not found`);
-    }
+    const { account: newAccount } = message.params;
+    const { account: oldAccount, snapId: expectedSnapId } =
+      this.#accounts.getOrThrow(newAccount.id, 'Account');
 
     // The address of the account cannot be changed. In the future, we will
     // support changing the address of an account since it will be required
     // to support UTXO-based chains.
-    if (currentAccount.address !== account.address) {
-      throw new Error(`Cannot change address of account '${account.id}'`);
+    if (oldAccount.address !== newAccount.address) {
+      throw new Error(`Cannot change address of account '${newAccount.id}'`);
     }
 
     // ! A snap cannot update an account it doesn't own.
-    if (this.#addressToSnapId.get(account.address) !== snapId) {
-      throw new Error(`Cannot update account '${account.id}'`);
+    if (snapId !== expectedSnapId) {
+      throw new Error(`Cannot update account '${newAccount.id}'`);
     }
 
-    this.#addAccountToMaps(account, snapId);
+    this.#addAccountToMaps(newAccount, snapId);
     await this.#callbacks.saveState();
     return null;
   }
@@ -175,19 +177,24 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, AccountDeletedEventStruct);
     const { id } = message.params;
-    const account = this.#getAccountById(id);
 
     // We can ignore the case where the account was already removed from
     // the keyring, making the deletion idempotent.
     //
     // This happens when the keyring calls the snap to delete an account,
     // and the snap responds with an AccountDeleted event.
-    if (account !== undefined) {
+    if (this.#accounts.has(id)) {
+      const {
+        snapId: expectedSnapId,
+        account: { address },
+      } = this.#accounts.getOrThrow(id, 'Account');
+
       // ! A snap cannot delete an account it doesn't own.
-      if (this.#addressToSnapId.get(account.address) !== snapId) {
-        throw new Error(`Cannot delete account '${account.id}'`);
+      if (snapId !== expectedSnapId) {
+        throw new Error(`Cannot delete account '${id}'`);
       }
-      await this.#callbacks.removeAccount(account.address);
+
+      await this.#callbacks.removeAccount(address);
     }
 
     return null;
@@ -196,13 +203,23 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Handle an Request Approved event from a snap.
    *
+   * @param snapId - Snap ID.
    * @param message - Event message.
    * @returns `null`.
    */
-  async #handleRequestApproved(message: SnapMessage): Promise<null> {
+  async #handleRequestApproved(
+    snapId: string,
+    message: SnapMessage,
+  ): Promise<null> {
     assert(message, RequestApprovedEventStruct);
     const { id, result } = message.params;
-    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
+    const { promise, snapId: expectedSnapId } =
+      this.#pendingRequests.getOrThrow(id, 'Pending request');
+
+    // ! A snap cannot approve a request it didn't create.
+    if (snapId !== expectedSnapId) {
+      throw new Error(`Cannot approve request '${id}'`);
+    }
 
     this.#pendingRequests.delete(id);
     promise.resolve(result);
@@ -212,13 +229,23 @@ export class SnapKeyring extends EventEmitter {
   /**
    * Handle an Request Rejected event from a snap.
    *
+   * @param snapId - Snap ID.
    * @param message - Event message.
    * @returns `null`.
    */
-  async #handleRequestRejected(message: SnapMessage): Promise<null> {
+  async #handleRequestRejected(
+    snapId: string,
+    message: SnapMessage,
+  ): Promise<null> {
     assert(message, RequestRejectedEventStruct);
     const { id } = message.params;
-    const promise = this.#pendingRequests.getOrThrow(id, 'Pending request');
+    const { promise, snapId: expectedSnapId } =
+      this.#pendingRequests.getOrThrow(id, 'Pending request');
+
+    // ! A snap cannot reject a request it didn't create.
+    if (snapId !== expectedSnapId) {
+      throw new Error(`Cannot reject request '${id}'`);
+    }
 
     this.#pendingRequests.delete(id);
     promise.reject(new Error(`Request rejected by user or snap.`));
@@ -251,11 +278,11 @@ export class SnapKeyring extends EventEmitter {
       }
 
       case KeyringEvent.RequestApproved: {
-        return this.#handleRequestApproved(message);
+        return this.#handleRequestApproved(snapId, message);
       }
 
       case KeyringEvent.RequestRejected: {
-        return this.#handleRequestRejected(message);
+        return this.#handleRequestRejected(snapId, message);
       }
 
       default:
@@ -270,8 +297,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async serialize(): Promise<KeyringState> {
     return {
-      addressToAccount: this.#addressToAccount.toObject(),
-      addressToSnapId: this.#addressToSnapId.toObject(),
+      accounts: this.#accounts.toObject(),
     };
   }
 
@@ -286,16 +312,8 @@ export class SnapKeyring extends EventEmitter {
     if (state === undefined) {
       return;
     }
-
     assert(state, KeyringStateStruct);
-
-    this.#addressToAccount = CaseInsensitiveMap.fromObject(
-      state.addressToAccount,
-    );
-
-    this.#addressToSnapId = CaseInsensitiveMap.fromObject(
-      state.addressToSnapId,
-    );
+    this.#accounts = CaseInsensitiveMap.fromObject(state.accounts);
   }
 
   /**
@@ -304,7 +322,9 @@ export class SnapKeyring extends EventEmitter {
    * @returns The addresses of the accounts in this keyring.
    */
   async getAccounts(): Promise<string[]> {
-    return unique(this.#addressToAccount.keys());
+    return unique(
+      Array.from(this.#accounts.values()).map((entry) => entry.account.address),
+    );
   }
 
   /**
@@ -334,7 +354,7 @@ export class SnapKeyring extends EventEmitter {
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
     const promise = new DeferredPromise<Response>();
-    this.#pendingRequests.set(requestId, promise);
+    this.#pendingRequests.set(requestId, { promise, snapId });
 
     const response = await (async () => {
       try {
@@ -531,10 +551,11 @@ export class SnapKeyring extends EventEmitter {
     account: KeyringAccount;
     snapId: string;
   } {
-    return {
-      account: this.#addressToAccount.getOrThrow(address, 'Account'),
-      snapId: this.#addressToSnapId.getOrThrow(address, 'Snap'),
-    };
+    return (
+      Array.from(this.#accounts.values()).find(
+        (entry) => entry.account.address === address,
+      ) ?? throwError(`Account '${address}' not found`)
+    );
   }
 
   /**
@@ -554,8 +575,7 @@ export class SnapKeyring extends EventEmitter {
       // address.
       address: snapAccount.address.toLowerCase(),
     };
-    this.#addressToAccount.set(account.address, account);
-    this.#addressToSnapId.set(account.address, snapId);
+    this.#accounts.set(account.id, { account, snapId });
   }
 
   /**
@@ -564,32 +584,18 @@ export class SnapKeyring extends EventEmitter {
    * @param account - The account to be removed.
    */
   #removeAccountFromMaps(account: KeyringAccount): void {
-    this.#addressToAccount.delete(account.address);
-    this.#addressToSnapId.delete(account.address);
-  }
-
-  /**
-   * Get an account by its ID. Returns undefined if the account is not found.
-   *
-   * @param id - Account ID.
-   * @returns The account object or undefined if the account is not found.
-   */
-  #getAccountById(id: string): KeyringAccount | undefined {
-    return [...this.#addressToAccount.values()].find(
-      (account) => account.id === id,
-    );
+    this.#accounts.delete(account.id);
   }
 
   /**
    * Get the metadata of a snap keyring account.
    *
-   * @param address - Account address.
+   * @param snapId - Snap ID.
    * @returns The snap metadata or undefined if the snap cannot be found.
    */
   #getSnapMetadata(
-    address: string,
+    snapId: string,
   ): InternalAccount['metadata']['snap'] | undefined {
-    const snapId = this.#addressToSnapId.getOrThrow(address);
     const snap = this.#snapClient.getController().get(snapId);
     return snap
       ? { id: snapId, name: snap.manifest.proposedName, enabled: snap.enabled }
@@ -602,8 +608,9 @@ export class SnapKeyring extends EventEmitter {
    * @returns An array containing all snap keyring accounts.
    */
   async listAccounts(): Promise<InternalAccount[]> {
-    return [...this.#addressToAccount.values()].map((account) => {
-      const snap = this.#getSnapMetadata(account.address);
+    return Array.from(this.#accounts.values()).map((entry) => {
+      const { account, snapId } = entry;
+      const snap = this.#getSnapMetadata(snapId);
       return {
         ...account,
         // TODO: Do not convert the address to lowercase.
