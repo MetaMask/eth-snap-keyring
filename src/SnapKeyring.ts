@@ -148,8 +148,8 @@ export class SnapKeyring extends EventEmitter {
       this.#accounts.getOrThrow(newAccount.id, 'Account');
 
     // The address of the account cannot be changed. In the future, we will
-    // support changing the address of an account since it will be required
-    // to support UTXO-based chains.
+    // support changing the address of an account since it will be required to
+    // support UTXO-based chains.
     if (oldAccount.address !== newAccount.address) {
       throw new Error(`Cannot change address of account '${newAccount.id}'`);
     }
@@ -178,11 +178,11 @@ export class SnapKeyring extends EventEmitter {
     assert(message, AccountDeletedEventStruct);
     const { id } = message.params;
 
-    // We can ignore the case where the account was already removed from
-    // the keyring, making the deletion idempotent.
+    // We can ignore the case where the account was already removed from the
+    // keyring, making the deletion idempotent.
     //
-    // This happens when the keyring calls the snap to delete an account,
-    // and the snap responds with an AccountDeleted event.
+    // This happens when the keyring calls the snap to delete an account, and
+    // the snap responds with an AccountDeleted event.
     if (this.#accounts.has(id)) {
       const {
         snapId: expectedSnapId,
