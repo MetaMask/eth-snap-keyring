@@ -398,8 +398,8 @@ export class SnapKeyring extends EventEmitter {
       // If the snap failed to delete the account, log the error and continue
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
-      console.error(
-        `Account "${address}" may not have been removed from snap "${snapId}":`,
+      console.warn(
+        `Account '${address}' may not have been removed from snap '${snapId}':`,
         error,
       );
     }
