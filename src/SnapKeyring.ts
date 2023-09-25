@@ -227,7 +227,7 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Cannot delete account '${id}'`);
     }
 
-    await this.#callbacks.removeAccount(address.toLowerCase());
+    await this.#callbacks.removeAccount(address.toLowerCase(), snapId);
     return null;
   }
 

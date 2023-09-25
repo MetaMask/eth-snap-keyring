@@ -53,6 +53,11 @@ describe('SnapKeyring', () => {
       mockSnapController as unknown as SnapController,
       mockCallbacks,
     );
+    mockCallbacks.addAccount.mockImplementation(
+      async (_address, _snapId, handleUserInput) => {
+        await handleUserInput(true);
+      },
+    );
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
@@ -162,10 +167,18 @@ describe('SnapKeyring', () => {
     });
 
     it('removes an account', async () => {
+<<<<<<< HEAD
       mockSnapController.handleRequest.mockResolvedValue(null);
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
       });
+=======
+      mockCallbacks.removeAccount.mockImplementation(
+        async (_address, _snapId, handleUserInput) => {
+          await handleUserInput(true);
+        },
+      );
+>>>>>>> 0cf64cf (test: mock `addAccount` and `removeAccount` callbacks in the unit tests)
 
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountDeleted,
