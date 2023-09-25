@@ -30,8 +30,19 @@ export const KeyringStateStruct = object({
   addressToSnapId: record(string(), string()),
 });
 
+/**
+ * Snap keyring state.
+ *
+ * This state is persisted by the keyring controller and passed to the snap
+ * keyring when it's created.
+ */
 export type KeyringState = Infer<typeof KeyringStateStruct>;
 
+/**
+ * Snap keyring callbacks.
+ *
+ * These callbacks are used to interact with other components.
+ */
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
   removeAccount(address: string): Promise<void>;
@@ -45,6 +56,9 @@ export class SnapKeyring extends EventEmitter {
 
   type: string;
 
+  /**
+   * Client used to call the snap keyring.
+   */
   #snapClient: KeyringSnapControllerClient;
 
   #addressToAccount: CaseInsensitiveMap<KeyringAccount>;
@@ -53,8 +67,18 @@ export class SnapKeyring extends EventEmitter {
 
   #pendingRequests: CaseInsensitiveMap<DeferredPromise<any>>;
 
+  /**
+   * Callbacks used to interact with other components.
+   */
   #callbacks: SnapKeyringCallbacks;
 
+  /**
+   * Create a new snap keyring.
+   *
+   * @param controller - Snaps controller.
+   * @param callbacks - Callbacks used to interact with other components.
+   * @returns A new snap keyring.
+   */
   constructor(controller: SnapController, callbacks: SnapKeyringCallbacks) {
     super();
     this.type = SnapKeyring.type;
@@ -213,8 +237,8 @@ export class SnapKeyring extends EventEmitter {
       }
     })();
 
-    // The snap can respond immediately if the request is not async. In that
-    // case we should delete the promise to prevent a leak.
+    // If the snap answers synchronously, the promise must be removed from the
+    // map to prevent a leak.
     if (!response.pending) {
       this.#pendingRequests.delete(requestId);
       return response.result;
@@ -248,6 +272,8 @@ export class SnapKeyring extends EventEmitter {
       params: [tx],
     });
 
+    // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
+    // ! snap could overwrite the transaction.
     const signature = mask(
       signedTx,
       object({
