@@ -285,9 +285,7 @@ export class SnapKeyring extends EventEmitter {
 
     return TransactionFactory.fromTxData({
       ...(tx as Record<string, Json>),
-      r: signature.r,
-      s: signature.s,
-      v: signature.v,
+      ...signature,
     });
   }
 
