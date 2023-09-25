@@ -93,7 +93,6 @@ describe('SnapKeyring', () => {
     it('approves an async request', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
-        redirect: {},
       });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,
@@ -112,10 +111,48 @@ describe('SnapKeyring', () => {
       expect(await requestPromise).toBe('0x123');
     });
 
+    it.each([
+      [
+        { message: 'Go to dapp to continue.' },
+        'The snap requested a redirect: message="Go to dapp to continue.", url=""',
+      ],
+      [
+        { url: 'https://example.com/sign?tx=1234' },
+        'The snap requested a redirect: message="", url="https://example.com/sign?tx=1234"',
+      ],
+    ])('returns a redirect %s', async (redirect, message) => {
+      const spy = jest.spyOn(console, 'log').mockImplementation();
+
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect,
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        accounts[0].address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: { id: requestId },
+      });
+
+      // We need to await on the request promise because the request submission
+      // is async, so if we don't await, the test will exit before the promise
+      // gets resolved.
+      await expect(requestPromise).rejects.toThrow(
+        'Request rejected by user or snap.',
+      );
+
+      expect(console.log).toHaveBeenCalledWith(message);
+      spy.mockRestore();
+    });
+
     it('rejects an async request', async () => {
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
-        redirect: {},
       });
       const requestPromise = keyring.signPersonalMessage(
         accounts[0].address,
