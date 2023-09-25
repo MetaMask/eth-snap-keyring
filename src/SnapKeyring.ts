@@ -162,7 +162,8 @@ export class SnapKeyring extends EventEmitter {
     assert(message, AccountUpdatedEventStruct);
     const { account: newAccount } = message.params;
     const { account: oldAccount, snapId: expectedSnapId } =
-      this.#accounts.getOrThrow(newAccount.id, 'Account');
+      this.#accounts.get(newAccount.id) ??
+      throwError(`Account '${newAccount.id}' not found`);
 
     // The address of the account cannot be changed. In the future, we will
     // support changing the address of an account since it will be required to
@@ -194,26 +195,30 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, AccountDeletedEventStruct);
     const { id } = message.params;
+    const entry = this.#accounts.get(id);
 
     // We can ignore the case where the account was already removed from the
     // keyring, making the deletion idempotent.
     //
     // This happens when the keyring calls the snap to delete an account, and
-    // the snap responds with an AccountDeleted event.
-    if (this.#accounts.has(id)) {
-      const {
-        snapId: expectedSnapId,
-        account: { address },
-      } = this.#accounts.getOrThrow(id, 'Account');
-
-      // ! A snap cannot delete an account it doesn't own.
-      if (snapId !== expectedSnapId) {
-        throw new Error(`Cannot delete account '${id}'`);
-      }
-
-      await this.#callbacks.removeAccount(address.toLowerCase());
+    // the snap calls the keyring back with an `AccountDeleted` event.
+    if (entry === undefined) {
+      return null;
     }
 
+    // At this point we know that the account exists, so we can safely
+    // destructure it.
+    const {
+      snapId: expectedSnapId,
+      account: { address },
+    } = entry;
+
+    // ! A snap cannot delete an account it doesn't own.
+    if (snapId !== expectedSnapId) {
+      throw new Error(`Cannot delete account '${id}'`);
+    }
+
+    await this.#callbacks.removeAccount(address.toLowerCase());
     return null;
   }
 
@@ -230,10 +235,8 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, RequestApprovedEventStruct);
     const { id, result } = message.params;
-    const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
-      id,
-      'Request',
-    );
+    const { promise, snapId: expectedSnapId } =
+      this.#requests.get(id) ?? throwError(`Request '${id}' not found`);
 
     // ! A snap cannot approve a request it didn't receive.
     if (snapId !== expectedSnapId) {
@@ -258,10 +261,8 @@ export class SnapKeyring extends EventEmitter {
   ): Promise<null> {
     assert(message, RequestRejectedEventStruct);
     const { id } = message.params;
-    const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
-      id,
-      'Request',
-    );
+    const { promise, snapId: expectedSnapId } =
+      this.#requests.get(id) ?? throwError(`Request '${id}' not found`);
 
     // ! A snap cannot reject a request it didn't receive.
     if (snapId !== expectedSnapId) {

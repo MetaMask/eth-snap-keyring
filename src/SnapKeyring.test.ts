@@ -314,6 +314,52 @@ describe('SnapKeyring', () => {
         }),
       ).rejects.toThrow(`Cannot reject request '${requestId}'`);
     });
+
+    it('fails to approve a request that failed when submitted', async () => {
+      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
+      const mockMessage = 'Hello World!';
+      await expect(
+        keyring.signPersonalMessage(accounts[0].address, mockMessage),
+      ).rejects.toThrow('error');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestApproved,
+        params: {
+          id: requestId,
+          result: '0x123',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        `Request '${requestId as string}' not found`,
+      );
+    });
+
+    it("fails to approve a request that doesn't exist", async () => {
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestApproved,
+        params: {
+          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+          result: '0x123',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+      );
+    });
+
+    it("fails to reject a request that doesn't exist", async () => {
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: {
+          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+      );
+    });
   });
 
   describe('getAccounts', () => {
@@ -565,27 +611,6 @@ describe('SnapKeyring', () => {
       await expect(
         keyring.signPersonalMessage('0x0', mockMessage),
       ).rejects.toThrow("Account '0x0' not found");
-    });
-
-    it("fails to resolve a request that wasn't submitted correctly", async () => {
-      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
-      const mockMessage = 'Hello World!';
-      await expect(
-        keyring.signPersonalMessage(accounts[0].address, mockMessage),
-      ).rejects.toThrow('error');
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestApproved,
-        params: {
-          id: requestId,
-          result: '0x123',
-        },
-      });
-      await expect(responsePromise).rejects.toThrow(
-        `Pending request '${requestId as string}' not found`,
-      );
     });
   });
 
