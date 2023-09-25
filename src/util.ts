@@ -28,7 +28,7 @@ export function strictMask<Type, Schema>(
  * @param array - Array to remove duplicates from.
  * @returns Array with duplicates removed.
  */
-export function unique<Type>(array: Type[]): Type[] {
+export function unique<Type>(array: Type[] | Iterable<Type>): Type[] {
   return [...new Set(array)];
 }
 
