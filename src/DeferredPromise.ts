@@ -21,7 +21,7 @@ export class DeferredPromise<Type> {
     });
 
     // This is a sanity check to make sure that the promise constructor
-    // actually set the resolve and reject functions.
+    // actually set the `resolve` and `reject` functions.
     /* istanbul ignore next */
     if (!this.resolve || !this.reject) {
       throw new Error('Promise constructor failed');
