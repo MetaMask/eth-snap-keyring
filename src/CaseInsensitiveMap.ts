@@ -1,3 +1,5 @@
+import { throwError } from './util';
+
 /**
  * A case-insensitive map that stores key-value pairs.
  */
@@ -44,11 +46,7 @@ export class CaseInsensitiveMap<Value> extends Map<string, Value> {
    * @returns The value associated with the given key.
    */
   getOrThrow(key: string, name = 'Key'): Value {
-    const value = this.get(key);
-    if (value === undefined) {
-      throw new Error(`${name} '${key}' not found`);
-    }
-    return value;
+    return this.get(key) ?? throwError(`${name} '${key}' not found`);
   }
 
   /**

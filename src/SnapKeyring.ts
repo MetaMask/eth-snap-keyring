@@ -232,7 +232,7 @@ export class SnapKeyring extends EventEmitter {
     const { id, result } = message.params;
     const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
       id,
-      'Pending request',
+      'Request',
     );
 
     // ! A snap cannot approve a request it didn't receive.
@@ -260,7 +260,7 @@ export class SnapKeyring extends EventEmitter {
     const { id } = message.params;
     const { promise, snapId: expectedSnapId } = this.#requests.getOrThrow(
       id,
-      'Pending request',
+      'Request',
     );
 
     // ! A snap cannot reject a request it didn't receive.
