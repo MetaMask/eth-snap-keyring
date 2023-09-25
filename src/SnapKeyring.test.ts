@@ -1,6 +1,6 @@
 import { TransactionFactory } from '@ethereumjs/tx';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import type { InternalAccount } from '@metamask/keyring-api';
+import type { KeyringAccount } from '@metamask/keyring-api';
 import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
@@ -19,6 +19,7 @@ describe('SnapKeyring', () => {
   const mockCallbacks = {
     saveState: jest.fn(),
     removeAccount: jest.fn(),
+    addressExists: jest.fn(),
   };
 
   const snapId = 'local:snap.mock';
@@ -49,13 +50,112 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountCreated,
-        params: { account: account as unknown as InternalAccount },
+        params: { account: account as unknown as KeyringAccount },
       });
     }
   });
 
   describe('handleKeyringSnapMessage', () => {
+    it('cannot add an account that already exists (address)', async () => {
+      mockCallbacks.addressExists.mockResolvedValue(true);
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountCreated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
+            },
+          },
+        }),
+      ).rejects.toThrow(
+        `Account address '${accounts[0].address}' already exists`,
+      );
+    });
+
+    it('cannot add an account that already exists (ID)', async () => {
+      mockCallbacks.addressExists.mockResolvedValue(false);
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountCreated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              address: '0x0',
+            },
+          },
+        }),
+      ).rejects.toThrow(`Account '${accounts[0].id}' already exists`);
+    });
+
+    it('updated the methods of an account', async () => {
+      // Return the updated list of accounts when the keyring requests it.
+      mockSnapController.handleRequest.mockResolvedValue([
+        { ...accounts[0], methods: [] },
+        { ...accounts[1] },
+      ]);
+
+      expect(
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: { account: { ...accounts[0], methods: [] } },
+        }),
+      ).toBeNull();
+
+      const keyringAccounts = await keyring.listAccounts();
+      expect(keyringAccounts.length).toBeGreaterThan(0);
+      expect(keyringAccounts[0]?.methods).toStrictEqual([]);
+    });
+
+    it("cannot updated an account that doesn't exist", async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              id: '0b3551da-1685-4750-ad4c-01fc3a9e90b1',
+            },
+          },
+        }),
+      ).rejects.toThrow(
+        "Account '0b3551da-1685-4750-ad4c-01fc3a9e90b1' not found",
+      );
+    });
+
+    it('cannot change the address of an account', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+              address: accounts[1].address,
+            },
+          },
+        }),
+      ).rejects.toThrow(
+        "Cannot change address of account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
+    });
+
+    it('cannot updated an account owned by another snap', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage('invalid-snap-id', {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: {
+              ...(accounts[0] as unknown as KeyringAccount),
+            },
+          },
+        }),
+      ).rejects.toThrow(
+        "Cannot update account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
+    });
+
     it('removes an account', async () => {
+      mockSnapController.handleRequest.mockResolvedValue(null);
       mockCallbacks.removeAccount.mockImplementation(async (address) => {
         await keyring.removeAccount(address);
       });
@@ -67,6 +167,17 @@ describe('SnapKeyring', () => {
       expect(await keyring.getAccounts()).toStrictEqual([
         accounts[1].address.toLowerCase(),
       ]);
+    });
+
+    it('cannot delete an account owned by another snap', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage('invalid-snap-id', {
+          method: KeyringEvent.AccountDeleted,
+          params: { id: accounts[0].id },
+        }),
+      ).rejects.toThrow(
+        "Cannot delete account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+      );
     });
 
     it('returns null when removing an account that does not exist', async () => {
@@ -169,6 +280,86 @@ describe('SnapKeyring', () => {
         'Request rejected by user or snap.',
       );
     });
+
+    it("cannot approve another snap's request", async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+      });
+      // eslint-disable-next-line no-void
+      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId: string = calls[calls.length - 1][0].request.params.id;
+      await expect(
+        keyring.handleKeyringSnapMessage('another-snap-id', {
+          method: KeyringEvent.RequestApproved,
+          params: { id: requestId, result: '0x1234' },
+        }),
+      ).rejects.toThrow(`Cannot approve request '${requestId}'`);
+    });
+
+    it("cannot reject another snap's request", async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+      });
+      // eslint-disable-next-line no-void
+      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId: string = calls[calls.length - 1][0].request.params.id;
+      await expect(
+        keyring.handleKeyringSnapMessage('another-snap-id', {
+          method: KeyringEvent.RequestRejected,
+          params: { id: requestId },
+        }),
+      ).rejects.toThrow(`Cannot reject request '${requestId}'`);
+    });
+
+    it('fails to approve a request that failed when submitted', async () => {
+      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
+      const mockMessage = 'Hello World!';
+      await expect(
+        keyring.signPersonalMessage(accounts[0].address, mockMessage),
+      ).rejects.toThrow('error');
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestApproved,
+        params: {
+          id: requestId,
+          result: '0x123',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        `Request '${requestId as string}' not found`,
+      );
+    });
+
+    it("fails to approve a request that doesn't exist", async () => {
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestApproved,
+        params: {
+          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+          result: '0x123',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+      );
+    });
+
+    it("fails to reject a request that doesn't exist", async () => {
+      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: {
+          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+        },
+      });
+      await expect(responsePromise).rejects.toThrow(
+        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+      );
+    });
   });
 
   describe('getAccounts', () => {
@@ -177,29 +368,15 @@ describe('SnapKeyring', () => {
       expect(addresses).toStrictEqual(
         accounts.map((a) => a.address.toLowerCase()),
       );
-      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
-        handler: 'onRpcRequest',
-        origin: 'metamask',
-        request: {
-          id: expect.any(String),
-          jsonrpc: '2.0',
-          method: 'keyring_listAccounts',
-        },
-        snapId,
-      });
     });
   });
 
   describe('serialize', () => {
     it('returns the keyring state', async () => {
       const expectedState = {
-        addressToAccount: {
-          [accounts[0].address.toLowerCase()]: accounts[0],
-          [accounts[1].address.toLowerCase()]: accounts[1],
-        },
-        addressToSnapId: {
-          [accounts[0].address.toLowerCase()]: snapId,
-          [accounts[1].address.toLowerCase()]: snapId,
+        accounts: {
+          [accounts[0].id]: { account: accounts[0], snapId },
+          [accounts[1].id]: { account: accounts[1], snapId },
         },
       };
       const state = await keyring.serialize();
@@ -211,11 +388,8 @@ describe('SnapKeyring', () => {
     it('restores the keyring state', async () => {
       // State only contains the first account
       const state = {
-        addressToAccount: {
-          [accounts[0].address]: accounts[0],
-        },
-        addressToSnapId: {
-          [accounts[0].address]: snapId,
+        accounts: {
+          [accounts[0].id]: { account: accounts[0], snapId },
         },
       };
       const expectedAddresses = [accounts[0].address];
@@ -438,27 +612,6 @@ describe('SnapKeyring', () => {
         keyring.signPersonalMessage('0x0', mockMessage),
       ).rejects.toThrow("Account '0x0' not found");
     });
-
-    it("fails to resolve a request that wasn't submitted correctly", async () => {
-      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
-      const mockMessage = 'Hello World!';
-      await expect(
-        keyring.signPersonalMessage(accounts[0].address, mockMessage),
-      ).rejects.toThrow('error');
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestApproved,
-        params: {
-          id: requestId,
-          result: '0x123',
-        },
-      });
-      await expect(responsePromise).rejects.toThrow(
-        `Pending request '${requestId as string}' not found`,
-      );
-    });
   });
 
   describe('signMessage', () => {
@@ -522,14 +675,14 @@ describe('SnapKeyring', () => {
 
     it('removes the account and warn if snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
-      mockSnapController.handleRequest.mockRejectedValue('error');
+      mockSnapController.handleRequest.mockRejectedValue('some error');
       await keyring.removeAccount(accounts[0].address);
       expect(await keyring.getAccounts()).toStrictEqual([
         accounts[1].address.toLowerCase(),
       ]);
       expect(console.error).toHaveBeenCalledWith(
-        'Account "0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3" may not have been removed from snap "local:snap.mock":',
-        'error',
+        "Account '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3' may not have been removed from snap 'local:snap.mock':",
+        'some error',
       );
       spy.mockRestore();
     });
@@ -562,29 +715,6 @@ describe('SnapKeyring', () => {
         },
       }));
       expect(result).toStrictEqual(expected);
-    });
-
-    it('continues to list account even if one fails', async () => {
-      mockSnapController.handleRequest.mockImplementation(() => {
-        throw new Error('error');
-      });
-      const expected = accounts.map((a) => ({
-        ...a,
-        metadata: {
-          name: '',
-          keyring: {
-            type: 'Snap Keyring',
-          },
-        },
-      }));
-      const spy = jest.spyOn(console, 'error').mockImplementation();
-      const result = await keyring.listAccounts();
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to sync accounts for snap 'local:snap.mock':",
-        expect.any(Error),
-      );
-      expect(result).toStrictEqual(expected);
-      spy.mockRestore();
     });
   });
 });
