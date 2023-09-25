@@ -67,3 +67,14 @@ export function ensureDefined<Type>(
 export function throwError(message: string): never {
   throw new Error(message);
 }
+
+/**
+ * Compares two strings for equality, ignoring case.
+ *
+ * @param a - The first string to compare.
+ * @param b - The second string to compare.
+ * @returns `true` if the strings are equal, ignoring case. `false` otherwise.
+ */
+export function equalsIgnoreCase(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
+}
