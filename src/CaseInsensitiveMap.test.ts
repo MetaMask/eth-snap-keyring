@@ -1,7 +1,7 @@
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 
 describe('CaseInsensitiveMap', () => {
-  it('should set and get values case-insensitively', () => {
+  it('sets and gets values case-insensitively', () => {
     const map = new CaseInsensitiveMap<number>();
     map.set('foo', 1);
     map.set('BAR', 2);
@@ -11,7 +11,7 @@ describe('CaseInsensitiveMap', () => {
     expect(map.get('BaR')).toBe(2);
   });
 
-  it('should check for keys case-insensitively', () => {
+  it('checks for keys case-insensitively', () => {
     const map = new CaseInsensitiveMap<number>();
     map.set('foo', 1);
     expect(map.has('foo')).toBe(true);
@@ -20,7 +20,7 @@ describe('CaseInsensitiveMap', () => {
     expect(map.has('BaR')).toBe(false);
   });
 
-  it('should delete keys case-insensitively', () => {
+  it('deletes keys case-insensitively', () => {
     const map = new CaseInsensitiveMap<number>();
     map.set('foo', 1);
     map.set('BAR', 2);
@@ -34,7 +34,7 @@ describe('CaseInsensitiveMap', () => {
     expect(map.has('BaR')).toBe(false);
   });
 
-  it('should be able to construct from items', () => {
+  it('is able to construct from items', () => {
     const map = new CaseInsensitiveMap<number>([
       ['foo', 1],
       ['BAR', 2],
@@ -45,7 +45,7 @@ describe('CaseInsensitiveMap', () => {
     expect(map.get('BaR')).toBe(2);
   });
 
-  it('should convert the map to an object', () => {
+  it('converts the map to an object', () => {
     const map = new CaseInsensitiveMap<number>([
       ['foo', 1],
       ['BAR', 2],
@@ -54,12 +54,17 @@ describe('CaseInsensitiveMap', () => {
     expect(obj).toStrictEqual({ foo: 1, bar: 2 });
   });
 
-  it('should create a map from an object', () => {
+  it('creates a map from an object', () => {
     const obj = { foo: 1, BAR: 2 };
     const map = CaseInsensitiveMap.fromObject(obj);
     expect(map.get('foo')).toBe(1);
     expect(map.get('FOO')).toBe(1);
     expect(map.get('bar')).toBe(2);
     expect(map.get('BaR')).toBe(2);
+  });
+
+  it('throws an error when trying to get a non-existent key', () => {
+    const map = new CaseInsensitiveMap<number>();
+    expect(() => map.getOrThrow('foo')).toThrow("Key 'foo' not found");
   });
 });
