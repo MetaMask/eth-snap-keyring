@@ -46,8 +46,19 @@ export const KeyringStateStruct = object({
   ),
 });
 
+/**
+ * Snap keyring state.
+ *
+ * This state is persisted by the keyring controller and passed to the snap
+ * keyring when it's created.
+ */
 export type KeyringState = Infer<typeof KeyringStateStruct>;
 
+/**
+ * Snap keyring callbacks.
+ *
+ * These callbacks are used to interact with other components.
+ */
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
   removeAccount(address: string): Promise<void>;
