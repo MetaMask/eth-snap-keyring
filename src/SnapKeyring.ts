@@ -600,6 +600,20 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
+   * Remove all accounts associated with a given Snap ID.
+   *
+   * @param snapId - The Snap ID to remove accounts for.
+   * @returns A Promise that resolves when all accounts have been removed.
+   */
+  async removeAccountsBySnapId(snapId: string): Promise<void> {
+    for (const entry of this.#accounts.values()) {
+      if (entry.snapId === snapId) {
+        await this.removeAccount(entry.account.address.toLowerCase());
+      }
+    }
+  }
+
+  /**
    * List all snap keyring accounts.
    *
    * @returns An array containing all snap keyring accounts.
