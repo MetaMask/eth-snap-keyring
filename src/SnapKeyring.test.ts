@@ -23,7 +23,8 @@ describe('SnapKeyring', () => {
       await handleUserInput(true);
       return Promise.resolve();
     }),
-    removeAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
+    removeAccount: jest.fn(async (address, _snapId, handleUserInput) => {
+      await keyring.removeAccount(address);
       await handleUserInput(true);
       return Promise.resolve();
     }),
@@ -168,10 +169,13 @@ describe('SnapKeyring', () => {
 
     it('removes an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
-      mockCallbacks.removeAccount.mockImplementation(async (address, handleUserInput) => {
-        await handleUserInput(true);
-        await keyring.removeAccount(address);
-      });
+      mockCallbacks.removeAccount.mockImplementation(
+        async (address, _snapId, handleUserInput) => {
+          await keyring.removeAccount(address);
+          await handleUserInput(true);
+        },
+      );
+
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountDeleted,
         params: { id: accounts[0].id },
@@ -203,21 +207,6 @@ describe('SnapKeyring', () => {
           params: { id: 'bcda5b5f-098f-4706-919b-ee919402f0dd' },
         }),
       ).toBeNull();
-    });
-
-    it('throws an error if the removeAccount callback fails', async () => {
-      mockCallbacks.removeAccount.mockImplementation(
-        async (_address, _snapId, _handleUserInput) => {
-          throw new Error('Some error occurred while removing account');
-        },
-      );
-
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountDeleted,
-          params: { id: accounts[0].id },
-        }),
-      ).rejects.toThrow('Some error occurred while removing account');
     });
 
     it('fails when the method is not supported', async () => {
@@ -386,27 +375,30 @@ describe('SnapKeyring', () => {
       await expect(responsePromise).rejects.toThrow(
         "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
       );
-    it('returns null after successfully updating an account', async () => {
-      const result = await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.AccountUpdated,
-      });
-      expect(mockCallbacks.saveState).toHaveBeenCalledTimes(1);
-      expect(result).toBeNull();
     });
 
-    it('throws an error if updating account fails', async () => {
-      mockCallbacks.saveState.mockImplementation(
+    it('throws an error if the removeAccount callback fails', async () => {
+      mockCallbacks.removeAccount.mockImplementation(
         async (_address, _snapId, _handleUserInput) => {
-          throw new Error('Some error occurred while updating account');
+          throw new Error('Some error occurred while removing account');
         },
       );
 
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
+          method: KeyringEvent.AccountDeleted,
           params: { id: accounts[0].id },
         }),
-      ).rejects.toThrow('Some error occurred while updating account');
+      ).rejects.toThrow('Some error occurred while removing account');
+    });
+
+    it('returns null after successfully updating an account', async () => {
+      const result = await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.AccountUpdated,
+        params: { account: accounts[0] as unknown as KeyringAccount },
+      });
+      expect(mockCallbacks.saveState).toHaveBeenCalled();
+      expect(result).toBeNull();
     });
   });
 

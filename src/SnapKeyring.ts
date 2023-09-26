@@ -151,9 +151,16 @@ export class SnapKeyring extends EventEmitter {
     if (this.#accounts.has(account.id)) {
       throw new Error(`Account '${account.id}' already exists`);
     }
-
-    this.#accounts.set(account.id, { account, snapId });
-    await this.#callbacks.saveState();
+    await this.#callbacks.addAccount(
+      account.address,
+      snapId,
+      async (accepted: boolean) => {
+        if (accepted) {
+          this.#accounts.set(account.id, { account, snapId });
+          await this.#callbacks.saveState();
+        }
+      },
+    );
     return null;
   }
 
@@ -227,7 +234,15 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Cannot delete account '${id}'`);
     }
 
-    await this.#callbacks.removeAccount(address.toLowerCase(), snapId);
+    await this.#callbacks.removeAccount(
+      address.toLowerCase(),
+      snapId,
+      async (accepted) => {
+        if (accepted) {
+          await this.#callbacks.saveState();
+        }
+      },
+    );
     return null;
   }
 
@@ -303,6 +318,7 @@ export class SnapKeyring extends EventEmitter {
       case KeyringEvent.AccountUpdated: {
         return this.#handleAccountUpdated(snapId, message);
       }
+
       case KeyringEvent.AccountDeleted: {
         return this.#handleAccountDeleted(snapId, message);
       }
