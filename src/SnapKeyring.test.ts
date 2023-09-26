@@ -18,8 +18,16 @@ describe('SnapKeyring', () => {
 
   const mockCallbacks = {
     saveState: jest.fn(),
-    removeAccount: jest.fn(),
     addressExists: jest.fn(),
+    addAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
+      await handleUserInput(true);
+      return Promise.resolve();
+    }),
+    removeAccount: jest.fn(async (address, _snapId, handleUserInput) => {
+      await keyring.removeAccount(address);
+      await handleUserInput(true);
+      return Promise.resolve();
+    }),
   };
 
   const snapId = 'local:snap.mock';
@@ -45,6 +53,11 @@ describe('SnapKeyring', () => {
     keyring = new SnapKeyring(
       mockSnapController as unknown as SnapController,
       mockCallbacks,
+    );
+    mockCallbacks.addAccount.mockImplementation(
+      async (_address, _snapId, handleUserInput) => {
+        await handleUserInput(true);
+      },
     );
     for (const account of accounts) {
       mockSnapController.handleRequest.mockResolvedValue(accounts);
@@ -156,9 +169,12 @@ describe('SnapKeyring', () => {
 
     it('removes an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
-      mockCallbacks.removeAccount.mockImplementation(async (address) => {
-        await keyring.removeAccount(address);
-      });
+      mockCallbacks.removeAccount.mockImplementation(
+        async (address, _snapId, handleUserInput) => {
+          await keyring.removeAccount(address);
+          await handleUserInput(true);
+        },
+      );
 
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountDeleted,
@@ -359,6 +375,30 @@ describe('SnapKeyring', () => {
       await expect(responsePromise).rejects.toThrow(
         "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
       );
+    });
+
+    it('throws an error if the removeAccount callback fails', async () => {
+      mockCallbacks.removeAccount.mockImplementation(
+        async (_address, _snapId, _handleUserInput) => {
+          throw new Error('Some error occurred while removing account');
+        },
+      );
+
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountDeleted,
+          params: { id: accounts[0].id },
+        }),
+      ).rejects.toThrow('Some error occurred while removing account');
+    });
+
+    it('returns null after successfully updating an account', async () => {
+      const result = await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.AccountUpdated,
+        params: { account: accounts[0] as unknown as KeyringAccount },
+      });
+      expect(mockCallbacks.saveState).toHaveBeenCalled();
+      expect(result).toBeNull();
     });
   });
 
