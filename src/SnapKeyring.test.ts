@@ -757,4 +757,13 @@ describe('SnapKeyring', () => {
       expect(result).toStrictEqual(expected);
     });
   });
+
+  describe('getAccountsBySnapId', () => {
+    it('returns the list of addresses of a snap', async () => {
+      const addresses = await keyring.getAccountsBySnapId(snapId);
+      expect(addresses).toStrictEqual(
+        accounts.map((a) => a.address.toLowerCase()),
+      );
+    });
+  });
 });
