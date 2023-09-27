@@ -151,8 +151,9 @@ export class SnapKeyring extends EventEmitter {
     if (this.#accounts.has(account.id)) {
       throw new Error(`Account '${account.id}' already exists`);
     }
+
     await this.#callbacks.addAccount(
-      account.address,
+      account.address.toLowerCase(),
       snapId,
       async (accepted: boolean) => {
         if (accepted) {
