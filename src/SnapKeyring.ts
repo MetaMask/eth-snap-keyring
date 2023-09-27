@@ -377,6 +377,20 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
+   * Get the addresses of the accounts associated with a given Snap.
+   *
+   * @param snapId - Snap ID to filter by.
+   * @returns The addresses of the accounts associated with the given Snap.
+   */
+  async getAccountsBySnapId(snapId: string): Promise<string[]> {
+    return unique(
+      [...this.#accounts.values()]
+        .filter(({ snapId: accountSnapId }) => accountSnapId === snapId)
+        .map(({ account }) => account.address.toLowerCase()),
+    );
+  }
+
+  /**
    * Submit a request to a snap.
    *
    * @param opts - Request options.
