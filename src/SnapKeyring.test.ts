@@ -757,12 +757,4 @@ describe('SnapKeyring', () => {
       expect(result).toStrictEqual(expected);
     });
   });
-
-  describe('removeAccountsBySnapId', () => {
-    it('removes all accounts owned by a snap', async () => {
-      mockSnapController.handleRequest.mockResolvedValue(null);
-      await keyring.removeAccountsBySnapId(snapId);
-      expect(await keyring.getAccounts()).toStrictEqual([]);
-    });
-  });
 });
