@@ -370,7 +370,7 @@ export class SnapKeyring extends EventEmitter {
    */
   async getAccounts(): Promise<string[]> {
     return unique(
-      Array.from(this.#accounts.values()).map(({ account }) =>
+      [...this.#accounts.values()].map(({ account }) =>
         account.address.toLowerCase(),
       ),
     );
@@ -617,7 +617,7 @@ export class SnapKeyring extends EventEmitter {
     snapId: string;
   } {
     return (
-      Array.from(this.#accounts.values()).find(({ account }) =>
+      [...this.#accounts.values()].find(({ account }) =>
         equalsIgnoreCase(account.address, address),
       ) ?? throwError(`Account '${address}' not found`)
     );
@@ -644,7 +644,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns An array containing all snap keyring accounts.
    */
   async listAccounts(): Promise<InternalAccount[]> {
-    return Array.from(this.#accounts.values()).map(({ account, snapId }) => {
+    return [...this.#accounts.values()].map(({ account, snapId }) => {
       const snap = this.#getSnapMetadata(snapId);
       return {
         ...account,
