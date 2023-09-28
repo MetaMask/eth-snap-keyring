@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- handle approval when adding/removing account with handleUserInput callback ([#99](https://github.com/MetaMask/eth-snap-keyring/pull/99))
+- Handle approval when adding/removing account with `handleUserInput` callback ([#99](https://github.com/MetaMask/eth-snap-keyring/pull/99)).
 
 ## [0.2.3]
 
