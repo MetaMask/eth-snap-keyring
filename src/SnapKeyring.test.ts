@@ -768,7 +768,7 @@ describe('SnapKeyring', () => {
   });
 
   describe('getAccountByAddress', () => {
-    it('returns the account', async () => {
+    it('returns the account with that address', async () => {
       const snapMetadata = {
         manifest: {
           proposedName: 'snap-name',
