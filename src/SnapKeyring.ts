@@ -639,6 +639,21 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
+   * Return an internal account object for a given address.
+   *
+   * @param address - Address of the account to return.
+   * @returns An internal account object for the given address.
+   */
+  async getAccountByAddress(
+    address: string,
+  ): Promise<InternalAccount | undefined> {
+    const accounts = await this.listAccounts();
+    return accounts.find(({ address: accountAddress }) =>
+      equalsIgnoreCase(accountAddress, address),
+    );
+  }
+
+  /**
    * List all snap keyring accounts.
    *
    * @returns An array containing all snap keyring accounts.
