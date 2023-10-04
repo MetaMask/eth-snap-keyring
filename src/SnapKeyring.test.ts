@@ -766,4 +766,27 @@ describe('SnapKeyring', () => {
       );
     });
   });
+
+  describe('getAccountByAddress', () => {
+    it('returns the account', async () => {
+      const snapMetadata = {
+        manifest: {
+          proposedName: 'snap-name',
+        },
+        id: snapId,
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapMetadata);
+      expect(
+        await keyring.getAccountByAddress(accounts[0].address),
+      ).toStrictEqual({
+        ...accounts[0],
+        metadata: {
+          name: '',
+          snap: { id: snapId, name: 'snap-name', enabled: true },
+          keyring: { type: 'Snap Keyring' },
+        },
+      });
+    });
+  });
 });
