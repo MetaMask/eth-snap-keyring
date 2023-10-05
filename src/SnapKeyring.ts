@@ -72,7 +72,12 @@ export type SnapKeyringCallbacks = {
     snapId: string,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
-  redirectUser(message: string, url: string, method: string): Promise<void>;
+  redirectUser(
+    snapId: string,
+    url: string,
+    message: string,
+    method: string,
+  ): Promise<void>;
 };
 
 /**
@@ -450,7 +455,7 @@ export class SnapKeyring extends EventEmitter {
     if (response.redirect?.message || response.redirect?.url) {
       const { message, url } = response.redirect;
       if (message && url) {
-        await this.#callbacks.redirectUser(message, url, method);
+        await this.#callbacks.redirectUser(snapId, url, message, method);
       } else {
         console.warn(
           `Snap '${snapId}' requested a redirect but the message or URL is missing.`,
