@@ -953,12 +953,12 @@ __metadata:
   linkType: hard
 
 "@metamask/base-controller@npm:^3.2.0, @metamask/base-controller@npm:^3.2.1":
-  version: 3.2.1
-  resolution: "@metamask/base-controller@npm:3.2.1"
+  version: 3.2.3
+  resolution: "@metamask/base-controller@npm:3.2.3"
   dependencies:
-    "@metamask/utils": ^6.2.0
+    "@metamask/utils": ^8.1.0
     immer: ^9.0.6
-  checksum: 73723a275ad2c8c6f9fcfcd69fd8b469bf8f4455fc572fc19ac9a8d76e5b65152cb111d95bfb9a4b9443298147e03a5f9778747dec2ca2203495ace54c97688c
+  checksum: f49fcf2bf892ec25657c2d72a50b3c4f3cad59acb1b74d9fdcdf564107b8f38f73647c696aaa9699d94828b5797d8f1479dab44a2dbcda987c268b0088bb3b76
   languageName: node
   linkType: hard
 
