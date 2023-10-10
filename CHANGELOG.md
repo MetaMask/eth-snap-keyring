@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.0-rc.2]
-### Uncategorized
-- feat: add `redirectUser` callback ([#136](https://github.com/MetaMask/eth-snap-keyring/pull/136))
+### Added
+- Add `redirectUser` callback ([#136](https://github.com/MetaMask/eth-snap-keyring/pull/136)).
 
 ## [1.0.0-rc.1]
 ### Added
