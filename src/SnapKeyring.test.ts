@@ -544,7 +544,7 @@ describe('SnapKeyring', () => {
       );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         snapId,
-        handler: 'onRpcRequest',
+        handler: 'onKeyringRequest',
         origin: 'metamask',
         request: {
           id: expect.any(String),
@@ -577,7 +577,7 @@ describe('SnapKeyring', () => {
       );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         snapId,
-        handler: 'onRpcRequest',
+        handler: 'onKeyringRequest',
         origin: 'metamask',
         request: {
           id: expect.any(String),
@@ -610,7 +610,7 @@ describe('SnapKeyring', () => {
       );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         snapId,
-        handler: 'onRpcRequest',
+        handler: 'onKeyringRequest',
         origin: 'metamask',
         request: {
           id: expect.any(String),
@@ -669,7 +669,7 @@ describe('SnapKeyring', () => {
       );
       expect(signature).toStrictEqual(expectedSignature);
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
-        handler: 'onRpcRequest',
+        handler: 'onKeyringRequest',
         origin: 'metamask',
         request: {
           id: expect.any(String),
