@@ -72,12 +72,7 @@ export type SnapKeyringCallbacks = {
     snapId: string,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
-  redirectUser(
-    snapId: string,
-    url: string,
-    message: string,
-    method: string,
-  ): Promise<void>;
+  redirectUser(snapId: string, url: string, message: string): Promise<void>;
 };
 
 /**
@@ -453,7 +448,7 @@ export class SnapKeyring extends EventEmitter {
     // If the snap answers asynchronously, we will inform the user with a redirect
     if (response.redirect?.message || response.redirect?.url) {
       const { message = '', url = '' } = response.redirect;
-      await this.#callbacks.redirectUser(snapId, url, message, method);
+      await this.#callbacks.redirectUser(snapId, url, message);
     }
 
     return promise.promise;

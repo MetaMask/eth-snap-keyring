@@ -279,7 +279,6 @@ describe('SnapKeyring', () => {
         snapId,
         url,
         message,
-        expect.any(String), // if you don’t know `method` value in test context
       );
       spy.mockRestore();
     });
