@@ -28,6 +28,7 @@ describe('SnapKeyring', () => {
       await handleUserInput(true);
       return Promise.resolve();
     }),
+    redirectUser: jest.fn(async () => Promise.resolve()),
   };
 
   const snapId = 'local:snap.mock';
@@ -239,15 +240,10 @@ describe('SnapKeyring', () => {
     });
 
     it.each([
-      [
-        { message: 'Go to dapp to continue.' },
-        'The snap requested a redirect: message="Go to dapp to continue.", url=""',
-      ],
-      [
-        { url: 'https://example.com/sign?tx=1234' },
-        'The snap requested a redirect: message="", url="https://example.com/sign?tx=1234"',
-      ],
-    ])('returns a redirect %s', async (redirect, message) => {
+      [{ message: 'Go to dapp to continue.' }],
+      [{ url: 'https://example.com/sign?tx=1234' }],
+      [{ url: 'https://example.com/sign?tx=12345', message: 'Go to dapp.' }],
+    ])('returns a redirect %s', async (redirect) => {
       const spy = jest.spyOn(console, 'log').mockImplementation();
 
       mockSnapController.handleRequest.mockResolvedValue({
@@ -266,6 +262,11 @@ describe('SnapKeyring', () => {
         params: { id: requestId },
       });
 
+      const { url = '', message = '' } = redirect as {
+        url?: string;
+        message?: string;
+      };
+
       // We need to await on the request promise because the request submission
       // is async, so if we don't await, the test will exit before the promise
       // gets resolved.
@@ -273,7 +274,13 @@ describe('SnapKeyring', () => {
         'Request rejected by user or snap.',
       );
 
-      expect(console.log).toHaveBeenCalledWith(message);
+      // Check that `redirectUser` was called with the correct parameters
+      expect(mockCallbacks.redirectUser).toHaveBeenCalledWith(
+        snapId,
+        url,
+        message,
+        expect.any(String), // if you don’t know `method` value in test context
+      );
       spy.mockRestore();
     });
 

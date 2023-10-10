@@ -453,14 +453,8 @@ export class SnapKeyring extends EventEmitter {
     // In the future, this should be handled by the UI. For now, we just log
     // the redirect information for debugging purposes.
     if (response.redirect?.message || response.redirect?.url) {
-      const { message, url } = response.redirect;
-      if (message && url) {
-        await this.#callbacks.redirectUser(snapId, url, message, method);
-      } else {
-        console.warn(
-          `Snap '${snapId}' requested a redirect but the message or URL is missing.`,
-        );
-      }
+      const { message = '', url = '' } = response.redirect;
+      await this.#callbacks.redirectUser(snapId, url, message, method);
     }
 
     return promise.promise;
