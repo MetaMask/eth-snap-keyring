@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+
+### Changed
+
+- Bump `@metamask/keyring-api` to 1.0.0 ([#145](https://github.com/MetaMask/eth-snap-keyring/pull/145)).
+- Bump `semver` and `word-wrap` dependencies ([#144](https://github.com/MetaMask/eth-snap-keyring/pull/144)).
+- Bump @metamask/rpc-errors from 6.0.0 to 6.1.0 ([#143](https://github.com/MetaMask/eth-snap-keyring/pull/143)).
+
 ## [1.0.0-rc.2]
 
 ### Added
@@ -118,7 +126,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v1.0.0-rc.2...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v1.0.0-rc.2...v1.0.0
 [1.0.0-rc.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v0.3.1...v1.0.0-rc.1
 [0.3.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v0.3.0...v0.3.1
