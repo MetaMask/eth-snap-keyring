@@ -116,7 +116,7 @@ describe('SnapKeyring', () => {
         }),
       ).toBeNull();
 
-      const keyringAccounts = await keyring.listAccounts();
+      const keyringAccounts = keyring.listAccounts();
       expect(keyringAccounts.length).toBeGreaterThan(0);
       expect(keyringAccounts[0]?.methods).toStrictEqual([]);
     });
@@ -749,7 +749,7 @@ describe('SnapKeyring', () => {
         enabled: true,
       };
       mockSnapController.get.mockReturnValue(snapObject);
-      const result = await keyring.listAccounts();
+      const result = keyring.listAccounts();
       const expected = accounts.map((a) => ({
         ...a,
         metadata: {
@@ -783,9 +783,7 @@ describe('SnapKeyring', () => {
         enabled: true,
       };
       mockSnapController.get.mockReturnValue(snapMetadata);
-      expect(
-        await keyring.getAccountByAddress(accounts[0].address),
-      ).toStrictEqual({
+      expect(keyring.getAccountByAddress(accounts[0].address)).toStrictEqual({
         ...accounts[0],
         metadata: {
           name: '',
