@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Remove async from listAccounts and getAccountByAddress ([#148](https://github.com/MetaMask/eth-snap-keyring/pull/148))
+- Remove async from `listAccounts` and `getAccountByAddress` ([#148](https://github.com/MetaMask/eth-snap-keyring/pull/148)).
 
 ## [1.0.0]
 
