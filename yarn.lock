@@ -1094,13 +1094,13 @@ __metadata:
   linkType: soft
 
 "@metamask/json-rpc-engine@npm:^7.1.1":
-  version: 7.1.1
-  resolution: "@metamask/json-rpc-engine@npm:7.1.1"
+  version: 7.2.0
+  resolution: "@metamask/json-rpc-engine@npm:7.2.0"
   dependencies:
     "@metamask/rpc-errors": ^6.0.0
     "@metamask/safe-event-emitter": ^3.0.0
     "@metamask/utils": ^8.1.0
-  checksum: 9dddd9142965ccd86313cda5bf13f15bf99c6c14631f93aab78de353317d548a334b5b125cdc134edd7d54e2f2e4961a0bdcd24fba997b2913083955df8fefa1
+  checksum: 81c366ebd7492b68a76da0fedfb3e6c92023f354e51b96dd7bcf8ec885ac40fc986587fdfb05669fabdc1339dfcf53a2de4baf6d8030eddc868897b995f3ad2b
   languageName: node
   linkType: hard
 
@@ -1311,13 +1311,13 @@ __metadata:
   linkType: hard
 
 "@metamask/snaps-registry@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@metamask/snaps-registry@npm:2.0.0"
+  version: 2.1.0
+  resolution: "@metamask/snaps-registry@npm:2.1.0"
   dependencies:
     "@metamask/utils": ^8.1.0
     "@noble/secp256k1": ^1.7.1
     superstruct: ^1.0.3
-  checksum: 621baf98c53c490d4bf8bf784910943e3c147cc2abdbcf5ea56ae6fcd45a1a412da79b0ef778b8f9d8c46b9272068d3dd5909be6691579590d2632c6baee8992
+  checksum: 652e8c5cc0be43325ba6cf9382db982380f34d1710bfbcc27c9d58cf0e0c14bd354e112b2feb27c1ca7264a0793795d9020a4315ffcf10fa6fed8f38cf18fcde
   languageName: node
   linkType: hard
 
@@ -1396,16 +1396,18 @@ __metadata:
   linkType: hard
 
 "@metamask/utils@npm:^8.0.0, @metamask/utils@npm:^8.1.0":
-  version: 8.1.0
-  resolution: "@metamask/utils@npm:8.1.0"
+  version: 8.2.0
+  resolution: "@metamask/utils@npm:8.2.0"
   dependencies:
-    "@ethereumjs/tx": ^4.1.2
+    "@ethereumjs/tx": ^4.2.0
     "@noble/hashes": ^1.3.1
+    "@scure/base": ^1.1.3
     "@types/debug": ^4.1.7
     debug: ^4.3.4
+    pony-cause: ^2.1.10
     semver: ^7.5.4
     superstruct: ^1.0.3
-  checksum: 4cbee36d0c227f3e528930e83f75a0c6b71b55b332c3e162f0e87f3dd86ae017d0b20405d76ea054ab99e4d924d3d9b8b896ed12a12aae57b090350e5a625999
+  checksum: 1c70c0f9c375bfa3836c15d48990dbea1c3cadfd3dd69b4867667116c09c3bdeef70a0c7027f1cdea88a9913cb846dc94812ece91be7ec32e65a62e00281b04c
   languageName: node
   linkType: hard
 
@@ -1538,7 +1540,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@scure/base@npm:^1.0.0, @scure/base@npm:^1.1.1, @scure/base@npm:~1.1.0, @scure/base@npm:~1.1.3":
+"@scure/base@npm:^1.0.0, @scure/base@npm:^1.1.1, @scure/base@npm:^1.1.3, @scure/base@npm:~1.1.0, @scure/base@npm:~1.1.3":
   version: 1.1.3
   resolution: "@scure/base@npm:1.1.3"
   checksum: 1606ab8a4db898cb3a1ada16c15437c3bce4e25854fadc8eb03ae93cbbbac1ed90655af4b0be3da37e12056fef11c0374499f69b9e658c9e5b7b3e06353c630c
@@ -6332,6 +6334,13 @@ __metadata:
   dependencies:
     semver-compare: ^1.0.0
   checksum: d87c41581a2a022fbe25965a97006238cd9b8cbbf49b39f78d262548149a9d30bd2bdf35fec3d810e0001e630cd46ef13c7e19c389dea8de7e64db271a2381bb
+  languageName: node
+  linkType: hard
+
+"pony-cause@npm:^2.1.10":
+  version: 2.1.10
+  resolution: "pony-cause@npm:2.1.10"
+  checksum: 8b61378f213e61056312dc274a1c79980154e9d864f6ad86e0c8b91a50d3ce900d430995ee24147c9f3caa440dfe7d51c274b488d7f033b65b206522536d7217
   languageName: node
   linkType: hard
 
