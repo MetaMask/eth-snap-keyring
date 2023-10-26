@@ -137,6 +137,19 @@ describe('SnapKeyring', () => {
       );
     });
 
+    it('cannot updated an account owned by another Snap', async () => {
+      await expect(
+        keyring.handleKeyringSnapMessage('a-different-snap-id', {
+          method: KeyringEvent.AccountCreated,
+          params: {
+            account: { ...(accounts[0] as unknown as KeyringAccount) },
+          },
+        }),
+      ).rejects.toThrow(
+        'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
+      );
+    });
+
     it('cannot change the address of an account', async () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
@@ -164,7 +177,7 @@ describe('SnapKeyring', () => {
           },
         }),
       ).rejects.toThrow(
-        "Cannot update account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+        "Account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a' not found",
       );
     });
 
@@ -187,14 +200,14 @@ describe('SnapKeyring', () => {
     });
 
     it('cannot delete an account owned by another snap', async () => {
-      await expect(
-        keyring.handleKeyringSnapMessage('invalid-snap-id', {
-          method: KeyringEvent.AccountDeleted,
-          params: { id: accounts[0].id },
-        }),
-      ).rejects.toThrow(
-        "Cannot delete account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
-      );
+      await keyring.handleKeyringSnapMessage('invalid-snap-id', {
+        method: KeyringEvent.AccountDeleted,
+        params: { id: accounts[0].id },
+      });
+      expect(await keyring.getAccounts()).toStrictEqual([
+        accounts[0].address.toLowerCase(),
+        accounts[1].address.toLowerCase(),
+      ]);
     });
 
     it('returns null when removing an account that does not exist', async () => {
@@ -317,7 +330,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.RequestApproved,
           params: { id: requestId, result: '0x1234' },
         }),
-      ).rejects.toThrow(`Cannot approve request '${requestId}'`);
+      ).rejects.toThrow(`Request '${requestId}' not found`);
     });
 
     it("cannot reject another snap's request", async () => {
@@ -334,7 +347,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.RequestRejected,
           params: { id: requestId },
         }),
-      ).rejects.toThrow(`Cannot reject request '${requestId}'`);
+      ).rejects.toThrow(`Request '${requestId}' not found`);
     });
 
     it('fails to approve a request that failed when submitted', async () => {
