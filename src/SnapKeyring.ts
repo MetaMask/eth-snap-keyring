@@ -2,7 +2,11 @@ import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import type { KeyringAccount, InternalAccount } from '@metamask/keyring-api';
+import type {
+  KeyringAccount,
+  InternalAccount,
+  EthBasicTransaction,
+} from '@metamask/keyring-api';
 import {
   KeyringAccountStruct,
   EthMethod,
@@ -538,6 +542,18 @@ export class SnapKeyring extends EventEmitter {
       address,
       method: EthMethod.PersonalSign,
       params: toJson<Json[]>([data, address]),
+    });
+    return strictMask(signature, string());
+  }
+
+  async prepareUserOperation(
+    address: string,
+    transactions: EthBasicTransaction[],
+  ) {
+    const signature = await this.#submitRequest({
+      address,
+      method: EthMethod.PrepareUserOperation,
+      params: toJson<Json[]>([transactions]),
     });
     return strictMask(signature, string());
   }
