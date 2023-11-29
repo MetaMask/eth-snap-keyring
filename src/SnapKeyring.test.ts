@@ -4,6 +4,7 @@ import type { KeyringAccount } from '@metamask/keyring-api';
 import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
+import type { SnapId } from '@metamask/snaps-sdk';
 
 import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
@@ -31,7 +32,7 @@ describe('SnapKeyring', () => {
     redirectUser: jest.fn(async () => Promise.resolve()),
   };
 
-  const snapId = 'local:snap.mock';
+  const snapId = 'local:snap.mock' as SnapId;
 
   const accounts = [
     {
@@ -139,7 +140,7 @@ describe('SnapKeyring', () => {
 
     it('cannot updated an account owned by another Snap', async () => {
       await expect(
-        keyring.handleKeyringSnapMessage('a-different-snap-id', {
+        keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
           method: KeyringEvent.AccountCreated,
           params: {
             account: { ...(accounts[0] as unknown as KeyringAccount) },
@@ -168,7 +169,7 @@ describe('SnapKeyring', () => {
 
     it('cannot updated an account owned by another snap', async () => {
       await expect(
-        keyring.handleKeyringSnapMessage('invalid-snap-id', {
+        keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
@@ -200,7 +201,7 @@ describe('SnapKeyring', () => {
     });
 
     it('cannot delete an account owned by another snap', async () => {
-      await keyring.handleKeyringSnapMessage('invalid-snap-id', {
+      await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
         method: KeyringEvent.AccountDeleted,
         params: { id: accounts[0].id },
       });
@@ -326,7 +327,7 @@ describe('SnapKeyring', () => {
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId: string = calls[calls.length - 1][0].request.params.id;
       await expect(
-        keyring.handleKeyringSnapMessage('another-snap-id', {
+        keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
           method: KeyringEvent.RequestApproved,
           params: { id: requestId, result: '0x1234' },
         }),
@@ -343,7 +344,7 @@ describe('SnapKeyring', () => {
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId: string = calls[calls.length - 1][0].request.params.id;
       await expect(
-        keyring.handleKeyringSnapMessage('another-snap-id', {
+        keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
           method: KeyringEvent.RequestRejected,
           params: { id: requestId },
         }),
@@ -475,7 +476,7 @@ describe('SnapKeyring', () => {
       );
       await expect(
         keyring.deserialize({} as unknown as KeyringState),
-      ).rejects.toThrow('Expected an object, but received: undefined');
+      ).rejects.toThrow('Cannot convert undefined or null to object');
       expect(await keyring.getAccounts()).toStrictEqual([]);
     });
   });

@@ -1,3 +1,5 @@
+import type { SnapId } from '@metamask/snaps-sdk';
+
 import { CaseInsensitiveMap } from './CaseInsensitiveMap';
 
 /**
@@ -7,7 +9,7 @@ export class InvalidSnapIdError extends Error {
   /**
    * The ID of the Snap that caused the error.
    */
-  snapId: string;
+  snapId: SnapId;
 
   /**
    * The key of the element that caused the error.
@@ -20,7 +22,7 @@ export class InvalidSnapIdError extends Error {
    * @param snapId - The invalid Snap ID.
    * @param key - The key associated with the invalid Snap ID.
    */
-  constructor(snapId: string, key: string) {
+  constructor(snapId: SnapId, key: string) {
     super(`Snap "${snapId}" is not allowed to set "${key}"`);
     this.name = 'InvalidSnapIdError';
     this.snapId = snapId;
@@ -35,7 +37,7 @@ export class InvalidSnapIdError extends Error {
  * The `snapId` property is used to ensure that only the Snap that added an
  * item to the map can modify or delete it.
  */
-export class SnapIdMap<Value extends { snapId: string }> {
+export class SnapIdMap<Value extends { snapId: SnapId }> {
   #map: CaseInsensitiveMap<Value>;
 
   /**
@@ -99,7 +101,7 @@ export class SnapIdMap<Value extends { snapId: string }> {
    * @param obj - A plain object whose elements will be added to the new map.
    * @returns A new `SnapIdMap` containing the elements of the given object.
    */
-  static fromObject<Value extends { snapId: string }>(
+  static fromObject<Value extends { snapId: SnapId }>(
     obj: Record<string, Value>,
   ): SnapIdMap<Value> {
     return new SnapIdMap(Object.entries(obj));
@@ -125,7 +127,7 @@ export class SnapIdMap<Value extends { snapId: string }> {
    * @param key - Key of the element to get.
    * @returns The value associated with the given key and Snap ID.
    */
-  get(snapId: string, key: string): Value | undefined {
+  get(snapId: SnapId, key: string): Value | undefined {
     const value = this.#map.get(key);
     return value?.snapId === snapId ? value : undefined;
   }
@@ -151,7 +153,7 @@ export class SnapIdMap<Value extends { snapId: string }> {
    * @returns `true` if the key is present in the map and the Snap ID of the
    * value is equal to the given Snap ID, `false` otherwise.
    */
-  has(snapId: string, key: string): boolean {
+  has(snapId: SnapId, key: string): boolean {
     return this.get(snapId, key) !== undefined;
   }
 
@@ -176,7 +178,7 @@ export class SnapIdMap<Value extends { snapId: string }> {
    * @returns `true` if the key was present in the map and the Snap ID of the
    * value was equal to the given Snap ID, `false` otherwise.
    */
-  delete(snapId: string, key: string): boolean {
+  delete(snapId: SnapId, key: string): boolean {
     return this.has(snapId, key) && this.#map.delete(key);
   }
 
