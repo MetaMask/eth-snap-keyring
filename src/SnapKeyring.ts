@@ -500,15 +500,18 @@ export class SnapKeyring extends EventEmitter {
       [SignTypedDataVersion.V4]: EthMethod.SignTypedDataV4,
     };
 
-    // Use 'V1' by default to match other keyring implementations.
+    // Use 'V1' by default to match other keyring implementations. V1 will be
+    // used if the version is not specified or not supported.
     const method = methods[opts.version] || EthMethod.SignTypedDataV1;
-    const signature = await this.#submitRequest({
-      address,
-      method,
-      params: toJson<Json[]>([address, data]),
-    });
 
-    return strictMask(signature, EthBytesStruct);
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method,
+        params: toJson<Json[]>([address, data]),
+      }),
+      EthBytesStruct,
+    );
   }
 
   /**
@@ -519,12 +522,14 @@ export class SnapKeyring extends EventEmitter {
    * @returns The signature.
    */
   async signMessage(address: string, hash: any): Promise<string> {
-    const signature = await this.#submitRequest({
-      address,
-      method: EthMethod.Sign,
-      params: toJson<Json[]>([address, hash]),
-    });
-    return strictMask(signature, EthBytesStruct);
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method: EthMethod.Sign,
+        params: toJson<Json[]>([address, hash]),
+      }),
+      EthBytesStruct,
+    );
   }
 
   /**
@@ -538,12 +543,14 @@ export class SnapKeyring extends EventEmitter {
    * @returns Promise of the signature.
    */
   async signPersonalMessage(address: string, data: any): Promise<string> {
-    const signature = await this.#submitRequest({
-      address,
-      method: EthMethod.PersonalSign,
-      params: toJson<Json[]>([data, address]),
-    });
-    return strictMask(signature, EthBytesStruct);
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method: EthMethod.PersonalSign,
+        params: toJson<Json[]>([data, address]),
+      }),
+      EthBytesStruct,
+    );
   }
 
   /**
@@ -583,7 +590,7 @@ export class SnapKeyring extends EventEmitter {
       await this.#submitRequest({
         address,
         method: EthMethod.PatchUserOperation,
-        params: toJson<Json[]>(userOp),
+        params: toJson<Json[]>([userOp]),
       }),
       EthUserOperationPatchStruct,
     );
@@ -604,7 +611,7 @@ export class SnapKeyring extends EventEmitter {
       await this.#submitRequest({
         address,
         method: EthMethod.SignUserOperation,
-        params: toJson<Json[]>(userOp),
+        params: toJson<Json[]>([userOp]),
       }),
       EthBytesStruct,
     );
