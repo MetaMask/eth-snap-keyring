@@ -5,10 +5,12 @@ import { SignTypedDataVersion } from '@metamask/eth-sig-util';
 import type {
   KeyringAccount,
   InternalAccount,
-  EthBasicTransaction,
+  EthBaseTransaction,
+  EthBaseUserOperation,
+  EthUserOperation,
+  EthUserOperationPatch,
 } from '@metamask/keyring-api';
 import {
-  KeyringAccountStruct,
   EthMethod,
   KeyringSnapControllerClient,
   KeyringEvent,
@@ -17,13 +19,16 @@ import {
   AccountDeletedEventStruct,
   RequestApprovedEventStruct,
   RequestRejectedEventStruct,
+  EthBaseUserOperationStruct,
+  EthUserOperationPatchStruct,
+  EthBytesStruct,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
+import type { SnapId } from '@metamask/snaps-sdk';
 import type { Json } from '@metamask/utils';
 import { bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import type { Infer } from 'superstruct';
-import { assert, object, string, record, mask } from 'superstruct';
+import { assert, object, string, mask } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './DeferredPromise';
@@ -40,23 +45,15 @@ import {
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-export const KeyringStateStruct = object({
-  accounts: record(
-    string(),
-    object({
-      account: KeyringAccountStruct,
-      snapId: string(),
-    }),
-  ),
-});
-
 /**
  * Snap keyring state.
  *
  * This state is persisted by the keyring controller and passed to the snap
  * keyring when it's created.
  */
-export type KeyringState = Infer<typeof KeyringStateStruct>;
+export type KeyringState = {
+  accounts: Record<string, { account: KeyringAccount; snapId: SnapId }>;
+};
 
 /**
  * Snap keyring callbacks.
@@ -65,18 +62,22 @@ export type KeyringState = Infer<typeof KeyringStateStruct>;
  */
 export type SnapKeyringCallbacks = {
   saveState: () => Promise<void>;
+
   addressExists(address: string): Promise<boolean>;
+
   addAccount(
     address: string,
-    snapId: string,
+    snapId: SnapId,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
+
   removeAccount(
     address: string,
-    snapId: string,
+    snapId: SnapId,
     handleUserInput: (accepted: boolean) => Promise<void>,
   ): Promise<void>;
-  redirectUser(snapId: string, url: string, message: string): Promise<void>;
+
+  redirectUser(snapId: SnapId, url: string, message: string): Promise<void>;
 };
 
 /**
@@ -98,7 +99,7 @@ export class SnapKeyring extends EventEmitter {
    */
   #accounts: SnapIdMap<{
     account: KeyringAccount;
-    snapId: string;
+    snapId: SnapId;
   }>;
 
   /**
@@ -106,7 +107,7 @@ export class SnapKeyring extends EventEmitter {
    */
   #requests: SnapIdMap<{
     promise: DeferredPromise<any>;
-    snapId: string;
+    snapId: SnapId;
   }>;
 
   /**
@@ -138,7 +139,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns `null`.
    */
   async #handleAccountCreated(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountCreatedEventStruct);
@@ -178,7 +179,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns `null`.
    */
   async #handleAccountUpdated(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountUpdatedEventStruct);
@@ -207,7 +208,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns `null`.
    */
   async #handleAccountDeleted(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountDeletedEventStruct);
@@ -249,7 +250,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns `null`.
    */
   async #handleRequestApproved(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<null> {
     assert(message, RequestApprovedEventStruct);
@@ -270,7 +271,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns `null`.
    */
   async #handleRequestRejected(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<null> {
     assert(message, RequestRejectedEventStruct);
@@ -291,7 +292,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns The execution result.
    */
   async handleKeyringSnapMessage(
-    snapId: string,
+    snapId: SnapId,
     message: SnapMessage,
   ): Promise<Json> {
     assert(message, SnapMessageStruct);
@@ -343,7 +344,6 @@ export class SnapKeyring extends EventEmitter {
     if (state === undefined) {
       return;
     }
-    assert(state, KeyringStateStruct);
     this.#accounts = SnapIdMap.fromObject(state.accounts);
   }
 
@@ -366,7 +366,7 @@ export class SnapKeyring extends EventEmitter {
    * @param snapId - Snap ID to filter by.
    * @returns The addresses of the accounts associated with the given Snap.
    */
-  async getAccountsBySnapId(snapId: string): Promise<string[]> {
+  async getAccountsBySnapId(snapId: SnapId): Promise<string[]> {
     return unique(
       [...this.#accounts.values()]
         .filter(({ snapId: accountSnapId }) => accountSnapId === snapId)
@@ -508,7 +508,7 @@ export class SnapKeyring extends EventEmitter {
       params: toJson<Json[]>([address, data]),
     });
 
-    return strictMask(signature, string());
+    return strictMask(signature, EthBytesStruct);
   }
 
   /**
@@ -524,7 +524,7 @@ export class SnapKeyring extends EventEmitter {
       method: EthMethod.Sign,
       params: toJson<Json[]>([address, hash]),
     });
-    return strictMask(signature, string());
+    return strictMask(signature, EthBytesStruct);
   }
 
   /**
@@ -543,19 +543,71 @@ export class SnapKeyring extends EventEmitter {
       method: EthMethod.PersonalSign,
       params: toJson<Json[]>([data, address]),
     });
-    return strictMask(signature, string());
+    return strictMask(signature, EthBytesStruct);
   }
 
+  /**
+   * Convert a base transaction to a base UserOperation.
+   *
+   * @param address - Address of the sender.
+   * @param transactions - Base transactions to include in the UserOperation.
+   * @returns A pseudo-UserOperation that can be used to construct a real.
+   */
   async prepareUserOperation(
     address: string,
-    transactions: EthBasicTransaction[],
-  ) {
-    const signature = await this.#submitRequest({
-      address,
-      method: EthMethod.PrepareUserOperation,
-      params: toJson<Json[]>([transactions]),
-    });
-    return strictMask(signature, string());
+    transactions: EthBaseTransaction[],
+  ): Promise<EthBaseUserOperation> {
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method: EthMethod.PrepareUserOperation,
+        params: toJson<Json[]>(transactions),
+      }),
+      EthBaseUserOperationStruct,
+    );
+  }
+
+  /**
+   * Patches properties of a UserOperation. Currently, only the
+   * `paymasterAndData` can be patched.
+   *
+   * @param address - Address of the sender.
+   * @param userOp - UserOperation to patch.
+   * @returns A patch to apply to the UserOperation.
+   */
+  async patchUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<EthUserOperationPatch> {
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method: EthMethod.PatchUserOperation,
+        params: toJson<Json[]>(userOp),
+      }),
+      EthUserOperationPatchStruct,
+    );
+  }
+
+  /**
+   * Signs an UserOperation.
+   *
+   * @param address - Address of the sender.
+   * @param userOp - UserOperation to sign.
+   * @returns The signature of the UserOperation.
+   */
+  async signUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<string> {
+    return strictMask(
+      await this.#submitRequest({
+        address,
+        method: EthMethod.SignUserOperation,
+        params: toJson<Json[]>(userOp),
+      }),
+      EthBytesStruct,
+    );
   }
 
   /**
@@ -607,7 +659,7 @@ export class SnapKeyring extends EventEmitter {
    */
   #resolveAddress(address: string): {
     account: KeyringAccount;
-    snapId: string;
+    snapId: SnapId;
   } {
     return (
       [...this.#accounts.values()].find(({ account }) =>
@@ -623,7 +675,7 @@ export class SnapKeyring extends EventEmitter {
    * @returns The snap metadata or undefined if the snap cannot be found.
    */
   #getSnapMetadata(
-    snapId: string,
+    snapId: SnapId,
   ): InternalAccount['metadata']['snap'] | undefined {
     const snap = this.#snapClient.getController().get(snapId);
     return snap
