@@ -649,6 +649,167 @@ describe('SnapKeyring', () => {
       });
       expect(signature).toStrictEqual(expectedSignature);
     });
+
+    it('calls eth_prepareUserOperation', async () => {
+      const baseTxs = [
+        {
+          to: '0x0c54fccd2e384b4bb6f2e405bf5cbc15a017aafb',
+          value: '0x0',
+          data: '0x',
+        },
+        {
+          to: '0x660265edc169bab511a40c0e049cc1e33774443d',
+          value: '0x0',
+          data: '0x619a309f',
+        },
+      ];
+
+      const expectedBaseUserOp = {
+        callData: '0x70641a22000000000000000000000000f3de3c0d654fda23da',
+        initCode: '0x',
+        nonce: '0x1',
+        gasLimits: {
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+        },
+        dummySignature: '0x',
+        dummyPaymasterAndData: '0x',
+        bundlerUrl: 'https://bundler.example.com/rpc',
+      };
+
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: false,
+        result: expectedBaseUserOp,
+      });
+
+      const baseUserOp = await keyring.prepareUserOperation(
+        accounts[0].address,
+        baseTxs,
+      );
+
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_prepareUserOperation',
+              params: baseTxs,
+            },
+          },
+        },
+      });
+
+      expect(baseUserOp).toStrictEqual(expectedBaseUserOp);
+    });
+
+    it('calls eth_patchUserOperation', async () => {
+      const userOp = {
+        sender: accounts[0].address,
+        nonce: '0x1',
+        initCode: '0x',
+        callData: '0x1234',
+        callGasLimit: '0x58a83',
+        verificationGasLimit: '0xe8c4',
+        preVerificationGas: '0xc57c',
+        maxFeePerGas: '0x87f0878c0',
+        maxPriorityFeePerGas: '0x1dcd6500',
+        paymasterAndData: '0x',
+        signature: '0x',
+      };
+
+      const expectedPatch = {
+        paymasterAndData: '0x1234',
+      };
+
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: false,
+        result: expectedPatch,
+      });
+
+      const patch = await keyring.patchUserOperation(
+        accounts[0].address,
+        userOp,
+      );
+
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_patchUserOperation',
+              params: [userOp],
+            },
+          },
+        },
+      });
+
+      expect(patch).toStrictEqual(expectedPatch);
+    });
+
+    it('calls eth_signUserOperation', async () => {
+      const userOp = {
+        sender: accounts[0].address,
+        nonce: '0x1',
+        initCode: '0x',
+        callData: '0x1234',
+        callGasLimit: '0x58a83',
+        verificationGasLimit: '0xe8c4',
+        preVerificationGas: '0xc57c',
+        maxFeePerGas: '0x87f0878c0',
+        maxPriorityFeePerGas: '0x1dcd6500',
+        paymasterAndData: '0x',
+        signature: '0x',
+      };
+
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const signature = await keyring.signUserOperation(
+        accounts[0].address,
+        userOp,
+      );
+
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signUserOperation',
+              params: [userOp],
+            },
+          },
+        },
+      });
+
+      expect(signature).toStrictEqual(expectedSignature);
+    });
   });
 
   describe('signPersonalMessage', () => {
