@@ -25,7 +25,7 @@
     "test:watch": "jest --watch"
   },
   "resolutions": {
-    "@metamask/keyring-api": "github:MetaMask/keyring-api#e6045efbab89e45ab50db907afad8231cb77bfca"
+    "@metamask/keyring-api": "github:MetaMask/keyring-api#7cd842d6579c1f838754edcc9f1eb220e0926832"
   },
   "dependencies": {
     "@ethereumjs/tx": "^4.2.0",
