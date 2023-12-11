@@ -9,30 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0]
 
-### Uncategorized
+### Added
 
-- chore(deps): bump @metamask/snaps-sdk from 1.2.0 to 1.3.0 ([#185](https://github.com/MetaMask/eth-snap-keyring/pull/185))
-- build: bump min Node version to 18.18 and use LTS for dev ([#183](https://github.com/MetaMask/eth-snap-keyring/pull/183))
-- chore(deps): bump @metamask/snaps-controllers from 3.4.1 to 3.5.0 ([#184](https://github.com/MetaMask/eth-snap-keyring/pull/184))
-- feat: add methods to support ERC-4337 accounts ([#180](https://github.com/MetaMask/eth-snap-keyring/pull/180))
-- chore(deps): bump @metamask/json-rpc-engine from 7.2.0 to 7.3.0 ([#174](https://github.com/MetaMask/eth-snap-keyring/pull/174))
-- chore(deps): bump @metamask/snaps-utils from 3.1.0 to 3.3.0 ([#176](https://github.com/MetaMask/eth-snap-keyring/pull/176))
-- chore(deps): bump @metamask/providers from 13.0.0 to 13.1.0 ([#167](https://github.com/MetaMask/eth-snap-keyring/pull/167))
-- chore(deps-dev): bump @metamask/auto-changelog from 3.4.2 to 3.4.3 ([#173](https://github.com/MetaMask/eth-snap-keyring/pull/173))
-- chore(deps): bump @metamask/utils from 8.2.0 to 8.2.1 ([#175](https://github.com/MetaMask/eth-snap-keyring/pull/175))
-- chore(deps): bump @metamask/snaps-rpc-methods from 3.1.0 to 3.3.0 ([#177](https://github.com/MetaMask/eth-snap-keyring/pull/177))
-- chore(deps): bump @metamask/eth-sig-util from 7.0.0 to 7.0.1 ([#178](https://github.com/MetaMask/eth-snap-keyring/pull/178))
-- chore(deps): bump @metamask/snaps-registry from 2.1.0 to 2.1.1 ([#179](https://github.com/MetaMask/eth-snap-keyring/pull/179))
-- feat: use a `snapId`-indexed map ([#172](https://github.com/MetaMask/eth-snap-keyring/pull/172))
-- deps: @metamask/keyring-api@^1.0.0->^1.1.0 ([#166](https://github.com/MetaMask/eth-snap-keyring/pull/166))
-- chore(deps-dev): bump @metamask/auto-changelog from 3.3.0 to 3.4.2 ([#162](https://github.com/MetaMask/eth-snap-keyring/pull/162))
-- chore(deps): bump @metamask/object-multiplex from 1.2.0 to 1.3.0 ([#163](https://github.com/MetaMask/eth-snap-keyring/pull/163))
-- chore(deps): bump @metamask/snaps-ui from 3.0.0 to 3.0.1 ([#157](https://github.com/MetaMask/eth-snap-keyring/pull/157))
-- chore(deps): bump @metamask/utils from 8.1.0 to 8.2.0 ([#156](https://github.com/MetaMask/eth-snap-keyring/pull/156))
-- chore(deps): bump @metamask/json-rpc-engine from 7.1.1 to 7.2.0 ([#154](https://github.com/MetaMask/eth-snap-keyring/pull/154))
-- chore(deps): bump @metamask/snaps-registry from 2.0.0 to 2.1.0 ([#147](https://github.com/MetaMask/eth-snap-keyring/pull/147))
-- ci: update CODEOWNERS and run CI on merge queues ([#165](https://github.com/MetaMask/eth-snap-keyring/pull/165))
-- chore(deps): bump @babel/traverse from 7.22.5 to 7.23.2 ([#151](https://github.com/MetaMask/eth-snap-keyring/pull/151))
+- Add methods to support ERC-4337 accounts ([#180](https://github.com/MetaMask/eth-snap-keyring/pull/180)).
+
+### Changed
+
+- Use a `snapId`-indexed map ([#172](https://github.com/MetaMask/eth-snap-keyring/pull/172)).
+- Update CODEOWNERS and run CI on merge queues ([#165](https://github.com/MetaMask/eth-snap-keyring/pull/165)).
+- Bump min Node version to 18.18 and use LTS for dev ([#183](https://github.com/MetaMask/eth-snap-keyring/pull/183)).
 
 ## [2.0.0]
 
