@@ -39,14 +39,14 @@ describe('SnapKeyring', () => {
       id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
       address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3'.toLowerCase(),
       options: {},
-      methods: [EthMethod.PersonalSign, EthMethod.SignTransaction],
+      methods: [...Object.values(EthMethod)],
       type: EthAccountType.Eoa,
     },
     {
       id: '33c96b60-2237-488e-a7bb-233576f3d22f',
       address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63'.toLowerCase(),
       options: {},
-      methods: [EthMethod.SignTransaction, EthMethod.SignTypedDataV1],
+      methods: [...Object.values(EthMethod)],
       type: EthAccountType.Eoa,
     },
   ] as const;
@@ -234,37 +234,42 @@ describe('SnapKeyring', () => {
 
     it('fails when the EthMethod is not supported', async () => {
       // Update first account to remove `EthMethod.PersonalSign`
+      let updatedMethods = Object.values(EthMethod).filter(
+        (method) => method !== EthMethod.PersonalSign,
+      );
       expect(
         await keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
               ...accounts[0],
-              methods: [EthMethod.SignTransaction],
+              methods: updatedMethods,
             },
           },
         }),
       ).toBeNull();
-      expect(keyring.listAccounts()[0]?.methods).toStrictEqual([
-        EthMethod.SignTransaction,
-      ]);
+      expect(keyring.listAccounts()[0]?.methods).toStrictEqual(updatedMethods);
       await expect(
         keyring.signPersonalMessage(accounts[0].address, 'hello'),
       ).rejects.toThrow(
         `Method '${EthMethod.PersonalSign}' not supported for account ${accounts[0].address}`,
       );
       // Restore `EthMethod.PersonalSign` and remove `EthMethod.SignTransaction`
+      updatedMethods = Object.values(EthMethod).filter(
+        (method) => method !== EthMethod.SignTransaction,
+      );
       expect(
         await keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountUpdated,
           params: {
-            account: { ...accounts[0], methods: [EthMethod.PersonalSign] },
+            account: {
+              ...accounts[0],
+              methods: updatedMethods,
+            },
           },
         }),
       ).toBeNull();
-      expect(keyring.listAccounts()[0]?.methods).toStrictEqual([
-        EthMethod.PersonalSign,
-      ]);
+      expect(keyring.listAccounts()[0]?.methods).toStrictEqual(updatedMethods);
       const mockTx = {
         data: '0x0',
         gasLimit: '0x26259fe',
