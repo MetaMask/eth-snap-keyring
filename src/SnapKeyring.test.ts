@@ -232,14 +232,54 @@ describe('SnapKeyring', () => {
       ).rejects.toThrow('Method not supported: invalid');
     });
 
-    it('fails when the method is not supported', async () => {
-      // TODO: mock account with unsupported sign method
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: 'eth_sendTransaction',
+    it('fails when the EthMethod is not supported', async () => {
+      // Update first account to remove `EthMethod.PersonalSign`
+      expect(
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: {
+              ...accounts[0],
+              methods: [EthMethod.SignTransaction],
+            },
+          },
         }),
+      ).toBeNull();
+      expect(keyring.listAccounts()[0]?.methods).toStrictEqual([
+        EthMethod.SignTransaction,
+      ]);
+      await expect(
+        keyring.signPersonalMessage(accounts[0].address, 'hello'),
       ).rejects.toThrow(
-        "Method 'eth_sendTransaction' not supported for account 0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3",
+        `Method '${EthMethod.PersonalSign}' not supported for account ${accounts[0].address}`,
+      );
+      // Restore `EthMethod.PersonalSign` and remove `EthMethod.SignTransaction`
+      expect(
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: {
+            account: { ...accounts[0], methods: [EthMethod.PersonalSign] },
+          },
+        }),
+      ).toBeNull();
+      expect(keyring.listAccounts()[0]?.methods).toStrictEqual([
+        EthMethod.PersonalSign,
+      ]);
+      const mockTx = {
+        data: '0x0',
+        gasLimit: '0x26259fe',
+        gasPrice: '0x1',
+        nonce: '0xfffffffe',
+        to: '0xccccccccccccd000000000000000000000000000',
+        value: '0x1869e',
+        chainId: '0x1',
+        type: '0x00',
+      };
+      const tx = TransactionFactory.fromTxData(mockTx);
+      await expect(
+        keyring.signTransaction(accounts[0].address, tx),
+      ).rejects.toThrow(
+        `Method '${EthMethod.SignTransaction}' not supported for account ${accounts[0].address}`,
       );
     });
 
