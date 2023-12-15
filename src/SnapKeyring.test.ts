@@ -224,12 +224,23 @@ describe('SnapKeyring', () => {
       ).toBeNull();
     });
 
-    it('fails when the method is not supported', async () => {
+    it('fails when the method is invalid', async () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
           method: 'invalid',
         }),
       ).rejects.toThrow('Method not supported: invalid');
+    });
+
+    it('fails when the method is not supported', async () => {
+      // TODO: mock account with unsupported sign method
+      await expect(
+        keyring.handleKeyringSnapMessage(snapId, {
+          method: 'eth_sendTransaction',
+        }),
+      ).rejects.toThrow(
+        "Method 'eth_sendTransaction' not supported for account 0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3",
+      );
     });
 
     it('approves an async request', async () => {
