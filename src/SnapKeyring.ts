@@ -3,32 +3,32 @@ import { TransactionFactory } from '@ethereumjs/tx';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
 import type {
-  KeyringAccount,
-  InternalAccount,
   EthBaseTransaction,
   EthBaseUserOperation,
   EthUserOperation,
   EthUserOperationPatch,
+  InternalAccount,
+  KeyringAccount,
 } from '@metamask/keyring-api';
 import {
-  EthMethod,
-  KeyringSnapControllerClient,
-  KeyringEvent,
   AccountCreatedEventStruct,
-  AccountUpdatedEventStruct,
   AccountDeletedEventStruct,
+  AccountUpdatedEventStruct,
+  EthBaseUserOperationStruct,
+  EthBytesStruct,
+  EthMethod,
+  EthUserOperationPatchStruct,
+  KeyringEvent,
+  KeyringSnapControllerClient,
   RequestApprovedEventStruct,
   RequestRejectedEventStruct,
-  EthBaseUserOperationStruct,
-  EthUserOperationPatchStruct,
-  EthBytesStruct,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
 import type { Json } from '@metamask/utils';
 import { bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, object, string, mask } from 'superstruct';
+import { assert, mask, object, string } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './DeferredPromise';
@@ -396,6 +396,11 @@ export class SnapKeyring extends EventEmitter {
     chainId?: string;
   }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
+    if (!account.methods.includes(method as EthMethod)) {
+      throw new Error(
+        `Method '${method}' not supported for account ${account.address}`,
+      );
+    }
     const requestId = uuid();
 
     // Create the promise before calling the snap to prevent a race condition
