@@ -28,8 +28,9 @@
     "@ethereumjs/tx": "^4.2.0",
     "@metamask/eth-sig-util": "^7.0.0",
     "@metamask/keyring-api": "^2.0.0",
-    "@metamask/snaps-controllers": "^3.4.1",
-    "@metamask/snaps-sdk": "^1.2.0",
+    "@metamask/snaps-controllers": "^4.1.0",
+    "@metamask/snaps-sdk": "^1.4.0",
+    "@metamask/snaps-utils": "^5.2.0",
     "@metamask/utils": "^8.1.0",
     "@types/uuid": "^9.0.1",
     "superstruct": "^1.0.3",
@@ -75,8 +76,8 @@
   },
   "lavamoat": {
     "allowScripts": {
-      "@metamask/snaps-controllers>@metamask/phishing-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
-      "@metamask/snaps-controllers>@metamask/phishing-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@metamask/snaps-utils>@metamask/permission-controller>@metamask/controller-utils>ethereumjs-util>ethereum-cryptography>secp256k1": false
     }
   }
 }
