@@ -19,7 +19,6 @@ import {
   EthMethod,
   EthUserOperationPatchStruct,
   KeyringEvent,
-  KeyringSnapControllerClient,
   RequestApprovedEventStruct,
   RequestRejectedEventStruct,
 } from '@metamask/keyring-api';
@@ -32,6 +31,7 @@ import { assert, mask, object, string } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './DeferredPromise';
+import { KeyringSnapControllerClient } from './KeyringSnapControllerClient';
 import { SnapIdMap } from './SnapIdMap';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
