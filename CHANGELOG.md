@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0]
+
+### Changed
+
+- Bump dependencies ([#220](https://github.com/MetaMask/eth-snap-keyring/pull/220))
+  - @metamask/snaps-controllers from ^4.1.0 to ^5.0.1
+  - @metamask/snaps-sdk from ^1.4.0 to ^2.1.0
+  - @metamask/snaps-utils from ^5.2.0 to ^6.1.0
+  - @metamask/utils from ^8.1.0 to ^8.3.0
+  - @metamask/keyring-api from ^2.0.0 to ^4.0.0
+
 ## [2.1.2]
 
 ### Fixed
@@ -156,7 +167,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.2...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.0.0...v2.1.0
