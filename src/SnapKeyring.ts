@@ -454,17 +454,20 @@ export class SnapKeyring extends EventEmitter {
     transaction: TypedTransaction,
     _opts = {},
   ): Promise<Json | TypedTransaction> {
+    const chainId = transaction.common.chainId();
     const tx = toJson({
       ...transaction.toJSON(),
       from: address,
       type: `0x${transaction.type.toString(16)}`,
-      chainId: bigIntToHex(transaction.common.chainId()),
+      chainId: bigIntToHex(chainId),
     });
 
     const signedTx = await this.#submitRequest({
       address,
       method: EthMethod.SignTransaction,
       params: [tx],
+      chainId: `---eip155:${chainId}`,
+      // TODO: CAIP-2 here
     });
 
     // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
