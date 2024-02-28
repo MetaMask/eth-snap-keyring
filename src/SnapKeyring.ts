@@ -436,6 +436,21 @@ export class SnapKeyring extends EventEmitter {
     // If the snap answers asynchronously, we will inform the user with a redirect
     if (response.redirect?.message || response.redirect?.url) {
       const { message = '', url = '' } = response.redirect;
+
+      // Check redirect url domain is in the snap allowed origins
+      if (url) {
+        const { origin } = new URL(url);
+        const snap = this.#snapClient.getController().get(snapId);
+        const allowedOrigins =
+          snap?.manifest?.initialPermissions['endowment:keyring']
+            ?.allowedOrigins ?? [];
+        if (!allowedOrigins.includes(origin)) {
+          throw new Error(
+            `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+          );
+        }
+      }
+
       await this.#callbacks.redirectUser(snapId, url, message);
     }
 
