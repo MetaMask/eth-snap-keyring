@@ -540,14 +540,14 @@ describe('SnapKeyring', () => {
   describe('signTransaction', () => {
     it('signs a ethereum transaction synchronously', async () => {
       const mockTx = {
-        data: '0x0',
+        data: '0x00',
         gasLimit: '0x26259fe',
         gasPrice: '0x1',
         nonce: '0xfffffffe',
         to: '0xccccccccccccd000000000000000000000000000',
         value: '0x1869e',
         chainId: '0x1',
-        type: '0x00',
+        type: '0x0',
       };
       const mockSignedTx = {
         ...mockTx,
@@ -561,7 +561,32 @@ describe('SnapKeyring', () => {
         pending: false,
         result: mockSignedTx,
       });
+
       const signature = await keyring.signTransaction(accounts[0].address, tx);
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTransaction',
+              params: [
+                {
+                  ...mockTx,
+                  from: accounts[0].address,
+                },
+              ],
+            },
+          },
+        },
+      });
       expect(signature).toStrictEqual(expectedSignedTx);
     });
   });
