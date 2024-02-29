@@ -24,6 +24,7 @@ import {
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
+import type { Snap } from '@metamask/snaps-utils';
 import type { Json } from '@metamask/utils';
 import { bigIntToHex } from '@metamask/utils';
 import { EventEmitter } from 'events';
@@ -441,9 +442,7 @@ export class SnapKeyring extends EventEmitter {
       if (url) {
         const { origin } = new URL(url);
         const snap = this.#snapClient.getController().get(snapId);
-        const allowedOrigins =
-          snap?.manifest?.initialPermissions['endowment:keyring']
-            ?.allowedOrigins ?? [];
+        const allowedOrigins = this.#getSnapAllowedOrigins(snap);
         if (!allowedOrigins.includes(origin)) {
           throw new Error(
             `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
@@ -708,6 +707,20 @@ export class SnapKeyring extends EventEmitter {
     return snap
       ? { id: snapId, name: snap.manifest.proposedName, enabled: snap.enabled }
       : undefined;
+  }
+
+  /**
+   * Get the allowed origins of a snap.
+   *
+   * @param snap - Snap.
+   * @returns The allowed origins of the snap.
+   */
+  #getSnapAllowedOrigins(snap: Snap): string[] {
+    if (snap.manifest.initialPermissions['endowment:keyring']?.allowedOrigins) {
+      return snap.manifest.initialPermissions['endowment:keyring']
+        .allowedOrigins;
+    }
+    throw new Error(`Snap '${snap.id}' does not have allowed origins`);
   }
 
   /**
