@@ -734,6 +734,54 @@ describe('SnapKeyring', () => {
       expect(signature).toStrictEqual(expectedSignature);
     });
 
+    it('signs typed data without domain chainId has no scope', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const dataToSignWithoutDomainChainId = {
+        ...dataToSign,
+        domain: {
+          name: dataToSign.domain.name,
+          version: dataToSign.domain.version,
+          verifyingContract: dataToSign.domain.verifyingContract,
+          // We do not defined the chainId (it's currently marked as
+          // optional in the current type declation).
+          // chainId: 1,
+        },
+      };
+
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSignWithoutDomainChainId,
+        { version: SignTypedDataVersion.V4 },
+      );
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            // Without chainId alongside the typed message, we cannot
+            // compute the scope for this request!
+            scope: '', // Default value for `signTypedTransaction`
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTypedData_v4',
+              params: [accounts[0].address, dataToSignWithoutDomainChainId],
+            },
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSignature);
+    });
+
+
     it('calls eth_prepareUserOperation', async () => {
       const baseTxs = [
         {
