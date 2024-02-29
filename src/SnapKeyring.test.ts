@@ -557,6 +557,8 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       const expectedSignedTx = TransactionFactory.fromTxData(mockSignedTx);
+      const expectedScope = 'eip155:1';
+
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: mockSignedTx,
@@ -573,7 +575,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTransaction',
@@ -630,6 +632,7 @@ describe('SnapKeyring', () => {
       },
     };
 
+    const expectedScope = 'eip155:1';
     const expectedSignature =
       '0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c';
 
@@ -653,7 +656,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
@@ -686,7 +689,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v4',
@@ -719,7 +722,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
