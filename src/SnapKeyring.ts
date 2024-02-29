@@ -719,11 +719,10 @@ export class SnapKeyring extends EventEmitter {
    * @returns The allowed origins of the snap.
    */
   #getSnapAllowedOrigins(snap: Snap): string[] {
-    if (snap.manifest.initialPermissions['endowment:keyring']?.allowedOrigins) {
-      return snap.manifest.initialPermissions['endowment:keyring']
-        .allowedOrigins;
-    }
-    throw new Error(`Snap '${snap.id}' does not have allowed origins`);
+    return (
+      snap.manifest.initialPermissions['endowment:keyring']?.allowedOrigins ??
+      []
+    );
   }
 
   /**

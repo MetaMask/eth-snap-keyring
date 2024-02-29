@@ -404,8 +404,9 @@ describe('SnapKeyring', () => {
       it('throws an error if no allowed origins', async () => {
         const redirect = {
           message: 'Go to dapp to continue.',
-          url: 'https://notallowed.com/sign?tx=1234',
+          url: 'https://example.com/sign?tx=1234',
         };
+        const { origin } = new URL(redirect.url);
 
         const snapObject = {
           id: snapId,
@@ -426,7 +427,7 @@ describe('SnapKeyring', () => {
         );
 
         await expect(requestPromise).rejects.toThrow(
-          `Snap '${snapId}' does not have allowed origins`,
+          `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
         );
       });
 
