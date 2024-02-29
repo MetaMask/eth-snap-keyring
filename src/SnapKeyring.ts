@@ -442,6 +442,9 @@ export class SnapKeyring extends EventEmitter {
       if (url) {
         const { origin } = new URL(url);
         const snap = this.#snapClient.getController().get(snapId);
+        if (!snap) {
+          throw new Error(`Snap '${snapId}' not found.`);
+        }
         const allowedOrigins = this.#getSnapAllowedOrigins(snap);
         if (!allowedOrigins.includes(origin)) {
           throw new Error(
