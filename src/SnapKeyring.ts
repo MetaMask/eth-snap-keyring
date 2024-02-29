@@ -30,6 +30,7 @@ import { EventEmitter } from 'events';
 import { assert, mask, object, string } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
+import { toCaipChainId, CaipNamespaces } from './caip';
 import { DeferredPromise } from './DeferredPromise';
 import { KeyringSnapControllerClient } from './KeyringSnapControllerClient';
 import { SnapIdMap } from './SnapIdMap';
@@ -454,17 +455,19 @@ export class SnapKeyring extends EventEmitter {
     transaction: TypedTransaction,
     _opts = {},
   ): Promise<Json | TypedTransaction> {
+    const chainId = transaction.common.chainId();
     const tx = toJson({
       ...transaction.toJSON(),
       from: address,
       type: `0x${transaction.type.toString(16)}`,
-      chainId: bigIntToHex(transaction.common.chainId()),
+      chainId: bigIntToHex(chainId),
     });
 
     const signedTx = await this.#submitRequest({
       address,
       method: EthMethod.SignTransaction,
       params: [tx],
+      chainId: toCaipChainId(CaipNamespaces.Eip155, `${chainId}`),
     });
 
     // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
@@ -509,11 +512,18 @@ export class SnapKeyring extends EventEmitter {
     // used if the version is not specified or not supported.
     const method = methods[opts.version] || EthMethod.SignTypedDataV1;
 
+    // Extract chain ID as if it was a typed message (as defined by EIP-712), if
+    // input is not a typed message, then chain ID will be undefined!
+    const chainId = (data as TypedMessage<any>).domain?.chainId;
+
     return strictMask(
       await this.#submitRequest({
         address,
         method,
         params: toJson<Json[]>([address, data]),
+        ...(chainId === undefined
+          ? {}
+          : { chainId: toCaipChainId(CaipNamespaces.Eip155, `${chainId}`) }),
       }),
       EthBytesStruct,
     );
