@@ -9,6 +9,7 @@ import type {
   EthUserOperationPatch,
   InternalAccount,
   KeyringAccount,
+  KeyringResponse,
 } from '@metamask/keyring-api';
 import {
   AccountCreatedEventStruct,
@@ -397,66 +398,171 @@ export class SnapKeyring extends EventEmitter {
     chainId?: string;
   }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
-    if (!account.methods.includes(method as EthMethod)) {
-      throw new Error(
-        `Method '${method}' not supported for account ${account.address}`,
-      );
-    }
+    this.#validateMethod(method as EthMethod, account);
+
     const requestId = uuid();
 
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
-    const promise = new DeferredPromise<Response>();
-    this.#requests.set(requestId, { promise, snapId });
+    const promise = this.#createPromise<Response>(requestId, snapId);
 
-    const response = await (async () => {
-      try {
-        return await this.#snapClient.withSnapId(snapId).submitRequest({
-          id: requestId,
-          scope: chainId,
-          account: account.id,
-          request: {
-            method,
-            ...(params !== undefined && { params }),
-          },
-        });
-      } catch (error) {
-        // If the snap failed to respond, delete the promise to prevent a leak.
-        this.#requests.delete(snapId, requestId);
-        throw error;
-      }
-    })();
+    const response = await this.#submitSnapRequest({
+      snapId,
+      requestId,
+      account,
+      method: method as EthMethod,
+      params,
+      chainId,
+    });
 
     // If the snap answers synchronously, the promise must be removed from the
     // map to prevent a leak.
     if (!response.pending) {
-      this.#requests.delete(snapId, requestId);
-      return response.result;
+      return this.#handleSyncResponse(response, requestId, snapId);
     }
 
     // If the snap answers asynchronously, we will inform the user with a redirect
     if (response.redirect?.message || response.redirect?.url) {
-      const { message = '', url = '' } = response.redirect;
-
-      // Check redirect url domain is in the snap allowed origins
-      if (url) {
-        const { origin } = new URL(url);
-        const snap = this.#snapClient.getController().get(snapId);
-        if (!snap) {
-          throw new Error(`Snap '${snapId}' not found.`);
-        }
-        const allowedOrigins = this.#getSnapAllowedOrigins(snap);
-        if (!allowedOrigins.includes(origin)) {
-          throw new Error(
-            `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
-          );
-        }
-      }
-
-      await this.#callbacks.redirectUser(snapId, url, message);
+      await this.#handleAsyncResponse(response.redirect, snapId);
     }
 
     return promise.promise;
+  }
+
+  /**
+   * Validates that the specified method is supported by the account.
+   *
+   * @param method - The Ethereum method to validate.
+   * @param account - The account object to check for method support.
+   * @throws An error if the method is not supported.
+   */
+  #validateMethod(method: EthMethod, account: KeyringAccount): void {
+    if (!account.methods.includes(method)) {
+      throw new Error(
+        `Method '${method}' not supported for account ${account.address}`,
+      );
+    }
+  }
+
+  /**
+   * Creates a DeferredPromise and associates it with a requestId and snapId.
+   *
+   * @param requestId - The unique identifier for the request.
+   * @param snapId - The Snap ID associated with the request.
+   * @returns A DeferredPromise instance.
+   */
+  #createPromise<Response>(
+    requestId: string,
+    snapId: SnapId,
+  ): DeferredPromise<Response> {
+    const promise = new DeferredPromise<Response>();
+    this.#requests.set(requestId, { promise, snapId });
+    return promise;
+  }
+
+  /**
+   * Submits a request to a Snap and handles the response.
+   *
+   * @param options - The options for the snap request.
+   * @param options.snapId - The Snap ID to submit the request to.
+   * @param options.requestId - The unique identifier for the request.
+   * @param options.account - The account to use for the request.
+   * @param options.method - The Ethereum method to call.
+   * @param options.params - The parameters to pass to the method, can be undefined.
+   * @param options.chainId - The chain ID to use for the request, can be an empty string.
+   * @returns A promise that resolves to the keyring response from the Snap.
+   * @throws An error if the snap fails to respond or if there's an issue with the request submission.
+   */
+  async #submitSnapRequest({
+    snapId,
+    requestId,
+    account,
+    method,
+    params,
+    chainId,
+  }: {
+    snapId: SnapId;
+    requestId: string;
+    account: KeyringAccount;
+    method: EthMethod;
+    params?: Json[] | Record<string, Json> | undefined;
+    chainId: string;
+  }): Promise<KeyringResponse> {
+    try {
+      return await this.#snapClient.withSnapId(snapId).submitRequest({
+        id: requestId,
+        scope: chainId,
+        account: account.id,
+        request: {
+          method,
+          ...(params !== undefined && { params }),
+        },
+      });
+    } catch (error) {
+      // If the snap failed to respond, delete the promise to prevent a leak.
+      this.#requests.delete(snapId, requestId);
+      throw error;
+    }
+  }
+
+  /**
+   * Handles the synchronous response from a Snap. If the response indicates the request is not pending, it removes the request from the map.
+   *
+   * @param response - The response from the Snap.
+   * @param response.pending - A boolean indicating if the request is pending should always be false in this context.
+   * @param response.result - The result data from the Snap response.
+   * @param requestId - The unique identifier for the request.
+   * @param snapId - The Snap ID associated with the request.
+   * @returns The result from the Snap response.
+   */
+  #handleSyncResponse(
+    response: { pending: false; result: Json },
+    requestId: string,
+    snapId: SnapId,
+  ): Json {
+    this.#requests.delete(snapId, requestId);
+    return response.result;
+  }
+
+  /**
+   * Handles the async redirect and response from a Snap. Validates the redirect URL and informs the user with a message and URL if provided.
+   *
+   * @param redirect - The redirect information including message and URL.
+   * @param redirect.message - The message to show to the user if provided.
+   * @param redirect.url - The URL to redirect the user to if provided.
+   * @param snapId - The Snap ID associated with the request.
+   * @throws An error if the redirect URL is not an allowed origin for the Snap.
+   */
+  async #handleAsyncResponse(
+    redirect: { message?: string; url?: string },
+    snapId: SnapId,
+  ) {
+    const { message = '', url = '' } = redirect;
+    if (url) {
+      this.#validateRedirectUrl(url, snapId);
+    }
+    await this.#callbacks.redirectUser(snapId, url, message);
+  }
+
+  /**
+   * Validates if the redirect URL is in the Snap's allowed origins.
+   *
+   * @param url - The URL to validate.
+   * @param snapId - The Snap ID to check allowed origins for.
+   * @throws An error if the URL's origin is not in the Snap's allowed origins.
+   */
+  #validateRedirectUrl(url: string, snapId: SnapId) {
+    const { origin } = new URL(url);
+    const snap = this.#snapClient.getController().get(snapId);
+    if (!snap) {
+      throw new Error(`Snap '${snapId}' not found.`);
+    }
+    const allowedOrigins = this.#getSnapAllowedOrigins(snap);
+    if (!allowedOrigins.includes(origin)) {
+      throw new Error(
+        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+      );
+    }
   }
 
   /**
