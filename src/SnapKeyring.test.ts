@@ -367,29 +367,28 @@ describe('SnapKeyring', () => {
     });
 
     describe('async request redirect url', () => {
-      it('throws an error if async request redirect url is not an allowed origin', async () => {
-        const redirect = {
-          message: 'Go to dapp to continue.',
-          url: 'https://notallowed.com/sign?tx=1234',
-        };
-        const { origin } = new URL(redirect.url);
-
+      const isNotAllowedOrigin = async (
+        allowedOrigins: string[],
+        redirectUrl: string,
+      ) => {
+        const { origin } = new URL(redirectUrl);
         const snapObject = {
           id: snapId,
           manifest: {
-            initialPermissions: {
-              'endowment:keyring': {
-                allowedOrigins: ['https://allowed.com'],
-              },
-            },
+            initialPermissions:
+              allowedOrigins.length > 0
+                ? { 'endowment:keyring': { allowedOrigins } }
+                : {},
           },
           enabled: true,
         };
         mockSnapController.get.mockReturnValue(snapObject);
-
         mockSnapController.handleRequest.mockResolvedValue({
           pending: true,
-          redirect,
+          redirect: {
+            message: 'Go to dapp to continue.',
+            url: redirectUrl,
+          },
         });
         const requestPromise = keyring.signPersonalMessage(
           accounts[0].address,
@@ -398,37 +397,20 @@ describe('SnapKeyring', () => {
 
         await expect(requestPromise).rejects.toThrow(
           `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+        );
+      };
+
+      it('throws an error if async request redirect url is not an allowed origin', async () => {
+        expect.hasAssertions();
+        await isNotAllowedOrigin(
+          ['https://allowed.com'],
+          'https://notallowed.com/sign?tx=1234',
         );
       });
 
       it('throws an error if no allowed origins', async () => {
-        const redirect = {
-          message: 'Go to dapp to continue.',
-          url: 'https://example.com/sign?tx=1234',
-        };
-        const { origin } = new URL(redirect.url);
-
-        const snapObject = {
-          id: snapId,
-          manifest: {
-            initialPermissions: {},
-          },
-          enabled: true,
-        };
-        mockSnapController.get.mockReturnValue(snapObject);
-
-        mockSnapController.handleRequest.mockResolvedValue({
-          pending: true,
-          redirect,
-        });
-        const requestPromise = keyring.signPersonalMessage(
-          accounts[0].address,
-          'hello',
-        );
-
-        await expect(requestPromise).rejects.toThrow(
-          `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
-        );
+        expect.hasAssertions();
+        await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
       });
 
       it('throws an error if the snap is undefined', async () => {
