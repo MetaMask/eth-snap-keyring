@@ -408,7 +408,7 @@ export class SnapKeyring extends EventEmitter {
 
     // Create the promise before calling the snap to prevent a race condition
     // where the snap responds before we have a chance to create it.
-    const promise = this.#createPromise<Response>(requestId, snapId);
+    const promise = this.#createRequestPromise<Response>(requestId, snapId);
 
     const response = await this.#submitSnapRequest({
       snapId,
@@ -445,13 +445,13 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Creates a DeferredPromise and associates it with a requestId and snapId.
+   * Creates a promise for a request and adds it to the map of requests.
    *
    * @param requestId - The unique identifier for the request.
    * @param snapId - The Snap ID associated with the request.
    * @returns A DeferredPromise instance.
    */
-  #createPromise<Response>(
+  #createRequestPromise<Response>(
     requestId: string,
     snapId: SnapId,
   ): DeferredPromise<Response> {
