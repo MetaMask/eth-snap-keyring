@@ -398,7 +398,11 @@ export class SnapKeyring extends EventEmitter {
     chainId?: string;
   }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
-    this.#validateMethod(method as EthMethod, account);
+    if (!this.#hasMethod(account, method as EthMethod)) {
+      throw new Error(
+        `Method '${method}' not supported for account ${account.address}`,
+      );
+    }
 
     const requestId = uuid();
 
@@ -430,18 +434,14 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Validates that the specified method is supported by the account.
+   * Check if an account supports the given method.
    *
-   * @param method - The Ethereum method to validate.
    * @param account - The account object to check for method support.
-   * @throws An error if the method is not supported.
+   * @param method - The Ethereum method to validate.
+   * @returns `true` if the method is supported, `false` otherwise.
    */
-  #validateMethod(method: EthMethod, account: KeyringAccount): void {
-    if (!account.methods.includes(method)) {
-      throw new Error(
-        `Method '${method}' not supported for account ${account.address}`,
-      );
-    }
+  #hasMethod(account: KeyringAccount, method: EthMethod): boolean {
+    return account.methods.includes(method);
   }
 
   /**
