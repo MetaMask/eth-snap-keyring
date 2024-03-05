@@ -50,7 +50,7 @@ export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 /**
  * Snap keyring state.
  *
- * This state is persisted by the keyring controller and passed to the snap
+ * This state is persisted by the keyring controller and passed to the Snap
  * keyring when it's created.
  */
 export type KeyringState = {
@@ -83,7 +83,7 @@ export type SnapKeyringCallbacks = {
 };
 
 /**
- * Keyring bridge implementation to support snaps.
+ * Keyring bridge implementation to support Snaps.
  */
 export class SnapKeyring extends EventEmitter {
   static type: string = SNAP_KEYRING_TYPE;
@@ -91,13 +91,13 @@ export class SnapKeyring extends EventEmitter {
   type: string;
 
   /**
-   * Client used to call the snap keyring.
+   * Client used to call the Snap keyring.
    */
   #snapClient: KeyringSnapControllerClient;
 
   /**
    * Mapping between account IDs and an object that contains the associated
-   * account object and snap ID.
+   * account object and Snap ID.
    */
   #accounts: SnapIdMap<{
     account: KeyringAccount;
@@ -118,11 +118,11 @@ export class SnapKeyring extends EventEmitter {
   #callbacks: SnapKeyringCallbacks;
 
   /**
-   * Create a new snap keyring.
+   * Create a new Snap keyring.
    *
    * @param controller - Snaps controller.
    * @param callbacks - Callbacks used to interact with other components.
-   * @returns A new snap keyring.
+   * @returns A new Snap keyring.
    */
   constructor(controller: SnapController, callbacks: SnapKeyringCallbacks) {
     super();
@@ -134,7 +134,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle an Account Created event from a snap.
+   * Handle an Account Created event from a Snap.
    *
    * @param snapId - Snap ID.
    * @param message - Event message.
@@ -154,7 +154,7 @@ export class SnapKeyring extends EventEmitter {
       throw new Error(`Account address '${account.address}' already exists`);
     }
 
-    // A snap could try to create an account with a different address but with
+    // A Snap could try to create an account with a different address but with
     // an existing ID, so the above test only is not enough.
     if (this.#accounts.has(snapId, account.id)) {
       throw new Error(`Account '${account.id}' already exists`);
@@ -174,7 +174,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle an Account Updated event from a snap.
+   * Handle an Account Updated event from a Snap.
    *
    * @param snapId - Snap ID.
    * @param message - Event message.
@@ -203,7 +203,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle an Account Deleted event from a snap.
+   * Handle an Account Deleted event from a Snap.
    *
    * @param snapId - Snap ID.
    * @param message - Event message.
@@ -220,8 +220,8 @@ export class SnapKeyring extends EventEmitter {
     // We can ignore the case where the account was already removed from the
     // keyring, making the deletion idempotent.
     //
-    // This happens when the keyring calls the snap to delete an account, and
-    // the snap calls the keyring back with an `AccountDeleted` event.
+    // This happens when the keyring calls the Snap to delete an account, and
+    // the Snap calls the keyring back with an `AccountDeleted` event.
     if (entry === undefined) {
       return null;
     }
@@ -245,7 +245,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle an Request Approved event from a snap.
+   * Handle an Request Approved event from a Snap.
    *
    * @param snapId - Snap ID.
    * @param message - Event message.
@@ -266,7 +266,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle an Request Rejected event from a snap.
+   * Handle an Request Rejected event from a Snap.
    *
    * @param snapId - Snap ID.
    * @param message - Event message.
@@ -287,10 +287,10 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Handle a message from a snap.
+   * Handle a message from a Snap.
    *
-   * @param snapId - ID of the snap.
-   * @param message - Message sent by the snap.
+   * @param snapId - ID of the Snap.
+   * @param message - Message sent by the Snap.
    * @returns The execution result.
    */
   async handleKeyringSnapMessage(
@@ -377,7 +377,7 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Submit a request to a snap.
+   * Submit a request to a Snap.
    *
    * @param opts - Request options.
    * @param opts.address - Account address.
@@ -406,8 +406,8 @@ export class SnapKeyring extends EventEmitter {
 
     const requestId = uuid();
 
-    // Create the promise before calling the snap to prevent a race condition
-    // where the snap responds before we have a chance to create it.
+    // Create the promise before calling the Snap to prevent a race condition
+    // where the Snap responds before we have a chance to create it.
     const promise = this.#createRequestPromise<Response>(requestId, snapId);
 
     const response = await this.#submitSnapRequest({
@@ -419,13 +419,13 @@ export class SnapKeyring extends EventEmitter {
       chainId,
     });
 
-    // If the snap answers synchronously, the promise must be removed from the
+    // If the Snap answers synchronously, the promise must be removed from the
     // map to prevent a leak.
     if (!response.pending) {
       return this.#handleSyncResponse(response, requestId, snapId);
     }
 
-    // If the snap answers asynchronously, we will inform the user with a redirect
+    // If the Snap answers asynchronously, we will inform the user with a redirect
     if (response.redirect?.message || response.redirect?.url) {
       await this.#handleAsyncResponse(response.redirect, snapId);
     }
@@ -461,9 +461,9 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Submits a request to a Snap and handles the response.
+   * Submits a request to a Snap.
    *
-   * @param options - The options for the snap request.
+   * @param options - The options for the Snap request.
    * @param options.snapId - The Snap ID to submit the request to.
    * @param options.requestId - The unique identifier for the request.
    * @param options.account - The account to use for the request.
@@ -471,7 +471,7 @@ export class SnapKeyring extends EventEmitter {
    * @param options.params - The parameters to pass to the method, can be undefined.
    * @param options.chainId - The chain ID to use for the request, can be an empty string.
    * @returns A promise that resolves to the keyring response from the Snap.
-   * @throws An error if the snap fails to respond or if there's an issue with the request submission.
+   * @throws An error if the Snap fails to respond or if there's an issue with the request submission.
    */
   async #submitSnapRequest({
     snapId,
@@ -499,7 +499,7 @@ export class SnapKeyring extends EventEmitter {
         },
       });
     } catch (error) {
-      // If the snap failed to respond, delete the promise to prevent a leak.
+      // If the Snap failed to respond, delete the promise to prevent a leak.
       this.#requests.delete(snapId, requestId);
       throw error;
     }
@@ -591,7 +591,7 @@ export class SnapKeyring extends EventEmitter {
     });
 
     // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
-    // ! snap could overwrite the transaction.
+    // ! Snap could overwrite the transaction.
     const signature = mask(
       signedTx,
       object({
@@ -768,14 +768,14 @@ export class SnapKeyring extends EventEmitter {
   async removeAccount(address: string): Promise<void> {
     const { account, snapId } = this.#resolveAddress(address);
 
-    // Always remove the account from the maps, even if the snap is going to
+    // Always remove the account from the maps, even if the Snap is going to
     // fail to delete it.
     this.#accounts.delete(snapId, account.id);
 
     try {
       await this.#snapClient.withSnapId(snapId).deleteAccount(account.id);
     } catch (error) {
-      // If the snap failed to delete the account, log the error and continue
+      // If the Snap failed to delete the account, log the error and continue
       // with the account deletion, otherwise the account will be stuck in the
       // keyring.
       console.error(
@@ -786,10 +786,10 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Resolve an address to an account and snap ID.
+   * Resolve an address to an account and Snap ID.
    *
    * @param address - Address of the account to resolve.
-   * @returns Account and snap ID. Throws if the account or snap ID is not
+   * @returns Account and Snap ID. Throws if the account or Snap ID is not
    * found.
    */
   #resolveAddress(address: string): {
@@ -804,10 +804,10 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Get the metadata of a snap keyring account.
+   * Get the metadata of a Snap keyring account.
    *
    * @param snapId - Snap ID.
-   * @returns The snap metadata or undefined if the snap cannot be found.
+   * @returns The Snap metadata or undefined if the Snap cannot be found.
    */
   #getSnapMetadata(
     snapId: SnapId,
@@ -819,10 +819,10 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * Get the allowed origins of a snap.
+   * Get the allowed origins of a Snap.
    *
    * @param snap - Snap.
-   * @returns The allowed origins of the snap.
+   * @returns The allowed origins of the Snap.
    */
   #getSnapAllowedOrigins(snap: Snap): string[] {
     return (
@@ -845,9 +845,9 @@ export class SnapKeyring extends EventEmitter {
   }
 
   /**
-   * List all snap keyring accounts.
+   * List all Snap keyring accounts.
    *
-   * @returns An array containing all snap keyring accounts.
+   * @returns An array containing all Snap keyring accounts.
    */
   listAccounts(): InternalAccount[] {
     return [...this.#accounts.values()].map(({ account, snapId }) => {
