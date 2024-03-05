@@ -623,14 +623,14 @@ describe('SnapKeyring', () => {
   describe('signTransaction', () => {
     it('signs a ethereum transaction synchronously', async () => {
       const mockTx = {
-        data: '0x0',
+        data: '0x00',
         gasLimit: '0x26259fe',
         gasPrice: '0x1',
         nonce: '0xfffffffe',
         to: '0xccccccccccccd000000000000000000000000000',
         value: '0x1869e',
         chainId: '0x1',
-        type: '0x00',
+        type: '0x0',
       };
       const mockSignedTx = {
         ...mockTx,
@@ -640,11 +640,38 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       const expectedSignedTx = TransactionFactory.fromTxData(mockSignedTx);
+      const expectedScope = 'eip155:1';
+
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: mockSignedTx,
       });
+
       const signature = await keyring.signTransaction(accounts[0].address, tx);
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expectedScope,
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTransaction',
+              params: [
+                {
+                  ...mockTx,
+                  from: accounts[0].address,
+                },
+              ],
+            },
+          },
+        },
+      });
       expect(signature).toStrictEqual(expectedSignedTx);
     });
   });
@@ -688,6 +715,7 @@ describe('SnapKeyring', () => {
       },
     };
 
+    const expectedScope = 'eip155:1';
     const expectedSignature =
       '0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c';
 
@@ -711,7 +739,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
@@ -744,7 +772,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v4',
@@ -777,11 +805,58 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
               params: [accounts[0].address, dataToSign],
+            },
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSignature);
+    });
+
+    it('signs typed data without domain chainId has no scope', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const dataToSignWithoutDomainChainId = {
+        ...dataToSign,
+        domain: {
+          name: dataToSign.domain.name,
+          version: dataToSign.domain.version,
+          verifyingContract: dataToSign.domain.verifyingContract,
+          // We do not defined the chainId (it's currently marked as
+          // optional in the current type declaration).
+          // chainId: 1,
+        },
+      };
+
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSignWithoutDomainChainId,
+        { version: SignTypedDataVersion.V4 },
+      );
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            // Without chainId alongside the typed message, we cannot
+            // compute the scope for this request!
+            scope: '', // Default value for `signTypedTransaction`
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTypedData_v4',
+              params: [accounts[0].address, dataToSignWithoutDomainChainId],
             },
           },
         },
