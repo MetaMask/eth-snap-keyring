@@ -9,11 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.1]
 
-### Fixed
-
-- Add `chainId` to Keyring API requests (transaction/typed message) ([#231](https://github.com/MetaMask/eth-snap-keyring/pull/231))
-- Enforce async request redirect URL is in the snaps 'allowedOrigins' ([#228](https://github.com/MetaMask/eth-snap-keyring/pull/228))
-
 ### Changed
 
 - Bump @metamask dependencies ([#236](https://github.com/MetaMask/eth-snap-keyring/pull/236))
@@ -26,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump @metamask/snaps-utils from 6.1.0 to 7.0.0 ([#224](https://github.com/MetaMask/eth-snap-keyring/pull/224))
 - Bump @metamask/rpc-errors from 6.1.0 to 6.2.0 ([#219](https://github.com/MetaMask/eth-snap-keyring/pull/219))
 - Bump ip from 2.0.0 to 2.0.1 ([#218](https://github.com/MetaMask/eth-snap-keyring/pull/218))
+
+### Fixed
+
+- Add `chainId` to Keyring API requests (transaction/typed message) ([#231](https://github.com/MetaMask/eth-snap-keyring/pull/231))
+- Enforce async request redirect URL is in the snaps 'allowedOrigins' ([#228](https://github.com/MetaMask/eth-snap-keyring/pull/228))
 
 ## [2.2.0]
 
