@@ -316,6 +316,19 @@ describe('SnapKeyring', () => {
     ])('returns a redirect %s', async (redirect) => {
       const spy = jest.spyOn(console, 'log').mockImplementation();
 
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          initialPermissions: {
+            'endowment:keyring': {
+              allowedOrigins: ['https://example.com'],
+            },
+          },
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+
       mockSnapController.handleRequest.mockResolvedValue({
         pending: true,
         redirect,
@@ -351,6 +364,76 @@ describe('SnapKeyring', () => {
         message,
       );
       spy.mockRestore();
+    });
+
+    describe('async request redirect url', () => {
+      const isNotAllowedOrigin = async (
+        allowedOrigins: string[],
+        redirectUrl: string,
+      ) => {
+        const { origin } = new URL(redirectUrl);
+        const snapObject = {
+          id: snapId,
+          manifest: {
+            initialPermissions:
+              allowedOrigins.length > 0
+                ? { 'endowment:keyring': { allowedOrigins } }
+                : {},
+          },
+          enabled: true,
+        };
+        mockSnapController.get.mockReturnValue(snapObject);
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+          redirect: {
+            message: 'Go to dapp to continue.',
+            url: redirectUrl,
+          },
+        });
+        const requestPromise = keyring.signPersonalMessage(
+          accounts[0].address,
+          'hello',
+        );
+
+        await expect(requestPromise).rejects.toThrow(
+          `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+        );
+      };
+
+      it('throws an error if async request redirect url is not an allowed origin', async () => {
+        expect.hasAssertions();
+        await isNotAllowedOrigin(
+          ['https://allowed.com'],
+          'https://notallowed.com/sign?tx=1234',
+        );
+      });
+
+      it('throws an error if no allowed origins', async () => {
+        expect.hasAssertions();
+        await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
+      });
+
+      it('throws an error if the snap is undefined', async () => {
+        const redirect = {
+          message: 'Go to dapp to continue.',
+          url: 'https://example.com/sign?tx=1234',
+        };
+
+        mockSnapController.get.mockReturnValue(undefined);
+
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+          redirect,
+        });
+        const requestPromise = keyring.signPersonalMessage(
+          accounts[0].address,
+          'hello',
+        );
+
+        await expect(requestPromise).rejects.toThrow(
+          `Snap '${snapId}' not found.`,
+        );
+      });
     });
 
     it('rejects an async request', async () => {
@@ -540,14 +623,14 @@ describe('SnapKeyring', () => {
   describe('signTransaction', () => {
     it('signs a ethereum transaction synchronously', async () => {
       const mockTx = {
-        data: '0x0',
+        data: '0x00',
         gasLimit: '0x26259fe',
         gasPrice: '0x1',
         nonce: '0xfffffffe',
         to: '0xccccccccccccd000000000000000000000000000',
         value: '0x1869e',
         chainId: '0x1',
-        type: '0x00',
+        type: '0x0',
       };
       const mockSignedTx = {
         ...mockTx,
@@ -557,11 +640,38 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       const expectedSignedTx = TransactionFactory.fromTxData(mockSignedTx);
+      const expectedScope = 'eip155:1';
+
       mockSnapController.handleRequest.mockResolvedValue({
         pending: false,
         result: mockSignedTx,
       });
+
       const signature = await keyring.signTransaction(accounts[0].address, tx);
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expectedScope,
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTransaction',
+              params: [
+                {
+                  ...mockTx,
+                  from: accounts[0].address,
+                },
+              ],
+            },
+          },
+        },
+      });
       expect(signature).toStrictEqual(expectedSignedTx);
     });
   });
@@ -605,6 +715,7 @@ describe('SnapKeyring', () => {
       },
     };
 
+    const expectedScope = 'eip155:1';
     const expectedSignature =
       '0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c';
 
@@ -628,7 +739,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
@@ -661,7 +772,7 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v4',
@@ -694,11 +805,58 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: expectedScope,
             account: accounts[0].id,
             request: {
               method: 'eth_signTypedData_v1',
               params: [accounts[0].address, dataToSign],
+            },
+          },
+        },
+      });
+      expect(signature).toStrictEqual(expectedSignature);
+    });
+
+    it('signs typed data without domain chainId has no scope', async () => {
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: false,
+        result: expectedSignature,
+      });
+
+      const dataToSignWithoutDomainChainId = {
+        ...dataToSign,
+        domain: {
+          name: dataToSign.domain.name,
+          version: dataToSign.domain.version,
+          verifyingContract: dataToSign.domain.verifyingContract,
+          // We do not defined the chainId (it's currently marked as
+          // optional in the current type declaration).
+          // chainId: 1,
+        },
+      };
+
+      const signature = await keyring.signTypedData(
+        accounts[0].address,
+        dataToSignWithoutDomainChainId,
+        { version: SignTypedDataVersion.V4 },
+      );
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        snapId,
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            // Without chainId alongside the typed message, we cannot
+            // compute the scope for this request!
+            scope: '', // Default value for `signTypedTransaction`
+            account: accounts[0].id,
+            request: {
+              method: 'eth_signTypedData_v4',
+              params: [accounts[0].address, dataToSignWithoutDomainChainId],
             },
           },
         },
