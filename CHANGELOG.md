@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1]
+
+### Changed
+
+- Bump @metamask dependencies ([#236](https://github.com/MetaMask/eth-snap-keyring/pull/236))
+- Extract logic in 'submitRequest' ([#232](https://github.com/MetaMask/eth-snap-keyring/pull/232))
+- Bump @metamask/controller-utils from 8.0.3 to 8.0.4 ([#233](https://github.com/MetaMask/eth-snap-keyring/pull/233))
+- Bump @metamask/json-rpc-engine from 7.3.2 to 7.3.3 ([#234](https://github.com/MetaMask/eth-snap-keyring/pull/234))
+- Bump @metamask/approval-controller from 5.1.2 to 5.1.3 ([#235](https://github.com/MetaMask/eth-snap-keyring/pull/235))
+- Bump update Snap and dev dependencies ([#230](https://github.com/MetaMask/eth-snap-keyring/pull/230))
+- Bump @metamask/rpc-errors from 6.2.0 to 6.2.1 ([#223](https://github.com/MetaMask/eth-snap-keyring/pull/223))
+- Bump @metamask/snaps-utils from 6.1.0 to 7.0.0 ([#224](https://github.com/MetaMask/eth-snap-keyring/pull/224))
+- Bump @metamask/rpc-errors from 6.1.0 to 6.2.0 ([#219](https://github.com/MetaMask/eth-snap-keyring/pull/219))
+- Bump ip from 2.0.0 to 2.0.1 ([#218](https://github.com/MetaMask/eth-snap-keyring/pull/218))
+
+### Fixed
+
+- Add `chainId` to Keyring API requests (transaction/typed message) ([#231](https://github.com/MetaMask/eth-snap-keyring/pull/231))
+- Enforce async request redirect URL is in the snaps 'allowedOrigins' ([#228](https://github.com/MetaMask/eth-snap-keyring/pull/228))
+
 ## [2.2.0]
 
 ### Changed
@@ -167,7 +187,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.0...v2.1.1
