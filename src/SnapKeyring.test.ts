@@ -1210,6 +1210,7 @@ describe('SnapKeyring', () => {
       dummyPaymasterAndData: '0x',
       bundlerUrl: 'https://bundler.example.com/rpc',
     };
+
     it('calls eth_prepareUserOperation', async () => {
       mockSnapController.handleRequest.mockReturnValueOnce({
         pending: false,
