@@ -1,6 +1,11 @@
 import { TransactionFactory } from '@ethereumjs/tx';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import type { KeyringAccount } from '@metamask/keyring-api';
+import type {
+  EthBaseUserOperation,
+  EthUserOperation,
+  EthUserOperationPatch,
+  KeyringAccount,
+} from '@metamask/keyring-api';
 import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
@@ -8,6 +13,9 @@ import type { SnapId } from '@metamask/snaps-sdk';
 
 import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
+
+const regexForUUIDInRequiredSyncErrorMessage =
+  /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and expectSync is true/u;
 
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;
@@ -1180,6 +1188,128 @@ describe('SnapKeyring', () => {
           keyring: { type: 'Snap Keyring' },
         },
       });
+    });
+  });
+
+  describe('prepareUserOperation', () => {
+    const mockIntents = [
+      {
+        to: '0x0c54fccd2e384b4bb6f2e405bf5cbc15a017aafb',
+        value: '0x0',
+        data: '0x',
+      },
+    ];
+
+    const mockExpectedUserOp: EthBaseUserOperation = {
+      callData: '0x70641a22000000000000000000000000f3de3c0d654fda23da',
+      initCode: '0x',
+      nonce: '0x1',
+      gasLimits: {
+        callGasLimit: '0x58a83',
+        verificationGasLimit: '0xe8c4',
+        preVerificationGas: '0xc57c',
+      },
+      dummySignature: '0x',
+      dummyPaymasterAndData: '0x',
+      bundlerUrl: 'https://bundler.example.com/rpc',
+    };
+
+    it('calls eth_prepareUserOperation', async () => {
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: false,
+        result: mockExpectedUserOp,
+      });
+
+      await keyring.prepareUserOperation(accounts[0].address, mockIntents);
+
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_prepareUserOperation',
+              params: mockIntents,
+            },
+          },
+        },
+        snapId: 'local:snap.mock',
+      });
+    });
+
+    it('throws error if an pending response is returned from the snap', async () => {
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: true,
+      });
+
+      await expect(
+        keyring.prepareUserOperation(accounts[0].address, mockIntents),
+      ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
+    });
+  });
+
+  describe('patchUserOperation', () => {
+    const mockUserOp: EthUserOperation = {
+      sender: accounts[0].address,
+      callData: '0x70641a22000000000000000000000000f3de3c0d654fda23da',
+      initCode: '0x',
+      nonce: '0x1',
+      callGasLimit: '0x58a83',
+      verificationGasLimit: '0xe8c4',
+      preVerificationGas: '0xc57c',
+      maxFeePerGas: '0x87f0878c0',
+      maxPriorityFeePerGas: '0x1dcd6500',
+      signature: '0x',
+      paymasterAndData: '0x',
+    };
+
+    const mockExpectedPatch: EthUserOperationPatch = {
+      paymasterAndData: '0x1234',
+    };
+
+    it('calls eth_patchUserOperation', async () => {
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: false,
+        result: mockExpectedPatch,
+      });
+
+      await keyring.patchUserOperation(accounts[0].address, mockUserOp);
+
+      expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
+        handler: 'onKeyringRequest',
+        origin: 'metamask',
+        request: {
+          id: expect.any(String),
+          jsonrpc: '2.0',
+          method: 'keyring_submitRequest',
+          params: {
+            id: expect.any(String),
+            scope: expect.any(String),
+            account: accounts[0].id,
+            request: {
+              method: 'eth_patchUserOperation',
+              params: [mockUserOp],
+            },
+          },
+        },
+        snapId: 'local:snap.mock',
+      });
+    });
+
+    it('throws error if an pending response is returned from the snap', async () => {
+      mockSnapController.handleRequest.mockReturnValueOnce({
+        pending: true,
+      });
+
+      await expect(
+        keyring.patchUserOperation(accounts[0].address, mockUserOp),
+      ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
     });
   });
 });
