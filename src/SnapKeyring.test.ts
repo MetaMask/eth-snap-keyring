@@ -15,7 +15,7 @@ import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
 
 const regexForUUIDInRequiredSyncErrorMessage =
-  /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and requireSync is true/u;
+  /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and expectSync is true/u;
 
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;
