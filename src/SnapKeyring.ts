@@ -423,6 +423,9 @@ export class SnapKeyring extends EventEmitter {
       chainId,
     });
 
+    // Some methods, like the ones used to prepare and patch user operations,
+    // require the Snap to answer synchronously in order to work with the
+    // confirmation flow. This check lets the caller enforce this behavior.
     if (requireSync && response.pending) {
       throw new Error(
         `Request '${requestId}' to snap '${snapId}' is pending and requireSync is true.`,
