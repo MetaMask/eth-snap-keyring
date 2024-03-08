@@ -761,7 +761,6 @@ export class SnapKeyring extends EventEmitter {
         address,
         method: EthMethod.SignUserOperation,
         params: toJson<Json[]>([userOp]),
-        requireSync: true,
       }),
       EthBytesStruct,
     );
