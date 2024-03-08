@@ -14,6 +14,9 @@ import type { SnapId } from '@metamask/snaps-sdk';
 import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
 
+const regexForUUIDInRequiredSyncErrorMessage =
+  /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and requireSync is true/u;
+
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;
 
@@ -1247,9 +1250,7 @@ describe('SnapKeyring', () => {
 
       await expect(
         keyring.prepareUserOperation(accounts[0].address, mockIntents),
-      ).rejects.toThrow(
-        /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and requireSync is true/u,
-      );
+      ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
     });
   });
 
@@ -1308,9 +1309,7 @@ describe('SnapKeyring', () => {
 
       await expect(
         keyring.patchUserOperation(accounts[0].address, mockUserOp),
-      ).rejects.toThrow(
-        /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and requireSync is true/u,
-      );
+      ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
     });
   });
 });
