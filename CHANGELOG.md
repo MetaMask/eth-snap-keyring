@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2]
+
+### Changed
+
+- Bump @metamask/safe-event-emitter from 3.1.0 to 3.1.1 ([#251](https://github.com/MetaMask/eth-snap-keyring/pull/251))
+- Bump dependencies ([#246](https://github.com/MetaMask/eth-snap-keyring/pull/246))
+- Bump @metamask/safe-event-emitter from 3.0.0 to 3.1.0 ([#245](https://github.com/MetaMask/eth-snap-keyring/pull/245))
+- Fix enforcing responses of `prepareUserOperation` and `patchUserOperation` to be synchronous ([#243](https://github.com/MetaMask/eth-snap-keyring/pull/243))
+- Bump @metamask/snaps-registry from 3.0.0 to 3.0.1 ([#244](https://github.com/MetaMask/eth-snap-keyring/pull/244))
+
 ## [2.2.1]
 
 ### Changed
@@ -187,7 +197,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...HEAD
+[2.2.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.1...v2.1.2
