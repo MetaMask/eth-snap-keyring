@@ -10,6 +10,7 @@ import type {
   InternalAccount,
   KeyringAccount,
   KeyringResponse,
+  KeyringExecutionContext,
 } from '@metamask/keyring-api';
 import {
   AccountCreatedEventStruct,
@@ -715,11 +716,13 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Address of the sender.
    * @param transactions - Base transactions to include in the UserOperation.
+   * @param context - Keyring execution context.
    * @returns A pseudo-UserOperation that can be used to construct a real.
    */
   async prepareUserOperation(
     address: string,
     transactions: EthBaseTransaction[],
+    context: KeyringExecutionContext,
   ): Promise<EthBaseUserOperation> {
     return strictMask(
       await this.#submitRequest({
@@ -727,6 +730,8 @@ export class SnapKeyring extends EventEmitter {
         method: EthMethod.PrepareUserOperation,
         params: toJson<Json[]>(transactions),
         expectSync: true,
+        // We assume the chain ID is already well formatted
+        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
       }),
       EthBaseUserOperationStruct,
     );
@@ -738,11 +743,13 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Address of the sender.
    * @param userOp - UserOperation to patch.
+   * @param context - Keyring execution context.
    * @returns A patch to apply to the UserOperation.
    */
   async patchUserOperation(
     address: string,
     userOp: EthUserOperation,
+    context: KeyringExecutionContext,
   ): Promise<EthUserOperationPatch> {
     return strictMask(
       await this.#submitRequest({
@@ -750,6 +757,8 @@ export class SnapKeyring extends EventEmitter {
         method: EthMethod.PatchUserOperation,
         params: toJson<Json[]>([userOp]),
         expectSync: true,
+        // We assume the chain ID is already well formatted
+        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
       }),
       EthUserOperationPatchStruct,
     );
@@ -760,17 +769,21 @@ export class SnapKeyring extends EventEmitter {
    *
    * @param address - Address of the sender.
    * @param userOp - UserOperation to sign.
+   * @param context - Leyring execution context.
    * @returns The signature of the UserOperation.
    */
   async signUserOperation(
     address: string,
     userOp: EthUserOperation,
+    context: KeyringExecutionContext,
   ): Promise<string> {
     return strictMask(
       await this.#submitRequest({
         address,
         method: EthMethod.SignUserOperation,
         params: toJson<Json[]>([userOp]),
+        // We assume the chain ID is already well formatted
+        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
       }),
       EthBytesStruct,
     );
