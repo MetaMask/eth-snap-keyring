@@ -35,6 +35,7 @@ import { v4 as uuid } from 'uuid';
 import { toCaipChainId, CaipNamespaces } from './caip';
 import { DeferredPromise } from './DeferredPromise';
 import { KeyringSnapControllerClient } from './KeyringSnapControllerClient';
+import { projectLogger as log } from './logger';
 import { SnapIdMap } from './SnapIdMap';
 import type { SnapMessage } from './types';
 import { SnapMessageStruct } from './types';
@@ -502,7 +503,7 @@ export class SnapKeyring extends EventEmitter {
     chainId: string;
   }): Promise<KeyringResponse> {
     try {
-      return await this.#snapClient.withSnapId(snapId).submitRequest({
+      const request = {
         id: requestId,
         scope: chainId,
         account: account.id,
@@ -510,8 +511,14 @@ export class SnapKeyring extends EventEmitter {
           method,
           ...(params !== undefined && { params }),
         },
-      });
+      };
+
+      log('Submit Snap request: ', request);
+
+      return await this.#snapClient.withSnapId(snapId).submitRequest(request);
     } catch (error) {
+      log('Snap Request failed: ', { requestId });
+
       // If the Snap failed to respond, delete the promise to prevent a leak.
       this.#requests.delete(snapId, requestId);
       throw error;
