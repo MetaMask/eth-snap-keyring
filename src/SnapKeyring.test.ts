@@ -11,10 +11,10 @@ import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
+import { KnownCaipNamespace, toCaipChainId } from '@metamask/utils';
 
 import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
-import { CaipNamespaces, toCaipChainId } from './caip';
 
 const regexForUUIDInRequiredSyncErrorMessage =
   /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and expectSync is true/u;
@@ -927,7 +927,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: toCaipChainId(CaipNamespaces.Eip155, executionContext.chainId),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_prepareUserOperation',
@@ -980,7 +983,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: toCaipChainId(CaipNamespaces.Eip155, executionContext.chainId),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_patchUserOperation',
@@ -1029,7 +1035,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: toCaipChainId(CaipNamespaces.Eip155, executionContext.chainId),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_signUserOperation',
@@ -1244,7 +1253,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: toCaipChainId(CaipNamespaces.Eip155, executionContext.chainId),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_prepareUserOperation',
@@ -1311,7 +1323,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: toCaipChainId(CaipNamespaces.Eip155, executionContext.chainId),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_patchUserOperation',

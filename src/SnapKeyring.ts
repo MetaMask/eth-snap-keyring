@@ -28,12 +28,15 @@ import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
 import type { Snap } from '@metamask/snaps-utils';
 import type { Json } from '@metamask/utils';
-import { bigIntToHex } from '@metamask/utils';
+import {
+  bigIntToHex,
+  toCaipChainId,
+  KnownCaipNamespace,
+} from '@metamask/utils';
 import { EventEmitter } from 'events';
 import { assert, mask, object, string } from 'superstruct';
 import { v4 as uuid } from 'uuid';
 
-import { toCaipChainId, CaipNamespaces } from './caip';
 import { DeferredPromise } from './DeferredPromise';
 import { KeyringSnapControllerClient } from './KeyringSnapControllerClient';
 import { projectLogger as log } from './logger';
@@ -610,7 +613,7 @@ export class SnapKeyring extends EventEmitter {
       address,
       method: EthMethod.SignTransaction,
       params: [tx],
-      chainId: toCaipChainId(CaipNamespaces.Eip155, `${chainId}`),
+      chainId: toCaipChainId(KnownCaipNamespace.Eip155, `${chainId}`),
     });
 
     // ! It's *** CRITICAL *** that we mask the signature here, otherwise the
@@ -666,7 +669,9 @@ export class SnapKeyring extends EventEmitter {
         params: toJson<Json[]>([address, data]),
         ...(chainId === undefined
           ? {}
-          : { chainId: toCaipChainId(CaipNamespaces.Eip155, `${chainId}`) }),
+          : {
+              chainId: toCaipChainId(KnownCaipNamespace.Eip155, `${chainId}`),
+            }),
       }),
       EthBytesStruct,
     );
@@ -731,7 +736,7 @@ export class SnapKeyring extends EventEmitter {
         params: toJson<Json[]>(transactions),
         expectSync: true,
         // We assume the chain ID is already well formatted
-        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
+        chainId: toCaipChainId(KnownCaipNamespace.Eip155, context.chainId),
       }),
       EthBaseUserOperationStruct,
     );
@@ -758,7 +763,7 @@ export class SnapKeyring extends EventEmitter {
         params: toJson<Json[]>([userOp]),
         expectSync: true,
         // We assume the chain ID is already well formatted
-        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
+        chainId: toCaipChainId(KnownCaipNamespace.Eip155, context.chainId),
       }),
       EthUserOperationPatchStruct,
     );
@@ -783,7 +788,7 @@ export class SnapKeyring extends EventEmitter {
         method: EthMethod.SignUserOperation,
         params: toJson<Json[]>([userOp]),
         // We assume the chain ID is already well formatted
-        chainId: toCaipChainId(CaipNamespaces.Eip155, context.chainId),
+        chainId: toCaipChainId(KnownCaipNamespace.Eip155, context.chainId),
       }),
       EthBytesStruct,
     );
