@@ -5,11 +5,13 @@ import type {
   EthUserOperation,
   EthUserOperationPatch,
   KeyringAccount,
+  KeyringExecutionContext,
 } from '@metamask/keyring-api';
 import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
+import { KnownCaipNamespace, toCaipChainId } from '@metamask/utils';
 
 import type { KeyringState } from '.';
 import { SnapKeyring } from '.';
@@ -58,6 +60,10 @@ describe('SnapKeyring', () => {
       type: EthAccountType.Eoa,
     },
   ] as const;
+
+  const executionContext: KeyringExecutionContext = {
+    chainId: '1',
+  };
 
   beforeEach(async () => {
     keyring = new SnapKeyring(
@@ -908,6 +914,7 @@ describe('SnapKeyring', () => {
       const baseUserOp = await keyring.prepareUserOperation(
         accounts[0].address,
         baseTxs,
+        executionContext,
       );
 
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
@@ -920,7 +927,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_prepareUserOperation',
@@ -960,6 +970,7 @@ describe('SnapKeyring', () => {
       const patch = await keyring.patchUserOperation(
         accounts[0].address,
         userOp,
+        executionContext,
       );
 
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
@@ -972,7 +983,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_patchUserOperation',
@@ -1008,6 +1022,7 @@ describe('SnapKeyring', () => {
       const signature = await keyring.signUserOperation(
         accounts[0].address,
         userOp,
+        executionContext,
       );
 
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
@@ -1020,7 +1035,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_signUserOperation',
@@ -1220,7 +1238,11 @@ describe('SnapKeyring', () => {
         result: mockExpectedUserOp,
       });
 
-      await keyring.prepareUserOperation(accounts[0].address, mockIntents);
+      await keyring.prepareUserOperation(
+        accounts[0].address,
+        mockIntents,
+        executionContext,
+      );
 
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onKeyringRequest',
@@ -1231,7 +1253,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_prepareUserOperation',
@@ -1249,7 +1274,11 @@ describe('SnapKeyring', () => {
       });
 
       await expect(
-        keyring.prepareUserOperation(accounts[0].address, mockIntents),
+        keyring.prepareUserOperation(
+          accounts[0].address,
+          mockIntents,
+          executionContext,
+        ),
       ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
     });
   });
@@ -1279,7 +1308,11 @@ describe('SnapKeyring', () => {
         result: mockExpectedPatch,
       });
 
-      await keyring.patchUserOperation(accounts[0].address, mockUserOp);
+      await keyring.patchUserOperation(
+        accounts[0].address,
+        mockUserOp,
+        executionContext,
+      );
 
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         handler: 'onKeyringRequest',
@@ -1290,7 +1323,10 @@ describe('SnapKeyring', () => {
           method: 'keyring_submitRequest',
           params: {
             id: expect.any(String),
-            scope: expect.any(String),
+            scope: toCaipChainId(
+              KnownCaipNamespace.Eip155,
+              executionContext.chainId,
+            ),
             account: accounts[0].id,
             request: {
               method: 'eth_patchUserOperation',
@@ -1308,7 +1344,11 @@ describe('SnapKeyring', () => {
       });
 
       await expect(
-        keyring.patchUserOperation(accounts[0].address, mockUserOp),
+        keyring.patchUserOperation(
+          accounts[0].address,
+          mockUserOp,
+          executionContext,
+        ),
       ).rejects.toThrow(regexForUUIDInRequiredSyncErrorMessage);
     });
   });
