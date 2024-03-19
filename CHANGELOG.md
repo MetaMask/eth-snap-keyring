@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0]
+
+### Added
+
+- Add logger and now log Snap requests ([#254](https://github.com/MetaMask/eth-snap-keyring/pull/254))
+
+### Changed
+
+- **BREAKING**: Add KeyringExecutionContext to user ops methods ([#253](https://github.com/MetaMask/eth-snap-keyring/pull/253))
+- Bump @metamask/utils from 8.3.0 to 8.4.0
+  ([#260](https://github.com/MetaMask/eth-snap-keyring/pull/260))
+  ([#256](https://github.com/MetaMask/eth-snap-keyring/pull/256))
+- Bump @metamask/keyring-api from 5.0.0 to 5.1.0 ([#259](https://github.com/MetaMask/eth-snap-keyring/pull/259))
+- Bump @metamask/keyring-api from 4.0.2 to 5.0.0 ([#255](https://github.com/MetaMask/eth-snap-keyring/pull/255))
+
 ## [2.2.2]
 
 ### Changed
@@ -76,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: Remove async from `listAccounts` and `getAccountByAddress` ([#148](https://github.com/MetaMask/eth-snap-keyring/pull/148)).
+- **BREAKING**: Remove async from `listAccounts` and `getAccountByAddress` ([#148](https://github.com/MetaMask/eth-snap-keyring/pull/148)).
 
 ## [1.0.0]
 
@@ -164,7 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: Add `callbacks` that will be used to inject dependencies ([#79](https://github.com/MetaMask/eth-snap-keyring/pull/79), [MetaMask/snaps#1725](https://github.com/MetaMask/snaps/pull/1725), [MetaMask/metamask-extension#20786](https://github.com/MetaMask/metamask-extension/pull/20786)).
+- **BREAKING**: Add `callbacks` that will be used to inject dependencies ([#79](https://github.com/MetaMask/eth-snap-keyring/pull/79), [MetaMask/snaps#1725](https://github.com/MetaMask/snaps/pull/1725), [MetaMask/metamask-extension#20786](https://github.com/MetaMask/metamask-extension/pull/20786)).
 
 ## [0.1.3]
 
@@ -197,7 +212,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...v3.0.0
 [2.2.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.1.2...v2.2.0
