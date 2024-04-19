@@ -1169,6 +1169,7 @@ describe('SnapKeyring', () => {
         ...a,
         metadata: {
           name: '',
+          importTime: 0,
           snap: snapMetadata,
           keyring: {
             type: 'Snap Keyring',
@@ -1202,6 +1203,7 @@ describe('SnapKeyring', () => {
         ...accounts[0],
         metadata: {
           name: '',
+          importTime: 0,
           snap: { id: snapId, name: 'snap-name', enabled: true },
           keyring: { type: 'Snap Keyring' },
         },

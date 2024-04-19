@@ -912,6 +912,7 @@ export class SnapKeyring extends EventEmitter {
         address: account.address.toLowerCase(),
         metadata: {
           name: '',
+          importTime: 0,
           keyring: {
             type: this.type,
           },
