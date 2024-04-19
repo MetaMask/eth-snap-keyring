@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0]
+
+### Changed
+
+- **BREAKING**: Bump @metamask/keyring-api to version 6.0.0 ([#275](https://github.com/MetaMask/eth-snap-keyring/pull/275))
+- Bump @metamask/snaps-controllers from 6.0.3 to 7.0.1 and @metamask/snaps-sdk 3.1.1 to 4.0.1 ([#272](https://github.com/MetaMask/eth-snap-keyring/pull/272))
+- Bump @metamask/snaps-utils from 7.0.4 to 7.1.0 ([#268](https://github.com/MetaMask/eth-snap-keyring/pull/268))
+- Bump @metamask/controller-utils from 9.0.2 to 9.1.0 ([#270](https://github.com/MetaMask/eth-snap-keyring/pull/270))
+- Bump @metamask/snaps-controllers from 6.0.3 to 6.0.4 ([#266](https://github.com/MetaMask/eth-snap-keyring/pull/266))
+- Bump @metamask/snaps-registry from 3.0.1 to 3.1.0 ([#265](https://github.com/MetaMask/eth-snap-keyring/pull/265))
+- Bump @metamask/snaps-rpc-methods from 7.0.1 to 7.0.2 ([#264](https://github.com/MetaMask/eth-snap-keyring/pull/264))
+- Bump @metamask/snaps-utils from 7.0.3 to 7.0.4 ([#263](https://github.com/MetaMask/eth-snap-keyring/pull/263))
+- Bump @metamask/snaps-sdk from 3.1.1 to 3.2.0 ([#262](https://github.com/MetaMask/eth-snap-keyring/pull/262))
+
 ## [3.0.0]
 
 ### Added
@@ -212,7 +226,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...v3.0.0
 [2.2.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.0...v2.2.1
