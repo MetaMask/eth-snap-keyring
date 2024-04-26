@@ -1063,7 +1063,7 @@ __metadata:
     "@metamask/eslint-config-typescript": ^12.1.0
     "@metamask/eth-sig-util": ^7.0.1
     "@metamask/keyring-api": ^6.0.0
-    "@metamask/snaps-controllers": ^7.0.1
+    "@metamask/snaps-controllers": ^8.0.0
     "@metamask/snaps-sdk": ^4.0.1
     "@metamask/snaps-utils": ^7.0.3
     "@metamask/utils": ^8.4.0
@@ -1298,9 +1298,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-controllers@npm:^7.0.1":
-  version: 7.0.1
-  resolution: "@metamask/snaps-controllers@npm:7.0.1"
+"@metamask/snaps-controllers@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@metamask/snaps-controllers@npm:8.0.0"
   dependencies:
     "@metamask/approval-controller": ^6.0.1
     "@metamask/base-controller": ^5.0.1
@@ -1313,12 +1313,13 @@ __metadata:
     "@metamask/rpc-errors": ^6.2.1
     "@metamask/snaps-registry": ^3.1.0
     "@metamask/snaps-rpc-methods": ^8.0.0
-    "@metamask/snaps-sdk": ^4.0.0
-    "@metamask/snaps-utils": ^7.1.0
+    "@metamask/snaps-sdk": ^4.0.1
+    "@metamask/snaps-utils": ^7.2.0
     "@metamask/utils": ^8.3.0
     "@xstate/fsm": ^2.0.0
     browserify-zlib: ^0.2.0
     concat-stream: ^2.0.0
+    fast-deep-equal: ^3.1.3
     get-npm-tarball-url: ^2.0.3
     immer: ^9.0.6
     nanoid: ^3.1.31
@@ -1326,11 +1327,11 @@ __metadata:
     readable-web-to-node-stream: ^3.0.2
     tar-stream: ^3.1.7
   peerDependencies:
-    "@metamask/snaps-execution-environments": ^6.0.0
+    "@metamask/snaps-execution-environments": ^6.0.2
   peerDependenciesMeta:
     "@metamask/snaps-execution-environments":
       optional: true
-  checksum: d8a23ebf81b5a3276cec041588e56b23a7b18cc7d6ea4b7b244aac6db6b9276db0687efc95de02043e8907d4b1ddf5de74b36e4f93b6f8aab121dc22ba5d43a1
+  checksum: 04bbbace0a828178d6062b43092a60d3213e6eff99bca6ebf40409fe2b5b3334bb886e4c4dc6a9f8a2457102b8ca24dfe1d857fe86a504705c111419e760634f
   languageName: node
   linkType: hard
 
@@ -1376,7 +1377,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-utils@npm:^7.0.3, @metamask/snaps-utils@npm:^7.1.0":
+"@metamask/snaps-utils@npm:^7.0.3, @metamask/snaps-utils@npm:^7.1.0, @metamask/snaps-utils@npm:^7.2.0":
   version: 7.2.0
   resolution: "@metamask/snaps-utils@npm:7.2.0"
   dependencies:
