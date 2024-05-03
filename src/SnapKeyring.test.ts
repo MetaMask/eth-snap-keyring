@@ -1165,9 +1165,9 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
       await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount2.address.toLowerCase(),
-        accounts[2].address.toLowerCase(),
-        accounts[3].address.toLowerCase(),
+        ethEoaAccount2.address,
+        accounts[2].address,
+        accounts[3].address,
       ]);
     });
 
@@ -1176,9 +1176,9 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockRejectedValue('some error');
       await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount2.address.toLowerCase(),
-        accounts[2].address.toLowerCase(),
-        accounts[3].address.toLowerCase(),
+        ethEoaAccount2.address,
+        accounts[2].address,
+        accounts[3].address,
       ]);
       expect(console.error).toHaveBeenCalledWith(
         "Account '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3' may not have been removed from snap 'local:snap.mock':",
