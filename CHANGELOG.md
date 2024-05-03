@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0]
+
+### Changed
+
+- Bump @metamask/keyring-api to version 6.1.0 and introduce btc account types ([#285](https://github.com/MetaMask/eth-snap-keyring/pull/285))
+- Bump @metamask/phishing-controller from 9.0.1 to 9.0.2 ([#279](https://github.com/MetaMask/eth-snap-keyring/pull/279))
+- Bump @metamask/base-controller from 5.0.1 to 5.0.2 ([#280](https://github.com/MetaMask/eth-snap-keyring/pull/280))
+- Bump @metamask/eth-sig-util from 7.0.1 to 7.0.2 ([#281](https://github.com/MetaMask/eth-snap-keyring/pull/281))
+- Bump @metamask/approval-controller from 6.0.1 to 6.0.2 ([#282](https://github.com/MetaMask/eth-snap-keyring/pull/282))
+- Bump @metamask/providers from 16.0.0 to 16.1.0 ([#283](https://github.com/MetaMask/eth-snap-keyring/pull/283))
+- Bump @metamask/snaps-controllers from 7.0.1 to 8.0.0 ([#278](https://github.com/MetaMask/eth-snap-keyring/pull/278))
+- Bump @metamask/snaps-utils from 7.1.0 to 7.2.0 ([#277](https://github.com/MetaMask/eth-snap-keyring/pull/277))
+
 ## [4.0.0]
 
 ### Changed
@@ -226,7 +239,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...v3.0.0
 [2.2.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.1...v2.2.2
