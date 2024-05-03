@@ -74,7 +74,7 @@ describe('SnapKeyring', () => {
   };
   const btcP2wpkhAccount = {
     id: '11cffca0-12cc-4779-8f82-23273c062e29',
-    address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'.toLowerCase(),
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'.toLowerCase(),
     options: {},
     methods: [...Object.values(BtcMethod)],
     type: BtcAccountType.P2wpkh,
