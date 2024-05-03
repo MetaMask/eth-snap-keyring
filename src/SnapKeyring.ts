@@ -55,7 +55,8 @@ import {
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
-// Temp to remove when this is added to the keyring-api
+// TODO: to be removed when this is added to the keyring-api
+
 type AccountMethod = EthMethod | EthErc4337Method | BtcMethod;
 
 /**
