@@ -2,17 +2,8 @@ import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import type {
-  EthBaseTransaction,
-  EthBaseUserOperation,
-  EthUserOperation,
-  EthUserOperationPatch,
-  InternalAccount,
-  KeyringAccount,
-  KeyringResponse,
-  KeyringExecutionContext,
-} from '@metamask/keyring-api';
 import {
+  EthErc4337Method,
   AccountCreatedEventStruct,
   AccountDeletedEventStruct,
   AccountUpdatedEventStruct,
@@ -23,6 +14,17 @@ import {
   KeyringEvent,
   RequestApprovedEventStruct,
   RequestRejectedEventStruct,
+} from '@metamask/keyring-api';
+import type {
+  EthBaseTransaction,
+  EthBaseUserOperation,
+  EthUserOperation,
+  EthUserOperationPatch,
+  InternalAccount,
+  KeyringAccount,
+  KeyringResponse,
+  KeyringExecutionContext,
+  BtcMethod,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
@@ -52,6 +54,9 @@ import {
 } from './util';
 
 export const SNAP_KEYRING_TYPE = 'Snap Keyring';
+
+// Temp to remove when this is added to the keyring-api
+type AccountMethod = EthMethod | EthErc4337Method | BtcMethod;
 
 /**
  * Snap keyring state.
@@ -407,7 +412,7 @@ export class SnapKeyring extends EventEmitter {
     expectSync?: boolean;
   }): Promise<Json> {
     const { account, snapId } = this.#resolveAddress(address);
-    if (!this.#hasMethod(account, method as EthMethod)) {
+    if (!this.#hasMethod(account, method as AccountMethod)) {
       throw new Error(
         `Method '${method}' not supported for account ${account.address}`,
       );
@@ -423,7 +428,7 @@ export class SnapKeyring extends EventEmitter {
       snapId,
       requestId,
       account,
-      method: method as EthMethod,
+      method: method as AccountMethod,
       params,
       chainId,
     });
@@ -458,8 +463,8 @@ export class SnapKeyring extends EventEmitter {
    * @param method - The Ethereum method to validate.
    * @returns `true` if the method is supported, `false` otherwise.
    */
-  #hasMethod(account: KeyringAccount, method: EthMethod): boolean {
-    return account.methods.includes(method);
+  #hasMethod(account: KeyringAccount, method: AccountMethod): boolean {
+    return (account.methods as AccountMethod[]).includes(method);
   }
 
   /**
@@ -502,7 +507,7 @@ export class SnapKeyring extends EventEmitter {
     snapId: SnapId;
     requestId: string;
     account: KeyringAccount;
-    method: EthMethod;
+    method: AccountMethod;
     params?: Json[] | Record<string, Json> | undefined;
     chainId: string;
   }): Promise<KeyringResponse> {
@@ -732,7 +737,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthMethod.PrepareUserOperation,
+        method: EthErc4337Method.PrepareUserOperation,
         params: toJson<Json[]>(transactions),
         expectSync: true,
         // We assume the chain ID is already well formatted
@@ -759,7 +764,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthMethod.PatchUserOperation,
+        method: EthErc4337Method.PatchUserOperation,
         params: toJson<Json[]>([userOp]),
         expectSync: true,
         // We assume the chain ID is already well formatted
@@ -785,7 +790,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthMethod.SignUserOperation,
+        method: EthErc4337Method.SignUserOperation,
         params: toJson<Json[]>([userOp]),
         // We assume the chain ID is already well formatted
         chainId: toCaipChainId(KnownCaipNamespace.Eip155, context.chainId),

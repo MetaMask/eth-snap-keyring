@@ -7,7 +7,13 @@ import type {
   KeyringAccount,
   KeyringExecutionContext,
 } from '@metamask/keyring-api';
-import { EthAccountType, EthMethod } from '@metamask/keyring-api';
+import {
+  BtcAccountType,
+  BtcMethod,
+  EthAccountType,
+  EthErc4337Method,
+  EthMethod,
+} from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
@@ -44,21 +50,41 @@ describe('SnapKeyring', () => {
 
   const snapId = 'local:snap.mock' as SnapId;
 
+  const ethEoaAccount1 = {
+    id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
+    address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3'.toLowerCase(),
+    options: {},
+    methods: [...Object.values(EthMethod)],
+    type: EthAccountType.Eoa,
+  };
+  const ethEoaAccount2 = {
+    id: '33c96b60-2237-488e-a7bb-233576f3d22f',
+    address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63'.toLowerCase(),
+    options: {},
+    methods: [...Object.values(EthMethod)],
+    type: EthAccountType.Eoa,
+  };
+
+  const ethErc4337Account = {
+    id: 'fc926fff-f515-4eb5-9952-720bbd9b9849',
+    address: '0x2f15b30952aebe0ed5fdbfe5bf16fb9ecdb31d9a'.toLowerCase(),
+    options: {},
+    methods: [...Object.values(EthErc4337Method)],
+    type: EthAccountType.Erc4337,
+  };
+  const btcP2wpkhAccount = {
+    id: '11cffca0-12cc-4779-8f82-23273c062e29',
+    address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'.toLowerCase(),
+    options: {},
+    methods: [...Object.values(BtcMethod)],
+    type: BtcAccountType.P2wpkh,
+  };
+
   const accounts = [
-    {
-      id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
-      address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3'.toLowerCase(),
-      options: {},
-      methods: [...Object.values(EthMethod)],
-      type: EthAccountType.Eoa,
-    },
-    {
-      id: '33c96b60-2237-488e-a7bb-233576f3d22f',
-      address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63'.toLowerCase(),
-      options: {},
-      methods: [...Object.values(EthMethod)],
-      type: EthAccountType.Eoa,
-    },
+    ethEoaAccount1,
+    ethEoaAccount2,
+    ethErc4337Account,
+    btcP2wpkhAccount,
   ] as const;
 
   const executionContext: KeyringExecutionContext = {
@@ -92,13 +118,13 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountCreated,
           params: {
             account: {
-              ...(accounts[0] as unknown as KeyringAccount),
+              ...(ethEoaAccount1 as unknown as KeyringAccount),
               id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
             },
           },
         }),
       ).rejects.toThrow(
-        `Account address '${accounts[0].address}' already exists`,
+        `Account address '${ethEoaAccount1.address}' already exists`,
       );
     });
 
@@ -109,25 +135,25 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountCreated,
           params: {
             account: {
-              ...(accounts[0] as unknown as KeyringAccount),
+              ...(ethEoaAccount1 as unknown as KeyringAccount),
               address: '0x0',
             },
           },
         }),
-      ).rejects.toThrow(`Account '${accounts[0].id}' already exists`);
+      ).rejects.toThrow(`Account '${ethEoaAccount1.id}' already exists`);
     });
 
     it('updated the methods of an account', async () => {
       // Return the updated list of accounts when the keyring requests it.
       mockSnapController.handleRequest.mockResolvedValue([
-        { ...accounts[0], methods: [] },
-        { ...accounts[1] },
+        { ...ethEoaAccount1, methods: [] },
+        { ...ethEoaAccount2 },
       ]);
 
       expect(
         await keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountUpdated,
-          params: { account: { ...accounts[0], methods: [] } },
+          params: { account: { ...ethEoaAccount1, methods: [] } },
         }),
       ).toBeNull();
 
@@ -142,7 +168,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
-              ...(accounts[0] as unknown as KeyringAccount),
+              ...(ethEoaAccount1 as unknown as KeyringAccount),
               id: '0b3551da-1685-4750-ad4c-01fc3a9e90b1',
             },
           },
@@ -157,7 +183,7 @@ describe('SnapKeyring', () => {
         keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
           method: KeyringEvent.AccountCreated,
           params: {
-            account: { ...(accounts[0] as unknown as KeyringAccount) },
+            account: { ...(ethEoaAccount1 as unknown as KeyringAccount) },
           },
         }),
       ).rejects.toThrow(
@@ -171,8 +197,8 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
-              ...(accounts[0] as unknown as KeyringAccount),
-              address: accounts[1].address,
+              ...(ethEoaAccount1 as unknown as KeyringAccount),
+              address: ethEoaAccount2.address,
             },
           },
         }),
@@ -187,7 +213,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
-              ...(accounts[0] as unknown as KeyringAccount),
+              ...(ethEoaAccount1 as unknown as KeyringAccount),
             },
           },
         }),
@@ -207,21 +233,25 @@ describe('SnapKeyring', () => {
 
       await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountDeleted,
-        params: { id: accounts[0].id },
+        params: { id: ethEoaAccount1.id },
       });
       expect(await keyring.getAccounts()).toStrictEqual([
-        accounts[1].address.toLowerCase(),
+        ethEoaAccount2.address.toLowerCase(),
+        ethErc4337Account.address.toLowerCase(),
+        btcP2wpkhAccount.address.toLowerCase(),
       ]);
     });
 
     it('cannot delete an account owned by another snap', async () => {
       await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
         method: KeyringEvent.AccountDeleted,
-        params: { id: accounts[0].id },
+        params: { id: ethEoaAccount1.id },
       });
       expect(await keyring.getAccounts()).toStrictEqual([
-        accounts[0].address.toLowerCase(),
-        accounts[1].address.toLowerCase(),
+        ethEoaAccount1.address.toLowerCase(),
+        ethEoaAccount2.address.toLowerCase(),
+        ethErc4337Account.address.toLowerCase(),
+        btcP2wpkhAccount.address.toLowerCase(),
       ]);
     });
 
@@ -256,7 +286,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
-              ...accounts[0],
+              ...ethEoaAccount1,
               methods: updatedMethods,
             },
           },
@@ -264,9 +294,9 @@ describe('SnapKeyring', () => {
       ).toBeNull();
       expect(keyring.listAccounts()[0]?.methods).toStrictEqual(updatedMethods);
       await expect(
-        keyring.signPersonalMessage(accounts[0].address, 'hello'),
+        keyring.signPersonalMessage(ethEoaAccount1.address, 'hello'),
       ).rejects.toThrow(
-        `Method '${EthMethod.PersonalSign}' not supported for account ${accounts[0].address}`,
+        `Method '${EthMethod.PersonalSign}' not supported for account ${ethEoaAccount1.address}`,
       );
       // Restore `EthMethod.PersonalSign` and remove `EthMethod.SignTransaction`
       updatedMethods = Object.values(EthMethod).filter(
@@ -277,7 +307,7 @@ describe('SnapKeyring', () => {
           method: KeyringEvent.AccountUpdated,
           params: {
             account: {
-              ...accounts[0],
+              ...ethEoaAccount1,
               methods: updatedMethods,
             },
           },
@@ -296,9 +326,9 @@ describe('SnapKeyring', () => {
       };
       const tx = TransactionFactory.fromTxData(mockTx);
       await expect(
-        keyring.signTransaction(accounts[0].address, tx),
+        keyring.signTransaction(ethEoaAccount1.address, tx),
       ).rejects.toThrow(
-        `Method '${EthMethod.SignTransaction}' not supported for account ${accounts[0].address}`,
+        `Method '${EthMethod.SignTransaction}' not supported for account ${ethEoaAccount1.address}`,
       );
     });
 
@@ -307,7 +337,7 @@ describe('SnapKeyring', () => {
         pending: true,
       });
       const requestPromise = keyring.signPersonalMessage(
-        accounts[0].address,
+        ethEoaAccount1.address,
         'hello',
       );
 
@@ -348,7 +378,7 @@ describe('SnapKeyring', () => {
         redirect,
       });
       const requestPromise = keyring.signPersonalMessage(
-        accounts[0].address,
+        ethEoaAccount1.address,
         'hello',
       );
 
@@ -405,7 +435,7 @@ describe('SnapKeyring', () => {
           },
         });
         const requestPromise = keyring.signPersonalMessage(
-          accounts[0].address,
+          ethEoaAccount1.address,
           'hello',
         );
 
@@ -440,7 +470,7 @@ describe('SnapKeyring', () => {
           redirect,
         });
         const requestPromise = keyring.signPersonalMessage(
-          accounts[0].address,
+          ethEoaAccount1.address,
           'hello',
         );
 
@@ -455,7 +485,7 @@ describe('SnapKeyring', () => {
         pending: true,
       });
       const requestPromise = keyring.signPersonalMessage(
-        accounts[0].address,
+        ethEoaAccount1.address,
         'hello',
       );
 
@@ -475,7 +505,7 @@ describe('SnapKeyring', () => {
         pending: true,
       });
       // eslint-disable-next-line no-void
-      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+      void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
 
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId: string = calls[calls.length - 1][0].request.params.id;
@@ -492,7 +522,7 @@ describe('SnapKeyring', () => {
         pending: true,
       });
       // eslint-disable-next-line no-void
-      void keyring.signPersonalMessage(accounts[0].address, 'hello');
+      void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
 
       const { calls } = mockSnapController.handleRequest.mock;
       const requestId: string = calls[calls.length - 1][0].request.params.id;
@@ -508,7 +538,7 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
       const mockMessage = 'Hello World!';
       await expect(
-        keyring.signPersonalMessage(accounts[0].address, mockMessage),
+        keyring.signPersonalMessage(ethEoaAccount1.address, mockMessage),
       ).rejects.toThrow('error');
 
       const { calls } = mockSnapController.handleRequest.mock;
@@ -560,7 +590,7 @@ describe('SnapKeyring', () => {
       await expect(
         keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountDeleted,
-          params: { id: accounts[0].id },
+          params: { id: ethEoaAccount1.id },
         }),
       ).rejects.toThrow('Some error occurred while removing account');
     });
@@ -568,7 +598,7 @@ describe('SnapKeyring', () => {
     it('returns null after successfully updating an account', async () => {
       const result = await keyring.handleKeyringSnapMessage(snapId, {
         method: KeyringEvent.AccountUpdated,
-        params: { account: accounts[0] as unknown as KeyringAccount },
+        params: { account: ethEoaAccount1 as unknown as KeyringAccount },
       });
       expect(mockCallbacks.saveState).toHaveBeenCalled();
       expect(result).toBeNull();
@@ -588,8 +618,10 @@ describe('SnapKeyring', () => {
     it('returns the keyring state', async () => {
       const expectedState = {
         accounts: {
-          [accounts[0].id]: { account: accounts[0], snapId },
-          [accounts[1].id]: { account: accounts[1], snapId },
+          [ethEoaAccount1.id]: { account: ethEoaAccount1, snapId },
+          [ethEoaAccount2.id]: { account: ethEoaAccount2, snapId },
+          [ethErc4337Account.id]: { account: ethErc4337Account, snapId },
+          [btcP2wpkhAccount.id]: { account: btcP2wpkhAccount, snapId },
         },
       };
       const state = await keyring.serialize();
@@ -602,10 +634,10 @@ describe('SnapKeyring', () => {
       // State only contains the first account
       const state = {
         accounts: {
-          [accounts[0].id]: { account: accounts[0], snapId },
+          [ethEoaAccount1.id]: { account: ethEoaAccount1, snapId },
         },
       };
-      const expectedAddresses = [accounts[0].address];
+      const expectedAddresses = [ethEoaAccount1.address];
       await keyring.deserialize(state as unknown as KeyringState);
       const addresses = await keyring.getAccounts();
       expect(addresses).toStrictEqual(expectedAddresses);
@@ -661,7 +693,10 @@ describe('SnapKeyring', () => {
         result: mockSignedTx,
       });
 
-      const signature = await keyring.signTransaction(accounts[0].address, tx);
+      const signature = await keyring.signTransaction(
+        ethEoaAccount1.address,
+        tx,
+      );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
         snapId,
         handler: 'onKeyringRequest',
@@ -673,13 +708,13 @@ describe('SnapKeyring', () => {
           params: {
             id: expect.any(String),
             scope: expectedScope,
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_signTransaction',
               params: [
                 {
                   ...mockTx,
-                  from: accounts[0].address,
+                  from: ethEoaAccount1.address,
                 },
               ],
             },
@@ -740,7 +775,7 @@ describe('SnapKeyring', () => {
       });
 
       const signature = await keyring.signTypedData(
-        accounts[0].address,
+        ethEoaAccount1.address,
         dataToSign,
       );
       expect(mockSnapController.handleRequest).toHaveBeenCalledWith({
@@ -754,10 +789,10 @@ describe('SnapKeyring', () => {
           params: {
             id: expect.any(String),
             scope: expectedScope,
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_signTypedData_v1',
-              params: [accounts[0].address, dataToSign],
+              params: [ethEoaAccount1.address, dataToSign],
             },
           },
         },
@@ -772,7 +807,7 @@ describe('SnapKeyring', () => {
       });
 
       const signature = await keyring.signTypedData(
-        accounts[0].address,
+        ethEoaAccount1.address,
         dataToSign,
         { version: SignTypedDataVersion.V4 },
       );
@@ -787,10 +822,10 @@ describe('SnapKeyring', () => {
           params: {
             id: expect.any(String),
             scope: expectedScope,
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_signTypedData_v4',
-              params: [accounts[0].address, dataToSign],
+              params: [ethEoaAccount1.address, dataToSign],
             },
           },
         },
@@ -805,7 +840,7 @@ describe('SnapKeyring', () => {
       });
 
       const signature = await keyring.signTypedData(
-        accounts[0].address,
+        ethEoaAccount1.address,
         dataToSign,
         { version: 'V2' as any },
       );
@@ -820,10 +855,10 @@ describe('SnapKeyring', () => {
           params: {
             id: expect.any(String),
             scope: expectedScope,
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_signTypedData_v1',
-              params: [accounts[0].address, dataToSign],
+              params: [ethEoaAccount1.address, dataToSign],
             },
           },
         },
@@ -850,7 +885,7 @@ describe('SnapKeyring', () => {
       };
 
       const signature = await keyring.signTypedData(
-        accounts[0].address,
+        ethEoaAccount1.address,
         dataToSignWithoutDomainChainId,
         { version: SignTypedDataVersion.V4 },
       );
@@ -867,10 +902,10 @@ describe('SnapKeyring', () => {
             // Without chainId alongside the typed message, we cannot
             // compute the scope for this request!
             scope: '', // Default value for `signTypedTransaction`
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_signTypedData_v4',
-              params: [accounts[0].address, dataToSignWithoutDomainChainId],
+              params: [ethEoaAccount1.address, dataToSignWithoutDomainChainId],
             },
           },
         },
@@ -912,7 +947,7 @@ describe('SnapKeyring', () => {
       });
 
       const baseUserOp = await keyring.prepareUserOperation(
-        accounts[0].address,
+        ethErc4337Account.address,
         baseTxs,
         executionContext,
       );
@@ -931,7 +966,7 @@ describe('SnapKeyring', () => {
               KnownCaipNamespace.Eip155,
               executionContext.chainId,
             ),
-            account: accounts[0].id,
+            account: ethErc4337Account.id,
             request: {
               method: 'eth_prepareUserOperation',
               params: baseTxs,
@@ -945,7 +980,7 @@ describe('SnapKeyring', () => {
 
     it('calls eth_patchUserOperation', async () => {
       const userOp = {
-        sender: accounts[0].address,
+        sender: ethErc4337Account.address,
         nonce: '0x1',
         initCode: '0x',
         callData: '0x1234',
@@ -968,7 +1003,7 @@ describe('SnapKeyring', () => {
       });
 
       const patch = await keyring.patchUserOperation(
-        accounts[0].address,
+        ethErc4337Account.address,
         userOp,
         executionContext,
       );
@@ -987,7 +1022,7 @@ describe('SnapKeyring', () => {
               KnownCaipNamespace.Eip155,
               executionContext.chainId,
             ),
-            account: accounts[0].id,
+            account: ethErc4337Account.id,
             request: {
               method: 'eth_patchUserOperation',
               params: [userOp],
@@ -1001,7 +1036,7 @@ describe('SnapKeyring', () => {
 
     it('calls eth_signUserOperation', async () => {
       const userOp = {
-        sender: accounts[0].address,
+        sender: ethErc4337Account.address,
         nonce: '0x1',
         initCode: '0x',
         callData: '0x1234',
@@ -1020,7 +1055,7 @@ describe('SnapKeyring', () => {
       });
 
       const signature = await keyring.signUserOperation(
-        accounts[0].address,
+        ethErc4337Account.address,
         userOp,
         executionContext,
       );
@@ -1039,7 +1074,7 @@ describe('SnapKeyring', () => {
               KnownCaipNamespace.Eip155,
               executionContext.chainId,
             ),
-            account: accounts[0].id,
+            account: ethErc4337Account.id,
             request: {
               method: 'eth_signUserOperation',
               params: [userOp],
@@ -1061,7 +1096,7 @@ describe('SnapKeyring', () => {
         result: expectedSignature,
       });
       const signature = await keyring.signPersonalMessage(
-        accounts[0].address,
+        ethEoaAccount1.address,
         mockMessage,
       );
       expect(signature).toStrictEqual(expectedSignature);
@@ -1085,7 +1120,7 @@ describe('SnapKeyring', () => {
         result: expectedSignature,
       });
       const signature = await keyring.signMessage(
-        accounts[0].address,
+        ethEoaAccount1.address,
         mockMessage,
       );
       expect(signature).toStrictEqual(expectedSignature);
@@ -1099,10 +1134,10 @@ describe('SnapKeyring', () => {
           params: {
             id: expect.any(String),
             scope: expect.any(String),
-            account: accounts[0].id,
+            account: ethEoaAccount1.id,
             request: {
               method: 'eth_sign',
-              params: [accounts[0].address, mockMessage],
+              params: [ethEoaAccount1.address, mockMessage],
             },
           },
         },
@@ -1113,7 +1148,7 @@ describe('SnapKeyring', () => {
 
   describe('exportAccount', () => {
     it('fails to export an account', async () => {
-      expect(() => keyring.exportAccount(accounts[0].address)).toThrow(
+      expect(() => keyring.exportAccount(ethEoaAccount1.address)).toThrow(
         'Exporting accounts from snaps is not supported',
       );
     });
@@ -1128,18 +1163,22 @@ describe('SnapKeyring', () => {
 
     it('removes an account', async () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
-      await keyring.removeAccount(accounts[0].address);
+      await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        accounts[1].address.toLowerCase(),
+        ethEoaAccount2.address.toLowerCase(),
+        accounts[2].address.toLowerCase(),
+        accounts[3].address.toLowerCase(),
       ]);
     });
 
     it('removes the account and warn if snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('some error');
-      await keyring.removeAccount(accounts[0].address);
+      await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        accounts[1].address.toLowerCase(),
+        ethEoaAccount2.address.toLowerCase(),
+        accounts[2].address.toLowerCase(),
+        accounts[3].address.toLowerCase(),
       ]);
       expect(console.error).toHaveBeenCalledWith(
         "Account '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3' may not have been removed from snap 'local:snap.mock':",
@@ -1199,15 +1238,17 @@ describe('SnapKeyring', () => {
         enabled: true,
       };
       mockSnapController.get.mockReturnValue(snapMetadata);
-      expect(keyring.getAccountByAddress(accounts[0].address)).toStrictEqual({
-        ...accounts[0],
-        metadata: {
-          name: '',
-          importTime: 0,
-          snap: { id: snapId, name: 'snap-name', enabled: true },
-          keyring: { type: 'Snap Keyring' },
+      expect(keyring.getAccountByAddress(ethEoaAccount1.address)).toStrictEqual(
+        {
+          ...ethEoaAccount1,
+          metadata: {
+            name: '',
+            importTime: 0,
+            snap: { id: snapId, name: 'snap-name', enabled: true },
+            keyring: { type: 'Snap Keyring' },
+          },
         },
-      });
+      );
     });
   });
 
@@ -1241,7 +1282,7 @@ describe('SnapKeyring', () => {
       });
 
       await keyring.prepareUserOperation(
-        accounts[0].address,
+        ethErc4337Account.address,
         mockIntents,
         executionContext,
       );
@@ -1259,7 +1300,7 @@ describe('SnapKeyring', () => {
               KnownCaipNamespace.Eip155,
               executionContext.chainId,
             ),
-            account: accounts[0].id,
+            account: ethErc4337Account.id,
             request: {
               method: 'eth_prepareUserOperation',
               params: mockIntents,
@@ -1277,7 +1318,7 @@ describe('SnapKeyring', () => {
 
       await expect(
         keyring.prepareUserOperation(
-          accounts[0].address,
+          ethErc4337Account.address,
           mockIntents,
           executionContext,
         ),
@@ -1287,7 +1328,7 @@ describe('SnapKeyring', () => {
 
   describe('patchUserOperation', () => {
     const mockUserOp: EthUserOperation = {
-      sender: accounts[0].address,
+      sender: ethErc4337Account.address,
       callData: '0x70641a22000000000000000000000000f3de3c0d654fda23da',
       initCode: '0x',
       nonce: '0x1',
@@ -1311,7 +1352,7 @@ describe('SnapKeyring', () => {
       });
 
       await keyring.patchUserOperation(
-        accounts[0].address,
+        ethErc4337Account.address,
         mockUserOp,
         executionContext,
       );
@@ -1329,7 +1370,7 @@ describe('SnapKeyring', () => {
               KnownCaipNamespace.Eip155,
               executionContext.chainId,
             ),
-            account: accounts[0].id,
+            account: ethErc4337Account.id,
             request: {
               method: 'eth_patchUserOperation',
               params: [mockUserOp],
@@ -1347,7 +1388,7 @@ describe('SnapKeyring', () => {
 
       await expect(
         keyring.patchUserOperation(
-          accounts[0].address,
+          ethErc4337Account.address,
           mockUserOp,
           executionContext,
         ),
