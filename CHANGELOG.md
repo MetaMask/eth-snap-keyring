@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.1]
+
+### Changed
+
+- Bump @metamask/snaps-\* and @metamask/keyring-api ([#294](https://github.com/MetaMask/eth-snap-keyring/pull/294))
+- Bump @metamask/key-tree from 9.0.0 to 9.1.0 ([#293](https://github.com/MetaMask/eth-snap-keyring/pull/293))
+
 ## [4.1.0]
 
 ### Changed
@@ -239,7 +246,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.1...HEAD
+[4.1.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v2.2.2...v3.0.0
