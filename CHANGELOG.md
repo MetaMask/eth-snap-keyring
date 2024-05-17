@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bump snaps dependencies and @metamask/keyring-api ([#294](https://github.com/MetaMask/eth-snap-keyring/pull/294))
+- Bump @metamask/snaps-\* and @metamask/keyring-api ([#294](https://github.com/MetaMask/eth-snap-keyring/pull/294))
 - Bump @metamask/key-tree from 9.0.0 to 9.1.0 ([#293](https://github.com/MetaMask/eth-snap-keyring/pull/293))
 
 ## [4.1.0]
