@@ -202,11 +202,12 @@ describe('SnapKeyring', () => {
               mockCallbacks,
             );
 
-            // TODO: Fix this test typing
             const params = {
               account: account as unknown as KeyringAccount,
-              displayConfirmation: displayConfirmation as unknown as boolean,
-              accountNameSuggestion: accountNameSuggestion as unknown as string,
+              ...(displayConfirmation !== undefined && { displayConfirmation }),
+              ...(accountNameSuggestion !== undefined && {
+                accountNameSuggestion,
+              }),
             };
 
             await keyring.handleKeyringSnapMessage(snapId, {
