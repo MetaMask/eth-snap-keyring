@@ -36,10 +36,18 @@ describe('SnapKeyring', () => {
   const mockCallbacks = {
     saveState: jest.fn(),
     addressExists: jest.fn(),
-    addAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
-      await handleUserInput(true);
-      return Promise.resolve();
-    }),
+    addAccount: jest.fn(
+      async (
+        _address,
+        _snapId,
+        handleUserInput,
+        _accountNameSuggestion,
+        _displayConfirmation,
+      ) => {
+        await handleUserInput(true);
+        return Promise.resolve();
+      },
+    ),
     removeAccount: jest.fn(async (address, _snapId, handleUserInput) => {
       await keyring.removeAccount(address);
       await handleUserInput(true);
@@ -97,7 +105,13 @@ describe('SnapKeyring', () => {
       mockCallbacks,
     );
     mockCallbacks.addAccount.mockImplementation(
-      async (_address, _snapId, handleUserInput) => {
+      async (
+        _address,
+        _snapId,
+        handleUserInput,
+        _accountNameSuggestion,
+        _displayConfirmation,
+      ) => {
         await handleUserInput(true);
       },
     );
@@ -111,6 +125,52 @@ describe('SnapKeyring', () => {
   });
 
   describe('handleKeyringSnapMessage', () => {
+    it.each([
+      [
+        'handles account creation with accountNameSuggestion',
+        { ...ethEoaAccount1, accountNameSuggestion: 'New Account' },
+        'New Account',
+        undefined,
+      ],
+      [
+        'handles account creation with displayConfirmation',
+        { ...ethEoaAccount1, displayConfirmation: false },
+        undefined,
+        false,
+      ],
+      [
+        'handles account creation with both accountNameSuggestion and displayConfirmation',
+        {
+          ...ethEoaAccount1,
+          accountNameSuggestion: 'New Account',
+          displayConfirmation: false,
+        },
+        'New Account',
+        false,
+      ],
+    ])(
+      '%s',
+      async (
+        _description,
+        account,
+        accountNameSuggestion,
+        displayConfirmation,
+      ) => {
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountCreated,
+          params: { account },
+        });
+
+        expect(mockCallbacks.addAccount).toHaveBeenCalledWith(
+          account.address.toLowerCase(),
+          snapId,
+          expect.any(Function),
+          accountNameSuggestion,
+          displayConfirmation,
+        );
+      },
+    );
+
     it('cannot add an account that already exists (address)', async () => {
       mockCallbacks.addressExists.mockResolvedValue(true);
       await expect(

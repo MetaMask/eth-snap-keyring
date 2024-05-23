@@ -25,6 +25,7 @@ import type {
   KeyringResponse,
   KeyringExecutionContext,
   BtcMethod,
+  ExactOptionalTag,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
@@ -83,6 +84,8 @@ export type SnapKeyringCallbacks = {
     address: string,
     snapId: SnapId,
     handleUserInput: (accepted: boolean) => Promise<void>,
+    accountNameSuggestion?: string | ExactOptionalTag,
+    displayConfirmation?: boolean | ExactOptionalTag,
   ): Promise<void>;
 
   removeAccount(
@@ -157,7 +160,8 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountCreatedEventStruct);
-    const { account } = message.params;
+    const { account, accountNameSuggestion, displayConfirmation } =
+      message.params;
 
     // The UI still uses the account address to identify accounts, so we need
     // to block the creation of duplicate accounts for now to prevent accounts
@@ -181,6 +185,8 @@ export class SnapKeyring extends EventEmitter {
           await this.#callbacks.saveState();
         }
       },
+      accountNameSuggestion,
+      displayConfirmation,
     );
     return null;
   }
