@@ -553,6 +553,39 @@ describe('SnapKeyring', () => {
     });
   });
   describe('async request redirect', () => {
+    const isNotAllowedOrigin = async (
+      allowedOrigins: string[],
+      redirectUrl: string,
+    ) => {
+      const { origin } = new URL(redirectUrl);
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          initialPermissions:
+            allowedOrigins.length > 0
+              ? { 'endowment:keyring': { allowedOrigins } }
+              : {},
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect: {
+          message: 'Go to dapp to continue.',
+          url: redirectUrl,
+        },
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        ethEoaAccount1.address,
+        'hello',
+      );
+
+      await expect(requestPromise).rejects.toThrow(
+        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+      );
+    };
+
     it.each([
       [{ message: 'Go to dapp to continue.' }],
       [{ url: 'https://example.com/sign?tx=1234' }],
@@ -609,38 +642,6 @@ describe('SnapKeyring', () => {
       );
       spy.mockRestore();
     });
-    const isNotAllowedOrigin = async (
-      allowedOrigins: string[],
-      redirectUrl: string,
-    ) => {
-      const { origin } = new URL(redirectUrl);
-      const snapObject = {
-        id: snapId,
-        manifest: {
-          initialPermissions:
-            allowedOrigins.length > 0
-              ? { 'endowment:keyring': { allowedOrigins } }
-              : {},
-        },
-        enabled: true,
-      };
-      mockSnapController.get.mockReturnValue(snapObject);
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-        redirect: {
-          message: 'Go to dapp to continue.',
-          url: redirectUrl,
-        },
-      });
-      const requestPromise = keyring.signPersonalMessage(
-        ethEoaAccount1.address,
-        'hello',
-      );
-
-      await expect(requestPromise).rejects.toThrow(
-        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
-      );
-    };
 
     it('throws an error if async request redirect url is not an allowed origin', async () => {
       expect.hasAssertions();
