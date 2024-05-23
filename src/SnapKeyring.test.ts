@@ -552,6 +552,7 @@ describe('SnapKeyring', () => {
       expect(await keyring.getAccounts()).toStrictEqual([]);
     });
   });
+  
   describe('async request redirect', () => {
     const isNotAllowedOrigin = async (
       allowedOrigins: string[],
