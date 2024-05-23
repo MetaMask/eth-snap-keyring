@@ -552,6 +552,7 @@ describe('SnapKeyring', () => {
       expect(await keyring.getAccounts()).toStrictEqual([]);
     });
   });
+  
   describe('async request redirect', () => {
     it.each([
       [{ message: 'Go to dapp to continue.' }],
