@@ -2,30 +2,29 @@ import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import {
-  EthErc4337Method,
-  AccountCreatedEventStruct,
-  AccountDeletedEventStruct,
-  AccountUpdatedEventStruct,
-  EthBaseUserOperationStruct,
-  EthBytesStruct,
-  EthMethod,
-  EthUserOperationPatchStruct,
-  KeyringEvent,
-  RequestApprovedEventStruct,
-  RequestRejectedEventStruct,
-} from '@metamask/keyring-api';
 import type {
+  BtcMethod,
   EthBaseTransaction,
   EthBaseUserOperation,
   EthUserOperation,
   EthUserOperationPatch,
   InternalAccount,
   KeyringAccount,
-  KeyringResponse,
   KeyringExecutionContext,
-  BtcMethod,
-  ExactOptionalTag,
+  KeyringResponse,
+} from '@metamask/keyring-api';
+import {
+  AccountCreatedEventStruct,
+  AccountDeletedEventStruct,
+  AccountUpdatedEventStruct,
+  EthBaseUserOperationStruct,
+  EthBytesStruct,
+  EthErc4337Method,
+  EthMethod,
+  EthUserOperationPatchStruct,
+  KeyringEvent,
+  RequestApprovedEventStruct,
+  RequestRejectedEventStruct,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
@@ -33,8 +32,8 @@ import type { Snap } from '@metamask/snaps-utils';
 import type { Json } from '@metamask/utils';
 import {
   bigIntToHex,
-  toCaipChainId,
   KnownCaipNamespace,
+  toCaipChainId,
 } from '@metamask/utils';
 import { EventEmitter } from 'events';
 import { assert, mask, object, string } from 'superstruct';
@@ -84,8 +83,8 @@ export type SnapKeyringCallbacks = {
     address: string,
     snapId: SnapId,
     handleUserInput: (accepted: boolean) => Promise<void>,
-    accountNameSuggestion?: string | ExactOptionalTag,
-    displayConfirmation?: boolean | ExactOptionalTag,
+    accountNameSuggestion?: string,
+    displayConfirmation?: boolean,
   ): Promise<void>;
 
   removeAccount(
