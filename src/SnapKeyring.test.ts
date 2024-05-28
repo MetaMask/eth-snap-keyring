@@ -301,7 +301,7 @@ describe('SnapKeyring', () => {
         );
       });
 
-      it('cannot update an account owned by another snap', async () => {
+      it('cannot update an account owned by another Snap', async () => {
         await expect(
           keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
             method: KeyringEvent.AccountUpdated,
@@ -399,7 +399,7 @@ describe('SnapKeyring', () => {
         ]);
       });
 
-      it('cannot delete an account owned by another snap', async () => {
+      it('cannot delete an account owned by another Snap', async () => {
         await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
           method: KeyringEvent.AccountDeleted,
           params: { id: ethEoaAccount1.id },
@@ -477,7 +477,7 @@ describe('SnapKeyring', () => {
         );
       });
 
-      it("cannot approve another snap's request", async () => {
+      it("cannot approve another Snap's request", async () => {
         mockSnapController.handleRequest.mockResolvedValue({
           pending: true,
         });
@@ -549,7 +549,7 @@ describe('SnapKeyring', () => {
         );
       });
 
-      it("cannot reject another snap's request", async () => {
+      it("cannot reject another Snap's request", async () => {
         mockSnapController.handleRequest.mockResolvedValue({
           pending: true,
         });
@@ -638,6 +638,39 @@ describe('SnapKeyring', () => {
     });
   });
   describe('async request redirect', () => {
+    const isNotAllowedOrigin = async (
+      allowedOrigins: string[],
+      redirectUrl: string,
+    ) => {
+      const { origin } = new URL(redirectUrl);
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          initialPermissions:
+            allowedOrigins.length > 0
+              ? { 'endowment:keyring': { allowedOrigins } }
+              : {},
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect: {
+          message: 'Go to dapp to continue.',
+          url: redirectUrl,
+        },
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        ethEoaAccount1.address,
+        'hello',
+      );
+
+      await expect(requestPromise).rejects.toThrow(
+        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+      );
+    };
+
     it.each([
       [{ message: 'Go to dapp to continue.' }],
       [{ url: 'https://example.com/sign?tx=1234' }],
@@ -694,38 +727,6 @@ describe('SnapKeyring', () => {
       );
       spy.mockRestore();
     });
-    const isNotAllowedOrigin = async (
-      allowedOrigins: string[],
-      redirectUrl: string,
-    ) => {
-      const { origin } = new URL(redirectUrl);
-      const snapObject = {
-        id: snapId,
-        manifest: {
-          initialPermissions:
-            allowedOrigins.length > 0
-              ? { 'endowment:keyring': { allowedOrigins } }
-              : {},
-        },
-        enabled: true,
-      };
-      mockSnapController.get.mockReturnValue(snapObject);
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-        redirect: {
-          message: 'Go to dapp to continue.',
-          url: redirectUrl,
-        },
-      });
-      const requestPromise = keyring.signPersonalMessage(
-        ethEoaAccount1.address,
-        'hello',
-      );
-
-      await expect(requestPromise).rejects.toThrow(
-        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
-      );
-    };
 
     it('throws an error if async request redirect url is not an allowed origin', async () => {
       expect.hasAssertions();
@@ -740,7 +741,7 @@ describe('SnapKeyring', () => {
       await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
     });
 
-    it('throws an error if the snap is undefined', async () => {
+    it('throws an error if the Snap is undefined', async () => {
       const redirect = {
         message: 'Go to dapp to continue.',
         url: 'https://example.com/sign?tx=1234',
@@ -1269,7 +1270,7 @@ describe('SnapKeyring', () => {
       ]);
     });
 
-    it('removes the account and warn if snap fails', async () => {
+    it('removes the account and warn if Snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('some error');
       await keyring.removeAccount(ethEoaAccount1.address);
@@ -1319,7 +1320,7 @@ describe('SnapKeyring', () => {
   });
 
   describe('getAccountsBySnapId', () => {
-    it('returns the list of addresses of a snap', async () => {
+    it('returns the list of addresses of a Snap', async () => {
       const addresses = await keyring.getAccountsBySnapId(snapId);
       expect(addresses).toStrictEqual(
         accounts.map((a) => a.address.toLowerCase()),
@@ -1410,7 +1411,7 @@ describe('SnapKeyring', () => {
       });
     });
 
-    it('throws error if an pending response is returned from the snap', async () => {
+    it('throws error if an pending response is returned from the Snap', async () => {
       mockSnapController.handleRequest.mockReturnValueOnce({
         pending: true,
       });
@@ -1480,7 +1481,7 @@ describe('SnapKeyring', () => {
       });
     });
 
-    it('throws error if an pending response is returned from the snap', async () => {
+    it('throws error if an pending response is returned from the Snap', async () => {
       mockSnapController.handleRequest.mockReturnValueOnce({
         pending: true,
       });
