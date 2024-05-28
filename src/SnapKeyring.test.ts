@@ -219,7 +219,7 @@ describe('SnapKeyring', () => {
         );
       });
 
-      it('cannot update an account owned by another snap', async () => {
+      it('cannot update an account owned by another Snap', async () => {
         await expect(
           keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
             method: KeyringEvent.AccountUpdated,
