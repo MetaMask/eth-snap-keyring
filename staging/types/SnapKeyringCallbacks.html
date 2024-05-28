@@ -31,7 +31,7 @@
 <li class="tsd-parameter">
 <h5>add<wbr/>Account<span class="tsd-signature-symbol">:</span>function</h5>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
-<li class="tsd-signature tsd-anchor-link" id="__type.addAccount.addAccount-1">add<wbr/>Account<span class="tsd-signature-symbol">(</span>address<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, snapId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SnapId</span>, handleUserInput<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>accepted<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><a href="#__type.addAccount.addAccount-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="__type.addAccount.addAccount-1">add<wbr/>Account<span class="tsd-signature-symbol">(</span>address<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, snapId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SnapId</span>, handleUserInput<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>accepted<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span>, accountNameSuggestion<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span>, displayConfirmation<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><a href="#__type.addAccount.addAccount-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -52,10 +52,14 @@
 <ul class="tsd-parameter-list">
 <li>
 <h5>accepted: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></li>
+<li>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> accountNameSuggestion: <span class="tsd-signature-type">string</span></h5></li>
+<li>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> displayConfirmation: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/dfdc7fc/src/SnapKeyring.ts#L82">src/SnapKeyring.ts:82</a></li></ul></aside></li></ul></li>
+<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/bc2af47/src/SnapKeyring.ts#L82">src/SnapKeyring.ts:82</a></li></ul></aside></li></ul></li>
 <li class="tsd-parameter">
 <h5>address<wbr/>Exists<span class="tsd-signature-symbol">:</span>function</h5>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
@@ -68,7 +72,7 @@
 <h5>address: <span class="tsd-signature-type">string</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/dfdc7fc/src/SnapKeyring.ts#L80">src/SnapKeyring.ts:80</a></li></ul></aside></li></ul></li>
+<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/bc2af47/src/SnapKeyring.ts#L80">src/SnapKeyring.ts:80</a></li></ul></aside></li></ul></li>
 <li class="tsd-parameter">
 <h5>redirect<wbr/>User<span class="tsd-signature-symbol">:</span>function</h5>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
@@ -85,7 +89,7 @@
 <h5>message: <span class="tsd-signature-type">string</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/dfdc7fc/src/SnapKeyring.ts#L94">src/SnapKeyring.ts:94</a></li></ul></aside></li></ul></li>
+<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/bc2af47/src/SnapKeyring.ts#L96">src/SnapKeyring.ts:96</a></li></ul></aside></li></ul></li>
 <li class="tsd-parameter">
 <h5>remove<wbr/>Account<span class="tsd-signature-symbol">:</span>function</h5>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
@@ -113,9 +117,9 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/dfdc7fc/src/SnapKeyring.ts#L88">src/SnapKeyring.ts:88</a></li></ul></aside></li></ul></li></ul></div><aside class="tsd-sources">
+<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/bc2af47/src/SnapKeyring.ts#L90">src/SnapKeyring.ts:90</a></li></ul></aside></li></ul></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/dfdc7fc/src/SnapKeyring.ts#L77">src/SnapKeyring.ts:77</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/MetaMask/eth-snap-keyring/blob/bc2af47/src/SnapKeyring.ts#L77">src/SnapKeyring.ts:77</a></li></ul></aside></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
