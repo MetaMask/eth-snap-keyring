@@ -316,7 +316,7 @@ describe('SnapKeyring', () => {
         ]);
       });
 
-      it('cannot delete an account owned by another snap', async () => {
+      it('cannot delete an account owned by another Snap', async () => {
         await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
           method: KeyringEvent.AccountDeleted,
           params: { id: ethEoaAccount1.id },
