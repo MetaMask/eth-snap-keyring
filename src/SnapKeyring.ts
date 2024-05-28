@@ -2,29 +2,29 @@ import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import { SignTypedDataVersion } from '@metamask/eth-sig-util';
-import {
-  EthErc4337Method,
-  AccountCreatedEventStruct,
-  AccountDeletedEventStruct,
-  AccountUpdatedEventStruct,
-  EthBaseUserOperationStruct,
-  EthBytesStruct,
-  EthMethod,
-  EthUserOperationPatchStruct,
-  KeyringEvent,
-  RequestApprovedEventStruct,
-  RequestRejectedEventStruct,
-} from '@metamask/keyring-api';
 import type {
+  BtcMethod,
   EthBaseTransaction,
   EthBaseUserOperation,
   EthUserOperation,
   EthUserOperationPatch,
   InternalAccount,
   KeyringAccount,
-  KeyringResponse,
   KeyringExecutionContext,
-  BtcMethod,
+  KeyringResponse,
+} from '@metamask/keyring-api';
+import {
+  AccountCreatedEventStruct,
+  AccountDeletedEventStruct,
+  AccountUpdatedEventStruct,
+  EthBaseUserOperationStruct,
+  EthBytesStruct,
+  EthErc4337Method,
+  EthMethod,
+  EthUserOperationPatchStruct,
+  KeyringEvent,
+  RequestApprovedEventStruct,
+  RequestRejectedEventStruct,
 } from '@metamask/keyring-api';
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
@@ -32,8 +32,8 @@ import type { Snap } from '@metamask/snaps-utils';
 import type { Json } from '@metamask/utils';
 import {
   bigIntToHex,
-  toCaipChainId,
   KnownCaipNamespace,
+  toCaipChainId,
 } from '@metamask/utils';
 import { EventEmitter } from 'events';
 import { assert, mask, object, string } from 'superstruct';
@@ -83,6 +83,8 @@ export type SnapKeyringCallbacks = {
     address: string,
     snapId: SnapId,
     handleUserInput: (accepted: boolean) => Promise<void>,
+    accountNameSuggestion?: string,
+    displayConfirmation?: boolean,
   ): Promise<void>;
 
   removeAccount(
@@ -157,7 +159,8 @@ export class SnapKeyring extends EventEmitter {
     message: SnapMessage,
   ): Promise<null> {
     assert(message, AccountCreatedEventStruct);
-    const { account } = message.params;
+    const { account, accountNameSuggestion, displayConfirmation } =
+      message.params;
 
     // The UI still uses the account address to identify accounts, so we need
     // to block the creation of duplicate accounts for now to prevent accounts
@@ -181,6 +184,8 @@ export class SnapKeyring extends EventEmitter {
           await this.#callbacks.saveState();
         }
       },
+      accountNameSuggestion,
+      displayConfirmation,
     );
     return null;
   }

@@ -36,10 +36,18 @@ describe('SnapKeyring', () => {
   const mockCallbacks = {
     saveState: jest.fn(),
     addressExists: jest.fn(),
-    addAccount: jest.fn(async (_address, _snapId, handleUserInput) => {
-      await handleUserInput(true);
-      return Promise.resolve();
-    }),
+    addAccount: jest.fn(
+      async (
+        _address,
+        _snapId,
+        handleUserInput,
+        _accountNameSuggestion,
+        _displayConfirmation,
+      ) => {
+        await handleUserInput(true);
+        return Promise.resolve();
+      },
+    ),
     removeAccount: jest.fn(async (address, _snapId, handleUserInput) => {
       await keyring.removeAccount(address);
       await handleUserInput(true);
@@ -64,6 +72,13 @@ describe('SnapKeyring', () => {
     methods: [...Object.values(EthMethod)],
     type: EthAccountType.Eoa,
   };
+  const ethEoaAccount3 = {
+    id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
+    address: '0xab1G3q98V7C67T9103g30C0417610237A137d763'.toLowerCase(),
+    options: {},
+    methods: [...Object.values(EthMethod)],
+    type: EthAccountType.Eoa,
+  };
 
   const ethErc4337Account = {
     id: 'fc926fff-f515-4eb5-9952-720bbd9b9849',
@@ -83,6 +98,7 @@ describe('SnapKeyring', () => {
   const accounts = [
     ethEoaAccount1,
     ethEoaAccount2,
+    ethEoaAccount3,
     ethErc4337Account,
     btcP2wpkhAccount,
   ] as const;
@@ -97,7 +113,13 @@ describe('SnapKeyring', () => {
       mockCallbacks,
     );
     mockCallbacks.addAccount.mockImplementation(
-      async (_address, _snapId, handleUserInput) => {
+      async (
+        _address,
+        _snapId,
+        handleUserInput,
+        _accountNameSuggestion,
+        _displayConfirmation,
+      ) => {
         await handleUserInput(true);
       },
     );
@@ -144,7 +166,7 @@ describe('SnapKeyring', () => {
         ).rejects.toThrow(`Account '${ethEoaAccount1.id}' already exists`);
       });
 
-      it('cannot update an account owned by another Snap', async () => {
+      it('cannot add an account that already exists (ID owned by another Snap', async () => {
         await expect(
           keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
             method: KeyringEvent.AccountCreated,
@@ -154,6 +176,65 @@ describe('SnapKeyring', () => {
           }),
         ).rejects.toThrow(
           'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
+        );
+      });
+      describe('with options', () => {
+        it.each([
+          [
+            'handles account creation with accountNameSuggestion',
+            { ...ethEoaAccount1 },
+            'New Account',
+            undefined,
+          ],
+          [
+            'handles account creation with displayConfirmation',
+            { ...ethEoaAccount2 },
+            undefined,
+            false,
+          ],
+          [
+            'handles account creation with both accountNameSuggestion and displayConfirmation',
+            { ...ethEoaAccount3 },
+            'New Account',
+            false,
+          ],
+        ])(
+          '%s',
+          async (
+            _description,
+            account,
+            accountNameSuggestion,
+            displayConfirmation,
+          ) => {
+            // Reset mock
+            mockCallbacks.addAccount.mockClear();
+            // Reset the keyring so it's empty.
+            keyring = new SnapKeyring(
+              mockSnapController as unknown as SnapController,
+              mockCallbacks,
+            );
+
+            const params = {
+              account: account as unknown as KeyringAccount,
+              ...(displayConfirmation !== undefined && { displayConfirmation }),
+              ...(accountNameSuggestion !== undefined && {
+                accountNameSuggestion,
+              }),
+            };
+
+            await keyring.handleKeyringSnapMessage(snapId, {
+              method: KeyringEvent.AccountCreated,
+              params,
+            });
+
+            expect(mockCallbacks.addAccount).toHaveBeenCalledWith(
+              account.address.toLowerCase(),
+              snapId,
+              expect.any(Function),
+              accountNameSuggestion,
+              displayConfirmation,
+            );
+          },
         );
       });
     });
@@ -311,6 +392,7 @@ describe('SnapKeyring', () => {
         });
         expect(await keyring.getAccounts()).toStrictEqual([
           ethEoaAccount2.address.toLowerCase(),
+          ethEoaAccount3.address.toLowerCase(),
           ethErc4337Account.address.toLowerCase(),
           btcP2wpkhAccount.address.toLowerCase(),
         ]);
@@ -324,6 +406,7 @@ describe('SnapKeyring', () => {
         expect(await keyring.getAccounts()).toStrictEqual([
           ethEoaAccount1.address.toLowerCase(),
           ethEoaAccount2.address.toLowerCase(),
+          ethEoaAccount3.address.toLowerCase(),
           ethErc4337Account.address.toLowerCase(),
           btcP2wpkhAccount.address.toLowerCase(),
         ]);
@@ -507,6 +590,7 @@ describe('SnapKeyring', () => {
         accounts: {
           [ethEoaAccount1.id]: { account: ethEoaAccount1, snapId },
           [ethEoaAccount2.id]: { account: ethEoaAccount2, snapId },
+          [ethEoaAccount3.id]: { account: ethEoaAccount3, snapId },
           [ethErc4337Account.id]: { account: ethErc4337Account, snapId },
           [btcP2wpkhAccount.id]: { account: btcP2wpkhAccount, snapId },
         },
@@ -552,7 +636,6 @@ describe('SnapKeyring', () => {
       expect(await keyring.getAccounts()).toStrictEqual([]);
     });
   });
-
   describe('async request redirect', () => {
     const isNotAllowedOrigin = async (
       allowedOrigins: string[],
@@ -1179,20 +1262,22 @@ describe('SnapKeyring', () => {
       mockSnapController.handleRequest.mockResolvedValue(null);
       await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount2.address,
+        accounts[1].address,
         accounts[2].address,
         accounts[3].address,
+        accounts[4].address,
       ]);
     });
 
-    it('removes the account and warn if snap fails', async () => {
+    it('removes the account and warn if Snap fails', async () => {
       const spy = jest.spyOn(console, 'error').mockImplementation();
       mockSnapController.handleRequest.mockRejectedValue('some error');
       await keyring.removeAccount(ethEoaAccount1.address);
       expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount2.address,
+        accounts[1].address,
         accounts[2].address,
         accounts[3].address,
+        accounts[4].address,
       ]);
       expect(console.error).toHaveBeenCalledWith(
         "Account '0xc728514df8a7f9271f4b7a4dd2aa6d2d723d3ee3' may not have been removed from snap 'local:snap.mock':",
@@ -1234,7 +1319,7 @@ describe('SnapKeyring', () => {
   });
 
   describe('getAccountsBySnapId', () => {
-    it('returns the list of addresses of a snap', async () => {
+    it('returns the list of addresses of a Snap', async () => {
       const addresses = await keyring.getAccountsBySnapId(snapId);
       expect(addresses).toStrictEqual(
         accounts.map((a) => a.address.toLowerCase()),
@@ -1325,7 +1410,7 @@ describe('SnapKeyring', () => {
       });
     });
 
-    it('throws error if an pending response is returned from the snap', async () => {
+    it('throws error if an pending response is returned from the Snap', async () => {
       mockSnapController.handleRequest.mockReturnValueOnce({
         pending: true,
       });
@@ -1395,7 +1480,7 @@ describe('SnapKeyring', () => {
       });
     });
 
-    it('throws error if an pending response is returned from the snap', async () => {
+    it('throws error if an pending response is returned from the Snap', async () => {
       mockSnapController.handleRequest.mockReturnValueOnce({
         pending: true,
       });
