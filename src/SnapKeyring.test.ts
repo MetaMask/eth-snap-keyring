@@ -393,7 +393,7 @@ describe('SnapKeyring', () => {
         );
       });
 
-      it("cannot approve another snap's request", async () => {
+      it("cannot approve another Snap's request", async () => {
         mockSnapController.handleRequest.mockResolvedValue({
           pending: true,
         });
