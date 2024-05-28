@@ -657,7 +657,7 @@ describe('SnapKeyring', () => {
       await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
     });
 
-    it('throws an error if the snap is undefined', async () => {
+    it('throws an error if the Snap is undefined', async () => {
       const redirect = {
         message: 'Go to dapp to continue.',
         url: 'https://example.com/sign?tx=1234',
