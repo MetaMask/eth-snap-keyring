@@ -143,6 +143,19 @@ describe('SnapKeyring', () => {
           }),
         ).rejects.toThrow(`Account '${ethEoaAccount1.id}' already exists`);
       });
+
+      it('cannot update an account owned by another Snap', async () => {
+        await expect(
+          keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
+            method: KeyringEvent.AccountCreated,
+            params: {
+              account: { ...(ethEoaAccount1 as unknown as KeyringAccount) },
+            },
+          }),
+        ).rejects.toThrow(
+          'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
+        );
+      });
     });
 
     describe('#handleAccountUpdated', () => {
@@ -187,19 +200,6 @@ describe('SnapKeyring', () => {
           }),
         ).rejects.toThrow(
           "Account '0b3551da-1685-4750-ad4c-01fc3a9e90b1' not found",
-        );
-      });
-
-      it('cannot update an account owned by another Snap', async () => {
-        await expect(
-          keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
-            method: KeyringEvent.AccountCreated,
-            params: {
-              account: { ...(ethEoaAccount1 as unknown as KeyringAccount) },
-            },
-          }),
-        ).rejects.toThrow(
-          'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
         );
       });
 
