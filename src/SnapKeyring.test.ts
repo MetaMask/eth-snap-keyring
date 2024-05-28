@@ -111,161 +111,376 @@ describe('SnapKeyring', () => {
   });
 
   describe('handleKeyringSnapMessage', () => {
-    it('cannot add an account that already exists (address)', async () => {
-      mockCallbacks.addressExists.mockResolvedValue(true);
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountCreated,
-          params: {
-            account: {
-              ...(ethEoaAccount1 as unknown as KeyringAccount),
-              id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
+    describe('#handleAccountCreated', () => {
+      it('cannot add an account that already exists (address)', async () => {
+        mockCallbacks.addressExists.mockResolvedValue(true);
+        await expect(
+          keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountCreated,
+            params: {
+              account: {
+                ...(ethEoaAccount1 as unknown as KeyringAccount),
+                id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
+              },
             },
-          },
-        }),
-      ).rejects.toThrow(
-        `Account address '${ethEoaAccount1.address}' already exists`,
-      );
-    });
-
-    it('cannot add an account that already exists (ID)', async () => {
-      mockCallbacks.addressExists.mockResolvedValue(false);
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountCreated,
-          params: {
-            account: {
-              ...(ethEoaAccount1 as unknown as KeyringAccount),
-              address: '0x0',
-            },
-          },
-        }),
-      ).rejects.toThrow(`Account '${ethEoaAccount1.id}' already exists`);
-    });
-
-    it('updated the methods of an account', async () => {
-      // Return the updated list of accounts when the keyring requests it.
-      mockSnapController.handleRequest.mockResolvedValue([
-        { ...ethEoaAccount1, methods: [] },
-        { ...ethEoaAccount2 },
-      ]);
-
-      expect(
-        await keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: { account: { ...ethEoaAccount1, methods: [] } },
-        }),
-      ).toBeNull();
-
-      const keyringAccounts = keyring.listAccounts();
-      expect(keyringAccounts.length).toBeGreaterThan(0);
-      expect(keyringAccounts[0]?.methods).toStrictEqual([]);
-    });
-
-    it("cannot updated an account that doesn't exist", async () => {
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: {
-            account: {
-              ...(ethEoaAccount1 as unknown as KeyringAccount),
-              id: '0b3551da-1685-4750-ad4c-01fc3a9e90b1',
-            },
-          },
-        }),
-      ).rejects.toThrow(
-        "Account '0b3551da-1685-4750-ad4c-01fc3a9e90b1' not found",
-      );
-    });
-
-    it('cannot updated an account owned by another Snap', async () => {
-      await expect(
-        keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
-          method: KeyringEvent.AccountCreated,
-          params: {
-            account: { ...(ethEoaAccount1 as unknown as KeyringAccount) },
-          },
-        }),
-      ).rejects.toThrow(
-        'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
-      );
-    });
-
-    it('cannot change the address of an account', async () => {
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: {
-            account: {
-              ...(ethEoaAccount1 as unknown as KeyringAccount),
-              address: ethEoaAccount2.address,
-            },
-          },
-        }),
-      ).rejects.toThrow(
-        "Cannot change address of account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
-      );
-    });
-
-    it('cannot updated an account owned by another snap', async () => {
-      await expect(
-        keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: {
-            account: {
-              ...(ethEoaAccount1 as unknown as KeyringAccount),
-            },
-          },
-        }),
-      ).rejects.toThrow(
-        "Account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a' not found",
-      );
-    });
-
-    it('removes an account', async () => {
-      mockSnapController.handleRequest.mockResolvedValue(null);
-      mockCallbacks.removeAccount.mockImplementation(
-        async (address, _snapId, handleUserInput) => {
-          await keyring.removeAccount(address);
-          await handleUserInput(true);
-        },
-      );
-
-      await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.AccountDeleted,
-        params: { id: ethEoaAccount1.id },
-      });
-      expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount2.address.toLowerCase(),
-        ethErc4337Account.address.toLowerCase(),
-        btcP2wpkhAccount.address.toLowerCase(),
-      ]);
-    });
-
-    it('cannot delete an account owned by another snap', async () => {
-      await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
-        method: KeyringEvent.AccountDeleted,
-        params: { id: ethEoaAccount1.id },
-      });
-      expect(await keyring.getAccounts()).toStrictEqual([
-        ethEoaAccount1.address.toLowerCase(),
-        ethEoaAccount2.address.toLowerCase(),
-        ethErc4337Account.address.toLowerCase(),
-        btcP2wpkhAccount.address.toLowerCase(),
-      ]);
-    });
-
-    it('returns null when removing an account that does not exist', async () => {
-      mockCallbacks.removeAccount.mockImplementation(async (address) => {
-        await keyring.removeAccount(address);
+          }),
+        ).rejects.toThrow(
+          `Account address '${ethEoaAccount1.address}' already exists`,
+        );
       });
 
-      expect(
+      it('cannot add an account that already exists (ID)', async () => {
+        mockCallbacks.addressExists.mockResolvedValue(false);
+        await expect(
+          keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountCreated,
+            params: {
+              account: {
+                ...(ethEoaAccount1 as unknown as KeyringAccount),
+                address: '0x0',
+              },
+            },
+          }),
+        ).rejects.toThrow(`Account '${ethEoaAccount1.id}' already exists`);
+      });
+
+      it('cannot update an account owned by another Snap', async () => {
+        await expect(
+          keyring.handleKeyringSnapMessage('a-different-snap-id' as SnapId, {
+            method: KeyringEvent.AccountCreated,
+            params: {
+              account: { ...(ethEoaAccount1 as unknown as KeyringAccount) },
+            },
+          }),
+        ).rejects.toThrow(
+          'Snap "a-different-snap-id" is not allowed to set "b05d918a-b37c-497a-bb28-3d15c0d56b7a"',
+        );
+      });
+    });
+
+    describe('#handleAccountUpdated', () => {
+      it('updates the methods of an account', async () => {
+        // Return the updated list of accounts when the keyring requests it.
+        mockSnapController.handleRequest.mockResolvedValue([
+          { ...ethEoaAccount1, methods: [] },
+          { ...ethEoaAccount2 },
+        ]);
+
+        expect(
+          await keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: { account: { ...ethEoaAccount1, methods: [] } },
+          }),
+        ).toBeNull();
+
+        const keyringAccounts = keyring.listAccounts();
+        expect(keyringAccounts.length).toBeGreaterThan(0);
+        expect(keyringAccounts[0]?.methods).toStrictEqual([]);
+      });
+
+      it('returns null after successfully updating an account', async () => {
+        const result = await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.AccountUpdated,
+          params: { account: ethEoaAccount1 as unknown as KeyringAccount },
+        });
+        expect(mockCallbacks.saveState).toHaveBeenCalled();
+        expect(result).toBeNull();
+      });
+
+      it("cannot update an account that doesn't exist", async () => {
+        await expect(
+          keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: {
+              account: {
+                ...(ethEoaAccount1 as unknown as KeyringAccount),
+                id: '0b3551da-1685-4750-ad4c-01fc3a9e90b1',
+              },
+            },
+          }),
+        ).rejects.toThrow(
+          "Account '0b3551da-1685-4750-ad4c-01fc3a9e90b1' not found",
+        );
+      });
+
+      it('cannot change the address of an account', async () => {
+        await expect(
+          keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: {
+              account: {
+                ...(ethEoaAccount1 as unknown as KeyringAccount),
+                address: ethEoaAccount2.address,
+              },
+            },
+          }),
+        ).rejects.toThrow(
+          "Cannot change address of account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a'",
+        );
+      });
+
+      it('cannot update an account owned by another Snap', async () => {
+        await expect(
+          keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: {
+              account: {
+                ...(ethEoaAccount1 as unknown as KeyringAccount),
+              },
+            },
+          }),
+        ).rejects.toThrow(
+          "Account 'b05d918a-b37c-497a-bb28-3d15c0d56b7a' not found",
+        );
+      });
+
+      it('fails when the EthMethod is not supported after update', async () => {
+        // Update first account to remove `EthMethod.PersonalSign`
+        let updatedMethods = Object.values(EthMethod).filter(
+          (method) => method !== EthMethod.PersonalSign,
+        );
+        expect(
+          await keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: {
+              account: {
+                ...ethEoaAccount1,
+                methods: updatedMethods,
+              },
+            },
+          }),
+        ).toBeNull();
+        expect(keyring.listAccounts()[0]?.methods).toStrictEqual(
+          updatedMethods,
+        );
+        await expect(
+          keyring.signPersonalMessage(ethEoaAccount1.address, 'hello'),
+        ).rejects.toThrow(
+          `Method '${EthMethod.PersonalSign}' not supported for account ${ethEoaAccount1.address}`,
+        );
+        // Restore `EthMethod.PersonalSign` and remove `EthMethod.SignTransaction`
+        updatedMethods = Object.values(EthMethod).filter(
+          (method) => method !== EthMethod.SignTransaction,
+        );
+        expect(
+          await keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountUpdated,
+            params: {
+              account: {
+                ...ethEoaAccount1,
+                methods: updatedMethods,
+              },
+            },
+          }),
+        ).toBeNull();
+        expect(keyring.listAccounts()[0]?.methods).toStrictEqual(
+          updatedMethods,
+        );
+        const mockTx = {
+          data: '0x0',
+          gasLimit: '0x26259fe',
+          gasPrice: '0x1',
+          nonce: '0xfffffffe',
+          to: '0xccccccccccccd000000000000000000000000000',
+          value: '0x1869e',
+          chainId: '0x1',
+          type: '0x00',
+        };
+        const tx = TransactionFactory.fromTxData(mockTx);
+        await expect(
+          keyring.signTransaction(ethEoaAccount1.address, tx),
+        ).rejects.toThrow(
+          `Method '${EthMethod.SignTransaction}' not supported for account ${ethEoaAccount1.address}`,
+        );
+      });
+    });
+
+    describe('#handleAccountDeleted', () => {
+      it('removes an account', async () => {
+        mockSnapController.handleRequest.mockResolvedValue(null);
+        mockCallbacks.removeAccount.mockImplementation(
+          async (address, _snapId, handleUserInput) => {
+            await keyring.removeAccount(address);
+            await handleUserInput(true);
+          },
+        );
+
         await keyring.handleKeyringSnapMessage(snapId, {
           method: KeyringEvent.AccountDeleted,
-          params: { id: 'bcda5b5f-098f-4706-919b-ee919402f0dd' },
-        }),
-      ).toBeNull();
+          params: { id: ethEoaAccount1.id },
+        });
+        expect(await keyring.getAccounts()).toStrictEqual([
+          ethEoaAccount2.address.toLowerCase(),
+          ethErc4337Account.address.toLowerCase(),
+          btcP2wpkhAccount.address.toLowerCase(),
+        ]);
+      });
+
+      it('cannot delete an account owned by another Snap', async () => {
+        await keyring.handleKeyringSnapMessage('invalid-snap-id' as SnapId, {
+          method: KeyringEvent.AccountDeleted,
+          params: { id: ethEoaAccount1.id },
+        });
+        expect(await keyring.getAccounts()).toStrictEqual([
+          ethEoaAccount1.address.toLowerCase(),
+          ethEoaAccount2.address.toLowerCase(),
+          ethErc4337Account.address.toLowerCase(),
+          btcP2wpkhAccount.address.toLowerCase(),
+        ]);
+      });
+
+      it('returns null when removing an account that does not exist', async () => {
+        mockCallbacks.removeAccount.mockImplementation(async (address) => {
+          await keyring.removeAccount(address);
+        });
+
+        expect(
+          await keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountDeleted,
+            params: { id: 'bcda5b5f-098f-4706-919b-ee919402f0dd' },
+          }),
+        ).toBeNull();
+      });
+
+      it('throws an error if the removeAccount callback fails', async () => {
+        mockCallbacks.removeAccount.mockImplementation(
+          async (_address, _snapId, _handleUserInput) => {
+            throw new Error('Some error occurred while removing account');
+          },
+        );
+
+        await expect(
+          keyring.handleKeyringSnapMessage(snapId, {
+            method: KeyringEvent.AccountDeleted,
+            params: { id: ethEoaAccount1.id },
+          }),
+        ).rejects.toThrow('Some error occurred while removing account');
+      });
+    });
+
+    describe('#handleRequestApproved', () => {
+      it('approves an async request', async () => {
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+        });
+        const requestPromise = keyring.signPersonalMessage(
+          ethEoaAccount1.address,
+          'hello',
+        );
+
+        const { calls } = mockSnapController.handleRequest.mock;
+        const requestId = calls[calls.length - 1][0].request.params.id;
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.RequestApproved,
+          params: {
+            id: requestId,
+            result: '0x123',
+          },
+        });
+        expect(await requestPromise).toBe('0x123');
+      });
+
+      it("fails to approve a request that doesn't exist", async () => {
+        const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.RequestApproved,
+          params: {
+            id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+            result: '0x123',
+          },
+        });
+        await expect(responsePromise).rejects.toThrow(
+          "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+        );
+      });
+
+      it("cannot approve another Snap's request", async () => {
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+        });
+        // eslint-disable-next-line no-void
+        void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
+
+        const { calls } = mockSnapController.handleRequest.mock;
+        const requestId: string = calls[calls.length - 1][0].request.params.id;
+        await expect(
+          keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
+            method: KeyringEvent.RequestApproved,
+            params: { id: requestId, result: '0x1234' },
+          }),
+        ).rejects.toThrow(`Request '${requestId}' not found`);
+      });
+
+      it('fails to approve a request that failed when submitted', async () => {
+        mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
+        const mockMessage = 'Hello World!';
+        await expect(
+          keyring.signPersonalMessage(ethEoaAccount1.address, mockMessage),
+        ).rejects.toThrow('error');
+
+        const { calls } = mockSnapController.handleRequest.mock;
+        const requestId = calls[calls.length - 1][0].request.params.id;
+        const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.RequestApproved,
+          params: {
+            id: requestId,
+            result: '0x123',
+          },
+        });
+        await expect(responsePromise).rejects.toThrow(
+          `Request '${requestId as string}' not found`,
+        );
+      });
+    });
+
+    describe('#handleRequestRejected', () => {
+      it('rejects an async request', async () => {
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+        });
+        const requestPromise = keyring.signPersonalMessage(
+          ethEoaAccount1.address,
+          'hello',
+        );
+
+        const { calls } = mockSnapController.handleRequest.mock;
+        const requestId = calls[calls.length - 1][0].request.params.id;
+        await keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.RequestRejected,
+          params: { id: requestId },
+        });
+        await expect(requestPromise).rejects.toThrow(
+          'Request rejected by user or snap.',
+        );
+      });
+
+      it("fails to reject a request that doesn't exist", async () => {
+        const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
+          method: KeyringEvent.RequestRejected,
+          params: {
+            id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
+          },
+        });
+        await expect(responsePromise).rejects.toThrow(
+          "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
+        );
+      });
+
+      it("cannot reject another Snap's request", async () => {
+        mockSnapController.handleRequest.mockResolvedValue({
+          pending: true,
+        });
+        // eslint-disable-next-line no-void
+        void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
+
+        const { calls } = mockSnapController.handleRequest.mock;
+        const requestId: string = calls[calls.length - 1][0].request.params.id;
+        await expect(
+          keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
+            method: KeyringEvent.RequestRejected,
+            params: { id: requestId },
+          }),
+        ).rejects.toThrow(`Request '${requestId}' not found`);
+      });
     });
 
     it('fails when the method is invalid', async () => {
@@ -274,334 +489,6 @@ describe('SnapKeyring', () => {
           method: 'invalid',
         }),
       ).rejects.toThrow('Method not supported: invalid');
-    });
-
-    it('fails when the EthMethod is not supported', async () => {
-      // Update first account to remove `EthMethod.PersonalSign`
-      let updatedMethods = Object.values(EthMethod).filter(
-        (method) => method !== EthMethod.PersonalSign,
-      );
-      expect(
-        await keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: {
-            account: {
-              ...ethEoaAccount1,
-              methods: updatedMethods,
-            },
-          },
-        }),
-      ).toBeNull();
-      expect(keyring.listAccounts()[0]?.methods).toStrictEqual(updatedMethods);
-      await expect(
-        keyring.signPersonalMessage(ethEoaAccount1.address, 'hello'),
-      ).rejects.toThrow(
-        `Method '${EthMethod.PersonalSign}' not supported for account ${ethEoaAccount1.address}`,
-      );
-      // Restore `EthMethod.PersonalSign` and remove `EthMethod.SignTransaction`
-      updatedMethods = Object.values(EthMethod).filter(
-        (method) => method !== EthMethod.SignTransaction,
-      );
-      expect(
-        await keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountUpdated,
-          params: {
-            account: {
-              ...ethEoaAccount1,
-              methods: updatedMethods,
-            },
-          },
-        }),
-      ).toBeNull();
-      expect(keyring.listAccounts()[0]?.methods).toStrictEqual(updatedMethods);
-      const mockTx = {
-        data: '0x0',
-        gasLimit: '0x26259fe',
-        gasPrice: '0x1',
-        nonce: '0xfffffffe',
-        to: '0xccccccccccccd000000000000000000000000000',
-        value: '0x1869e',
-        chainId: '0x1',
-        type: '0x00',
-      };
-      const tx = TransactionFactory.fromTxData(mockTx);
-      await expect(
-        keyring.signTransaction(ethEoaAccount1.address, tx),
-      ).rejects.toThrow(
-        `Method '${EthMethod.SignTransaction}' not supported for account ${ethEoaAccount1.address}`,
-      );
-    });
-
-    it('approves an async request', async () => {
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-      });
-      const requestPromise = keyring.signPersonalMessage(
-        ethEoaAccount1.address,
-        'hello',
-      );
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestApproved,
-        params: {
-          id: requestId,
-          result: '0x123',
-        },
-      });
-      expect(await requestPromise).toBe('0x123');
-    });
-
-    it.each([
-      [{ message: 'Go to dapp to continue.' }],
-      [{ url: 'https://example.com/sign?tx=1234' }],
-      [{ url: 'https://example.com/sign?tx=12345', message: 'Go to dapp.' }],
-    ])('returns a redirect %s', async (redirect) => {
-      const spy = jest.spyOn(console, 'log').mockImplementation();
-
-      const snapObject = {
-        id: snapId,
-        manifest: {
-          initialPermissions: {
-            'endowment:keyring': {
-              allowedOrigins: ['https://example.com'],
-            },
-          },
-        },
-        enabled: true,
-      };
-      mockSnapController.get.mockReturnValue(snapObject);
-
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-        redirect,
-      });
-      const requestPromise = keyring.signPersonalMessage(
-        ethEoaAccount1.address,
-        'hello',
-      );
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestRejected,
-        params: { id: requestId },
-      });
-
-      const { url = '', message = '' } = redirect as {
-        url?: string;
-        message?: string;
-      };
-
-      // We need to await on the request promise because the request submission
-      // is async, so if we don't await, the test will exit before the promise
-      // gets resolved.
-      await expect(requestPromise).rejects.toThrow(
-        'Request rejected by user or snap.',
-      );
-
-      // Check that `redirectUser` was called with the correct parameters
-      expect(mockCallbacks.redirectUser).toHaveBeenCalledWith(
-        snapId,
-        url,
-        message,
-      );
-      spy.mockRestore();
-    });
-
-    describe('async request redirect url', () => {
-      const isNotAllowedOrigin = async (
-        allowedOrigins: string[],
-        redirectUrl: string,
-      ) => {
-        const { origin } = new URL(redirectUrl);
-        const snapObject = {
-          id: snapId,
-          manifest: {
-            initialPermissions:
-              allowedOrigins.length > 0
-                ? { 'endowment:keyring': { allowedOrigins } }
-                : {},
-          },
-          enabled: true,
-        };
-        mockSnapController.get.mockReturnValue(snapObject);
-        mockSnapController.handleRequest.mockResolvedValue({
-          pending: true,
-          redirect: {
-            message: 'Go to dapp to continue.',
-            url: redirectUrl,
-          },
-        });
-        const requestPromise = keyring.signPersonalMessage(
-          ethEoaAccount1.address,
-          'hello',
-        );
-
-        await expect(requestPromise).rejects.toThrow(
-          `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
-        );
-      };
-
-      it('throws an error if async request redirect url is not an allowed origin', async () => {
-        expect.hasAssertions();
-        await isNotAllowedOrigin(
-          ['https://allowed.com'],
-          'https://notallowed.com/sign?tx=1234',
-        );
-      });
-
-      it('throws an error if no allowed origins', async () => {
-        expect.hasAssertions();
-        await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
-      });
-
-      it('throws an error if the snap is undefined', async () => {
-        const redirect = {
-          message: 'Go to dapp to continue.',
-          url: 'https://example.com/sign?tx=1234',
-        };
-
-        mockSnapController.get.mockReturnValue(undefined);
-
-        mockSnapController.handleRequest.mockResolvedValue({
-          pending: true,
-          redirect,
-        });
-        const requestPromise = keyring.signPersonalMessage(
-          ethEoaAccount1.address,
-          'hello',
-        );
-
-        await expect(requestPromise).rejects.toThrow(
-          `Snap '${snapId}' not found.`,
-        );
-      });
-    });
-
-    it('rejects an async request', async () => {
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-      });
-      const requestPromise = keyring.signPersonalMessage(
-        ethEoaAccount1.address,
-        'hello',
-      );
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestRejected,
-        params: { id: requestId },
-      });
-      await expect(requestPromise).rejects.toThrow(
-        'Request rejected by user or snap.',
-      );
-    });
-
-    it("cannot approve another snap's request", async () => {
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-      });
-      // eslint-disable-next-line no-void
-      void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId: string = calls[calls.length - 1][0].request.params.id;
-      await expect(
-        keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
-          method: KeyringEvent.RequestApproved,
-          params: { id: requestId, result: '0x1234' },
-        }),
-      ).rejects.toThrow(`Request '${requestId}' not found`);
-    });
-
-    it("cannot reject another snap's request", async () => {
-      mockSnapController.handleRequest.mockResolvedValue({
-        pending: true,
-      });
-      // eslint-disable-next-line no-void
-      void keyring.signPersonalMessage(ethEoaAccount1.address, 'hello');
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId: string = calls[calls.length - 1][0].request.params.id;
-      await expect(
-        keyring.handleKeyringSnapMessage('another-snap-id' as SnapId, {
-          method: KeyringEvent.RequestRejected,
-          params: { id: requestId },
-        }),
-      ).rejects.toThrow(`Request '${requestId}' not found`);
-    });
-
-    it('fails to approve a request that failed when submitted', async () => {
-      mockSnapController.handleRequest.mockRejectedValue(new Error('error'));
-      const mockMessage = 'Hello World!';
-      await expect(
-        keyring.signPersonalMessage(ethEoaAccount1.address, mockMessage),
-      ).rejects.toThrow('error');
-
-      const { calls } = mockSnapController.handleRequest.mock;
-      const requestId = calls[calls.length - 1][0].request.params.id;
-      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestApproved,
-        params: {
-          id: requestId,
-          result: '0x123',
-        },
-      });
-      await expect(responsePromise).rejects.toThrow(
-        `Request '${requestId as string}' not found`,
-      );
-    });
-
-    it("fails to approve a request that doesn't exist", async () => {
-      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestApproved,
-        params: {
-          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
-          result: '0x123',
-        },
-      });
-      await expect(responsePromise).rejects.toThrow(
-        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
-      );
-    });
-
-    it("fails to reject a request that doesn't exist", async () => {
-      const responsePromise = keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.RequestRejected,
-        params: {
-          id: 'b59b5449-5517-4622-99f2-82670cc7f3f3',
-        },
-      });
-      await expect(responsePromise).rejects.toThrow(
-        "Request 'b59b5449-5517-4622-99f2-82670cc7f3f3' not found",
-      );
-    });
-
-    it('throws an error if the removeAccount callback fails', async () => {
-      mockCallbacks.removeAccount.mockImplementation(
-        async (_address, _snapId, _handleUserInput) => {
-          throw new Error('Some error occurred while removing account');
-        },
-      );
-
-      await expect(
-        keyring.handleKeyringSnapMessage(snapId, {
-          method: KeyringEvent.AccountDeleted,
-          params: { id: ethEoaAccount1.id },
-        }),
-      ).rejects.toThrow('Some error occurred while removing account');
-    });
-
-    it('returns null after successfully updating an account', async () => {
-      const result = await keyring.handleKeyringSnapMessage(snapId, {
-        method: KeyringEvent.AccountUpdated,
-        params: { account: ethEoaAccount1 as unknown as KeyringAccount },
-      });
-      expect(mockCallbacks.saveState).toHaveBeenCalled();
-      expect(result).toBeNull();
     });
   });
 
@@ -663,6 +550,133 @@ describe('SnapKeyring', () => {
         keyring.deserialize({} as unknown as KeyringState),
       ).rejects.toThrow('Cannot convert undefined or null to object');
       expect(await keyring.getAccounts()).toStrictEqual([]);
+    });
+  });
+
+  describe('async request redirect', () => {
+    const isNotAllowedOrigin = async (
+      allowedOrigins: string[],
+      redirectUrl: string,
+    ) => {
+      const { origin } = new URL(redirectUrl);
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          initialPermissions:
+            allowedOrigins.length > 0
+              ? { 'endowment:keyring': { allowedOrigins } }
+              : {},
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect: {
+          message: 'Go to dapp to continue.',
+          url: redirectUrl,
+        },
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        ethEoaAccount1.address,
+        'hello',
+      );
+
+      await expect(requestPromise).rejects.toThrow(
+        `Redirect URL domain '${origin}' is not an allowed origin by snap '${snapId}'`,
+      );
+    };
+
+    it.each([
+      [{ message: 'Go to dapp to continue.' }],
+      [{ url: 'https://example.com/sign?tx=1234' }],
+      [{ url: 'https://example.com/sign?tx=12345', message: 'Go to dapp.' }],
+    ])('returns a redirect %s', async (redirect) => {
+      const spy = jest.spyOn(console, 'log').mockImplementation();
+
+      const snapObject = {
+        id: snapId,
+        manifest: {
+          initialPermissions: {
+            'endowment:keyring': {
+              allowedOrigins: ['https://example.com'],
+            },
+          },
+        },
+        enabled: true,
+      };
+      mockSnapController.get.mockReturnValue(snapObject);
+
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect,
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        ethEoaAccount1.address,
+        'hello',
+      );
+
+      const { calls } = mockSnapController.handleRequest.mock;
+      const requestId = calls[calls.length - 1][0].request.params.id;
+      await keyring.handleKeyringSnapMessage(snapId, {
+        method: KeyringEvent.RequestRejected,
+        params: { id: requestId },
+      });
+
+      const { url = '', message = '' } = redirect as {
+        url?: string;
+        message?: string;
+      };
+
+      // We need to await on the request promise because the request submission
+      // is async, so if we don't await, the test will exit before the promise
+      // gets resolved.
+      await expect(requestPromise).rejects.toThrow(
+        'Request rejected by user or snap.',
+      );
+
+      // Check that `redirectUser` was called with the correct parameters
+      expect(mockCallbacks.redirectUser).toHaveBeenCalledWith(
+        snapId,
+        url,
+        message,
+      );
+      spy.mockRestore();
+    });
+
+    it('throws an error if async request redirect url is not an allowed origin', async () => {
+      expect.hasAssertions();
+      await isNotAllowedOrigin(
+        ['https://allowed.com'],
+        'https://notallowed.com/sign?tx=1234',
+      );
+    });
+
+    it('throws an error if no allowed origins', async () => {
+      expect.hasAssertions();
+      await isNotAllowedOrigin([], 'https://example.com/sign?tx=1234');
+    });
+
+    it('throws an error if the Snap is undefined', async () => {
+      const redirect = {
+        message: 'Go to dapp to continue.',
+        url: 'https://example.com/sign?tx=1234',
+      };
+
+      mockSnapController.get.mockReturnValue(undefined);
+
+      mockSnapController.handleRequest.mockResolvedValue({
+        pending: true,
+        redirect,
+      });
+      const requestPromise = keyring.signPersonalMessage(
+        ethEoaAccount1.address,
+        'hello',
+      );
+
+      await expect(requestPromise).rejects.toThrow(
+        `Snap '${snapId}' not found.`,
+      );
     });
   });
 
