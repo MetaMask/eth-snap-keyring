@@ -33,7 +33,7 @@
     "@metamask/snaps-utils": "^7.4.0",
     "@metamask/utils": "^8.4.0",
     "@types/uuid": "^9.0.1",
-    "superstruct": "^1.0.3",
+    "@metamask/superstruct": "^3.0.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
