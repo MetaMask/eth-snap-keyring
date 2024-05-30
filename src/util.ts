@@ -1,6 +1,6 @@
 import type { Json } from '@metamask/utils';
-import type { Struct } from 'superstruct';
-import { assert } from 'superstruct';
+import type { Struct } from '@metamask/superstruct';
+import { assert } from '@metamask/superstruct';
 
 /**
  * Assert that a value is valid according to a struct.

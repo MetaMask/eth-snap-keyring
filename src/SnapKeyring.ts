@@ -35,7 +35,7 @@ import {
   toCaipChainId,
 } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, mask, object, string } from 'superstruct';
+import { assert, mask, object, string } from '@metamask/superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './DeferredPromise';
