@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.1]
+
+### Changed
+
+- Fixed 4337 methods enum ([#312](https://github.com/MetaMask/eth-snap-keyring/pull/312))
+- Bump @metamask/post-message-stream from 8.0.0 to 8.1.0 ([#297](https://github.com/MetaMask/eth-snap-keyring/pull/297))
+- Bump @metamask/permission-controller from 9.0.2 to 9.1.0 ([#306](https://github.com/MetaMask/eth-snap-keyring/pull/306))
+- Bump @metamask/snaps-sdk from 4.2.0 to 4.3.0 ([#308](https://github.com/MetaMask/eth-snap-keyring/pull/308))
+
 ## [4.2.0]
 
 ### Added
@@ -253,7 +262,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.1...HEAD
+[4.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.0.0...v4.1.0
