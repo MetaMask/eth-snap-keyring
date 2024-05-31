@@ -11,7 +11,6 @@ import {
   BtcAccountType,
   BtcMethod,
   EthAccountType,
-  EthErc4337Method,
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
@@ -24,6 +23,21 @@ import { SnapKeyring } from '.';
 
 const regexForUUIDInRequiredSyncErrorMessage =
   /Request '[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}' to snap 'local:snap.mock' is pending and expectSync is true/u;
+
+const ETH_4337_METHODS = [
+  EthMethod.PatchUserOperation,
+  EthMethod.PrepareUserOperation,
+  EthMethod.SignUserOperation,
+];
+
+const ETH_EOA_METHODS = [
+  EthMethod.PersonalSign,
+  EthMethod.Sign,
+  EthMethod.SignTransaction,
+  EthMethod.SignTypedDataV1,
+  EthMethod.SignTypedDataV3,
+  EthMethod.SignTypedDataV4,
+];
 
 describe('SnapKeyring', () => {
   let keyring: SnapKeyring;
@@ -62,21 +76,21 @@ describe('SnapKeyring', () => {
     id: 'b05d918a-b37c-497a-bb28-3d15c0d56b7a',
     address: '0xC728514Df8A7F9271f4B7a4dd2Aa6d2D723d3eE3'.toLowerCase(),
     options: {},
-    methods: [...Object.values(EthMethod)],
+    methods: ETH_EOA_METHODS,
     type: EthAccountType.Eoa,
   };
   const ethEoaAccount2 = {
     id: '33c96b60-2237-488e-a7bb-233576f3d22f',
     address: '0x34b13912eAc00152bE0Cb409A301Ab8E55739e63'.toLowerCase(),
     options: {},
-    methods: [...Object.values(EthMethod)],
+    methods: ETH_EOA_METHODS,
     type: EthAccountType.Eoa,
   };
   const ethEoaAccount3 = {
     id: 'c6697bcf-5710-4751-a1cb-340e4b50617a',
     address: '0xab1G3q98V7C67T9103g30C0417610237A137d763'.toLowerCase(),
     options: {},
-    methods: [...Object.values(EthMethod)],
+    methods: ETH_EOA_METHODS,
     type: EthAccountType.Eoa,
   };
 
@@ -84,7 +98,7 @@ describe('SnapKeyring', () => {
     id: 'fc926fff-f515-4eb5-9952-720bbd9b9849',
     address: '0x2f15b30952aebe0ed5fdbfe5bf16fb9ecdb31d9a'.toLowerCase(),
     options: {},
-    methods: [...Object.values(EthErc4337Method)],
+    methods: ETH_4337_METHODS,
     type: EthAccountType.Erc4337,
   };
   const btcP2wpkhAccount = {

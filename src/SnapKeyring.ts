@@ -19,7 +19,6 @@ import {
   AccountUpdatedEventStruct,
   EthBaseUserOperationStruct,
   EthBytesStruct,
-  EthErc4337Method,
   EthMethod,
   EthUserOperationPatchStruct,
   KeyringEvent,
@@ -57,7 +56,7 @@ export const SNAP_KEYRING_TYPE = 'Snap Keyring';
 
 // TODO: to be removed when this is added to the keyring-api
 
-type AccountMethod = EthMethod | EthErc4337Method | BtcMethod;
+type AccountMethod = EthMethod | BtcMethod;
 
 /**
  * Snap keyring state.
@@ -743,7 +742,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthErc4337Method.PrepareUserOperation,
+        method: EthMethod.PrepareUserOperation,
         params: toJson<Json[]>(transactions),
         expectSync: true,
         // We assume the chain ID is already well formatted
@@ -770,7 +769,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthErc4337Method.PatchUserOperation,
+        method: EthMethod.PatchUserOperation,
         params: toJson<Json[]>([userOp]),
         expectSync: true,
         // We assume the chain ID is already well formatted
@@ -796,7 +795,7 @@ export class SnapKeyring extends EventEmitter {
     return strictMask(
       await this.#submitRequest({
         address,
-        method: EthErc4337Method.SignUserOperation,
+        method: EthMethod.SignUserOperation,
         params: toJson<Json[]>([userOp]),
         // We assume the chain ID is already well formatted
         chainId: toCaipChainId(KnownCaipNamespace.Eip155, context.chainId),
