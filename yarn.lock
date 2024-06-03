@@ -1277,8 +1277,8 @@ __metadata:
   linkType: hard
 
 "@metamask/snaps-controllers@npm:^8.1.1":
-  version: 8.2.0
-  resolution: "@metamask/snaps-controllers@npm:8.2.0"
+  version: 8.3.1
+  resolution: "@metamask/snaps-controllers@npm:8.3.1"
   dependencies:
     "@metamask/approval-controller": ^6.0.2
     "@metamask/base-controller": ^5.0.2
@@ -1290,9 +1290,9 @@ __metadata:
     "@metamask/post-message-stream": ^8.1.0
     "@metamask/rpc-errors": ^6.2.1
     "@metamask/snaps-registry": ^3.1.0
-    "@metamask/snaps-rpc-methods": ^9.1.0
-    "@metamask/snaps-sdk": ^4.3.0
-    "@metamask/snaps-utils": ^7.4.0
+    "@metamask/snaps-rpc-methods": ^9.1.2
+    "@metamask/snaps-sdk": ^4.4.1
+    "@metamask/snaps-utils": ^7.4.1
     "@metamask/utils": ^8.3.0
     "@xstate/fsm": ^2.0.0
     browserify-zlib: ^0.2.0
@@ -1305,11 +1305,11 @@ __metadata:
     readable-web-to-node-stream: ^3.0.2
     tar-stream: ^3.1.7
   peerDependencies:
-    "@metamask/snaps-execution-environments": ^6.2.0
+    "@metamask/snaps-execution-environments": ^6.3.0
   peerDependenciesMeta:
     "@metamask/snaps-execution-environments":
       optional: true
-  checksum: b1a4fbd177b66ee20d66b9f70a4d454081552e16e05ab6435850af336a96da906055e31f2bdb808f3ff650aa4b545e34ffa7450c97c269929f076dea2371857a
+  checksum: d2fccfc9a4fdea68c89755a0e93e292eafdbe28515fcf1f5ba761d4fb057ae2f1732d242f776cd089ea8dfbd0f84d9d2151778ba529fd9b5b4c7b00460a612ab
   languageName: node
   linkType: hard
 
@@ -1325,7 +1325,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-rpc-methods@npm:^9.1.0":
+"@metamask/snaps-rpc-methods@npm:^9.1.2":
   version: 9.1.2
   resolution: "@metamask/snaps-rpc-methods@npm:9.1.2"
   dependencies:
@@ -1341,7 +1341,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-sdk@npm:^4.2.0, @metamask/snaps-sdk@npm:^4.3.0, @metamask/snaps-sdk@npm:^4.4.1":
+"@metamask/snaps-sdk@npm:^4.2.0, @metamask/snaps-sdk@npm:^4.4.1":
   version: 4.4.1
   resolution: "@metamask/snaps-sdk@npm:4.4.1"
   dependencies:
