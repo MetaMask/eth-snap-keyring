@@ -28,6 +28,7 @@ import {
 import type { SnapController } from '@metamask/snaps-controllers';
 import type { SnapId } from '@metamask/snaps-sdk';
 import type { Snap } from '@metamask/snaps-utils';
+import { assert, mask, object, string } from '@metamask/superstruct';
 import type { Json } from '@metamask/utils';
 import {
   bigIntToHex,
@@ -35,7 +36,6 @@ import {
   toCaipChainId,
 } from '@metamask/utils';
 import { EventEmitter } from 'events';
-import { assert, mask, object, string } from '@metamask/superstruct';
 import { v4 as uuid } from 'uuid';
 
 import { DeferredPromise } from './DeferredPromise';
