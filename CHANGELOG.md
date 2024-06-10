@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.0]
+
+### Added
+
+- Export `KeyringSnapControllerClient` ([#328](https://github.com/MetaMask/eth-snap-keyring/pull/328)).
+
+### Changed
+
+- Bump @metamask/snaps-utils from 7.4.1 to 7.5.0 ([#326](https://github.com/MetaMask/eth-snap-keyring/pull/326)).
+- Bump @metamask/snaps-controllers from 8.3.1 to 8.4.0 ([#325](https://github.com/MetaMask/eth-snap-keyring/pull/325)).
+- Bump @metamask/snaps-sdk from 4.4.1 to 4.4.2 ([#327](https://github.com/MetaMask/eth-snap-keyring/pull/327)).
+- Bump @metamask/rpc-errors from 6.2.1 to 6.3.0 ([#322](https://github.com/MetaMask/eth-snap-keyring/pull/322)).
+- Bump @metamask/snaps-controllers from 8.2.0 to 8.3.1 ([#321](https://github.com/MetaMask/eth-snap-keyring/pull/321)).
+- Bump @metamask/snaps-sdk from 4.3.0 to 4.4.1 ([#314](https://github.com/MetaMask/eth-snap-keyring/pull/314)).
+- Bump @metamask/permission-controller from 9.1.0 to 9.1.1 ([#316](https://github.com/MetaMask/eth-snap-keyring/pull/316)).
+- Bump @metamask/snaps-utils from 7.4.0 to 7.4.1 ([#319](https://github.com/MetaMask/eth-snap-keyring/pull/319)).
+- Bump @metamask/keyring-api from 6.3.1 to 6.4.0 ([#315](https://github.com/MetaMask/eth-snap-keyring/pull/315)).
+- Bump @metamask/json-rpc-middleware-stream from 7.0.1 to 7.0.2 ([#317](https://github.com/MetaMask/eth-snap-keyring/pull/317)).
+- Bump @metamask/phishing-controller from 9.0.3 to 9.0.4 ([#318](https://github.com/MetaMask/eth-snap-keyring/pull/318)).
+- Bump @metamask/snaps-rpc-methods from 9.1.0 to 9.1.2 ([#320](https://github.com/MetaMask/eth-snap-keyring/pull/320)).
+- Bump @lavamoat/allow-scripts@^2.3.1->^3.0.4 ([#296](https://github.com/MetaMask/eth-snap-keyring/pull/296)).
+- Bump @metamask/key-tree from 9.1.0 to 9.1.1 ([#298](https://github.com/MetaMask/eth-snap-keyring/pull/298)).
+- Bump @metamask/phishing-controller from 9.0.2 to 9.0.3 ([#302](https://github.com/MetaMask/eth-snap-keyring/pull/302)).
+- Bump @metamask/json-rpc-engine from 8.0.1 to 8.0.2 ([#291](https://github.com/MetaMask/eth-snap-keyring/pull/291)).
+- Bump @metamask/snaps-controllers from 8.1.1 to 8.2.0 ([#307](https://github.com/MetaMask/eth-snap-keyring/pull/307)).
+
 ## [4.2.1]
 
 ### Changed
@@ -262,7 +288,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.1...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.0...HEAD
+[4.3.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.1...v4.3.0
 [4.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.0...v4.1.1
