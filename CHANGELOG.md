@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.1]
+
+### Changed
+
+- Bump @metamask/keyring-api from 6.3.1 to 8.0.0 ([#331](https://github.com/MetaMask/eth-snap-keyring/pull/331)).
+
 ## [4.3.0]
 
 ### Added
@@ -288,7 +294,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.1...HEAD
+[4.3.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.1...v4.3.0
 [4.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.1.1...v4.2.0
