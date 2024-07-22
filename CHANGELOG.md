@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.2]
+
+### Changed
+
+- Bump `@metamask/eth-sig-util` from `^7.0.1` to `^7.0.3` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311))
+- Bump `@metamask/keyring-api` from `^8.0.0` to `^8.0.1` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311))
+- Bump `@metamask/snaps-controllers` from `^8.1.1` to `^9.3.0` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311), [#363](https://github.com/MetaMask/eth-snap-keyring/pull/363))
+- Bump `@metamask/snaps-sdk` from `^4.2.0` to `^6.1.0` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311), [#363](https://github.com/MetaMask/eth-snap-keyring/pull/363))
+- Bump `@metamask/snaps-utils` from `^7.4.0` to `^7.8.0` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311), [#363](https://github.com/MetaMask/eth-snap-keyring/pull/363))
+- Bump `@metamask/utils` from `^8.4.0` to `^9.1.0` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311))
+- Set tsconfig options `module`, `moduleResolution` to `Node16` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311))
+
+### Fixed
+
+- Replace `superstruct` with ESM-compatible `@metamask/superstruct` `^3.1.0` ([#311](https://github.com/MetaMask/eth-snap-keyring/pull/311))
+  - This fixes the issue of this package being unusable by any TypeScript project that uses `Node16` or `NodeNext` as its `moduleResolution` option.
+
 ## [4.3.1]
 
 ### Changed
@@ -294,7 +311,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.1...HEAD
+[Unreleased]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.2...HEAD
+[4.3.2]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.1...v4.3.2
 [4.3.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.1...v4.3.0
 [4.2.1]: https://github.com/MetaMask/eth-snap-keyring/compare/v4.2.0...v4.2.1
