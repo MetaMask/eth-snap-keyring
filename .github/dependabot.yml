@@ -11,5 +11,9 @@ updates:
     allow:
       - dependency-name: '@metamask/*'
     target-branch: 'main'
-    versioning-strategy: 'increase-if-necessary'
+    versioning-strategy: 'increase'
     open-pull-requests-limit: 10
+    groups:
+      snaps:
+        patterns:
+          - '@metamask/snaps-*'
