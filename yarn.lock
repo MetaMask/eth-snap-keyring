@@ -1074,7 +1074,6 @@ __metadata:
     "@metamask/eth-sig-util": ^7.0.3
     "@metamask/keyring-api": ^8.1.0
     "@metamask/snaps-controllers": ^9.6.0
-    "@metamask/snaps-execution-environments": ^6.7.0
     "@metamask/snaps-sdk": ^6.4.0
     "@metamask/snaps-utils": ^7.8.0
     "@metamask/superstruct": ^3.1.0
@@ -1331,25 +1330,6 @@ __metadata:
     "@metamask/snaps-execution-environments":
       optional: true
   checksum: fbaa320567f453d2996b1af1b2e4d41f8d98c554cf25c1c8e085987de0f023e4d329f5e0f989b20b58784f307bb9b4025704e40fc1bcd311c4854431e83adf05
-  languageName: node
-  linkType: hard
-
-"@metamask/snaps-execution-environments@npm:^6.7.0":
-  version: 6.7.0
-  resolution: "@metamask/snaps-execution-environments@npm:6.7.0"
-  dependencies:
-    "@metamask/json-rpc-engine": ^9.0.2
-    "@metamask/object-multiplex": ^2.0.0
-    "@metamask/post-message-stream": ^8.1.1
-    "@metamask/providers": ^17.1.2
-    "@metamask/rpc-errors": ^6.3.1
-    "@metamask/snaps-sdk": ^6.4.0
-    "@metamask/snaps-utils": ^8.1.0
-    "@metamask/superstruct": ^3.1.0
-    "@metamask/utils": ^9.2.1
-    nanoid: ^3.1.31
-    readable-stream: ^3.6.2
-  checksum: 769f9070494ef0cd522945758f47e9dc1233d0cfa6ab947bfc91af54e8dbb77a383a973d865f00a1ba4ff2f32a20fa09e2cbbcd3d80a374b2c9414ca32349100
   languageName: node
   linkType: hard
 
