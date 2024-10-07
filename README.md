@@ -1,5 +1,10 @@
 # Snap Keyring
 
+> [!WARNING]
+> This package has been moved into a
+> [new monorepo](https://github.com/MetaMask/accounts/tree/main/packages/keyring-snap-bridge).
+> This repository is no longer in use, and pull requests will no longer be accepted.
+
 This keyring acts as a bridge between the `KeyringController` and a snap.
 
 ## Installation
