@@ -42,7 +42,7 @@
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
-    "@metamask/eslint-config-typescript": "^12.1.0",
+    "@metamask/eslint-config-typescript": "^13.0.0",
     "@types/jest": "^28.1.6",
     "@types/node": "^17.0.23",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
